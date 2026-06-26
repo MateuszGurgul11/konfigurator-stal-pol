@@ -133,8 +133,9 @@ export function ConfiguratorShell() {
         {showDemoBanner && (
           <div className="shrink-0 border-b border-amber-200/20 bg-amber-950/40 px-5 py-2 text-center">
             <p className="text-[11px] text-amber-400/90">
-              API niedostępne — wyświetlane są dane demo. Uruchom backend
-              FastAPI i ustaw NEXT_PUBLIC_API_URL w .env.{" "}
+              API niedostępne — wyświetlane są dane demo. Sprawdź backend na
+              Render i zmienną NEXT_PUBLIC_API_URL (lokalnie) lub proxy /api
+              (produkcja Vercel).{" "}
               <Link href="/admin" className="underline hover:text-amber-300">
                 Panel admina
               </Link>

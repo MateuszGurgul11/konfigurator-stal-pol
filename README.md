@@ -110,14 +110,28 @@ Pola opcjonalne: `description`, `previewAsset` (URL zdjęcia).
 
 ## Produkcja
 
-**Frontend (Vercel):** połącz repo, ustaw zmienne z `.env.example`, deploy.
+**Adresy:**
+- Frontend: https://konfigurator-stal-pol.vercel.app
+- Backend: https://konfigurator-stal-pol.onrender.com
 
-**Backend (Render):** blueprint z [`render.yaml`](render.yaml) — szczegóły w [`backend/README.md`](backend/README.md).
+### Frontend — Vercel
 
-Po deployu backendu ustaw w Vercel:
+1. Import repo `konfigurator-stal-pol` na [Vercel](https://vercel.com/new).
+2. Root Directory: `.` (nie `backend`).
+3. Deploy — repo zawiera [`.env.production`](.env.production) (Firebase) i proxy `/api` → Render w [`next.config.ts`](next.config.ts).
+4. Firebase → Authentication → **Authorized domains** → dodaj `konfigurator-stal-pol.vercel.app`.
 
-```env
-NEXT_PUBLIC_API_URL=https://konfigurator-stal-pol-api.onrender.com
-```
+Lokalnie: `NEXT_PUBLIC_API_URL=http://localhost:8000` w `.env`.
 
-(zamień na rzeczywisty URL z Render Dashboard)
+### Backend — Render
+
+1. Blueprint [`render.yaml`](render.yaml) — szczegóły w [`backend/README.md`](backend/README.md).
+2. **Obowiązkowo** w Render Environment ustaw `FIREBASE_SERVICE_ACCOUNT_JSON`:
+   ```bash
+   cd backend && ./scripts/print-render-env.sh
+   ```
+3. `CORS_ORIGINS`:
+   ```
+   https://konfigurator-stal-pol.vercel.app,http://localhost:3000,http://localhost:3001
+   ```
+4. Sprawdź: https://konfigurator-stal-pol.onrender.com/api/health → `"firebase": true`

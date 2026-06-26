@@ -70,8 +70,8 @@ Skopiuj wypisany `FIREBASE_SERVICE_ACCOUNT_JSON` (jedna linia) do Render.
    ```
    https://konfigurator-stal-pol.vercel.app,http://localhost:3000,http://localhost:3001
    ```
-5. Po deployu skopiuj URL API (np. `https://konfigurator-stal-pol-api.onrender.com`).
-6. W Vercel ustaw `NEXT_PUBLIC_API_URL` na ten URL i zrób redeploy frontendu.
+5. Po deployu skopiuj URL API (np. `https://konfigurator-stal-pol.onrender.com`).
+6. Frontend na Vercel proxy'uje `/api` do Render (`next.config.ts`) — nie trzeba ustawiać `NEXT_PUBLIC_API_URL` na Vercel.
 
 `FIREBASE_PROJECT_ID` i `PORT` są już zdefiniowane w `render.yaml`.
 
