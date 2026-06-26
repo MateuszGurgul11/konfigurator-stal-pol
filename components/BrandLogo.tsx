@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const SITE_URL = "https://ogrodzenia-wielkopolska.pl/";
+const SITE_URL = "https://srv100483.seohost.com.pl/stal-pol/";
 
 type BrandLogoProps = {
   className?: string;
