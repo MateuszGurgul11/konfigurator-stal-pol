@@ -110,9 +110,14 @@ Pola opcjonalne: `description`, `previewAsset` (URL zdjęcia).
 
 ## Produkcja
 
-```bash
-npm run build && npm start
-# Backend: uvicorn app.main:app --host 0.0.0.0 --port 8000
+**Frontend (Vercel):** połącz repo, ustaw zmienne z `.env.example`, deploy.
+
+**Backend (Render):** blueprint z [`render.yaml`](render.yaml) — szczegóły w [`backend/README.md`](backend/README.md).
+
+Po deployu backendu ustaw w Vercel:
+
+```env
+NEXT_PUBLIC_API_URL=https://konfigurator-stal-pol-api.onrender.com
 ```
 
-Ustaw `NEXT_PUBLIC_API_URL` na URL produkcyjnego API.
+(zamień na rzeczywisty URL z Render Dashboard)

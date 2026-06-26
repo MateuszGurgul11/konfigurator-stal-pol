@@ -49,16 +49,31 @@ Frontend uruchamiasz osobno z katalogu głównego projektu: `npm run dev` (http:
 
 ## Deploy na Render
 
-Repozytorium: `https://github.com/MateuszGurgul11/ogrodzenia-wielkopolska-backend`
+Repozytorium: `https://github.com/MateuszGurgul11/konfigurator-stal-pol`
 
-1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** (lub Web Service z Docker).
-2. Połącz repozytorium GitHub — Render odczyta `render.yaml`.
-3. Ustaw zmienne środowiskowe:
-   - `FIREBASE_PROJECT_ID` = `konfigurator-stal-pol`
-   - `FIREBASE_SERVICE_ACCOUNT_JSON` = cały JSON z Firebase Console (jedna linia)
-   - `CORS_ORIGINS` = URL produkcyjnego frontendu
-4. Po deployu skopiuj URL usługi (np. `https://ogrodzenia-api.onrender.com`).
-5. W Vercel ustaw `NEXT_PUBLIC_API_URL` na ten URL i zrób redeploy frontendu.
+Plik [`render.yaml`](../render.yaml) w katalogu głównym uruchamia backend z `rootDir: backend`.
+
+### Kroki
+
+1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → połącz repo `konfigurator-stal-pol`.
+2. Render utworzy usługę `konfigurator-stal-pol-api` (Docker, region Frankfurt).
+3. W **Environment** uzupełnij zmienne z [`render.env.example`](../render.env.example):
+
+```bash
+cd backend
+./scripts/print-render-env.sh
+```
+
+Skopiuj wypisany `FIREBASE_SERVICE_ACCOUNT_JSON` (jedna linia) do Render.
+
+4. Ustaw `CORS_ORIGINS`, np.:
+   ```
+   https://konfigurator-stal-pol.vercel.app,http://localhost:3000,http://localhost:3001
+   ```
+5. Po deployu skopiuj URL API (np. `https://konfigurator-stal-pol-api.onrender.com`).
+6. W Vercel ustaw `NEXT_PUBLIC_API_URL` na ten URL i zrób redeploy frontendu.
+
+`FIREBASE_PROJECT_ID` i `PORT` są już zdefiniowane w `render.yaml`.
 
 ## Endpointy
 
