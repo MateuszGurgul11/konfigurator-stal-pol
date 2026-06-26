@@ -8,7 +8,7 @@ import Link from "next/link";
 
 const emptyItem = {
   name: "",
-  patternId: "pattern-solid",
+  patternId: "pattern-3d",
   priceSurchargePerMeter: 0,
   previewAsset: "",
   baseTextureUrl: "",

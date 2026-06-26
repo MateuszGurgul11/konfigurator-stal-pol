@@ -38,6 +38,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
   const quoteFenceClosed = useConfiguratorStore((s) => s.quoteFenceClosed);
   const quotePxPerMeter = useConfiguratorStore((s) => s.quotePxPerMeter);
   const quotePerimeterM = useConfiguratorStore((s) => s.quotePerimeterM);
+  const scope = useConfiguratorStore((s) => s.scope);
   const bramaEnabled = useConfiguratorStore((s) => s.bramaEnabled);
   const bramaElementId = useConfiguratorStore((s) => s.bramaElementId);
   const bramaOccupiedSpanM = useConfiguratorStore((s) => s.bramaOccupiedSpanM);
@@ -73,6 +74,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
         selection,
         pricing,
         perimeterM: quotePerimeterM,
+        fenceEnabled: scope.fence,
         bramaEnabled,
         bramaElementId,
         bramaOccupiedSpanM,
@@ -86,6 +88,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
       selection,
       pricing,
       quotePerimeterM,
+      scope.fence,
       bramaEnabled,
       bramaElementId,
       bramaOccupiedSpanM,

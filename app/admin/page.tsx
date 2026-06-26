@@ -17,7 +17,7 @@ import { Loader2 } from "lucide-react";
 
 const sections = [
   { href: "/admin/posts", title: "Słupki", desc: "Warianty słupków ogrodzenia" },
-  { href: "/admin/panels", title: "Panele", desc: "Wzory i tekstury paneli betonowych" },
+  { href: "/admin/panels", title: "Panele", desc: "Wzory i tekstury paneli stalowych" },
   {
     href: "/admin/textures",
     title: "Tekstury",
@@ -30,13 +30,13 @@ const sections = [
   },
   {
     href: "/admin/spacers",
-    title: "Dystanse",
-    desc: "Opcje dystansu i ażurowości",
+    title: "Wykończenie",
+    desc: "Ocynk i malowanie proszkowe RAL",
   },
   {
     href: "/admin/heights",
     title: "Wysokości",
-    desc: "Dostępne wysokości płotu (1–2,25 m)",
+    desc: "Wysokości paneli (1,53–2,00 m)",
   },
   { href: "/admin/colors", title: "Kolory", desc: "Kolory malowania" },
   {
@@ -104,8 +104,10 @@ export default function AdminDashboardPage() {
           <CardHeader>
             <CardTitle className="text-lg">Dane startowe</CardTitle>
             <CardDescription>
-              Jednorazowo wgraj przykładowe słupki, panele, wysokości i kolory do
-              Firestore przez API.
+              Po wdrożeniu oferty STAL-POL wgraj ponownie katalog (panele 3D,
+              palisada, bramy, furtki, ceny od 48 PLN/mb). Na produkcji użyj
+              też „Zastosuj domyślne” w sekcji Wycena, jeśli aktualizujesz tylko
+              stawki.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">

@@ -1,12 +1,6 @@
-export type PatternId =
-  | "pattern-solid"
-  | "pattern-lines"
-  | "pattern-grid"
-  | "pattern-brick";
+export type PatternId = "pattern-3d" | "pattern-palisade";
 
 export const PATTERN_OPTIONS: { id: PatternId; label: string }[] = [
-  { id: "pattern-solid", label: "Gładki" },
-  { id: "pattern-lines", label: "Pionowe linie" },
-  { id: "pattern-grid", label: "Siatka" },
-  { id: "pattern-brick", label: "Cegiełka" },
+  { id: "pattern-3d", label: "Panel 3D" },
+  { id: "pattern-palisade", label: "Palisada" },
 ];

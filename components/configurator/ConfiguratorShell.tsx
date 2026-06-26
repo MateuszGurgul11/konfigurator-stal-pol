@@ -8,6 +8,8 @@ import { useMounted } from "@/lib/hooks/use-mounted";
 import { ConfiguratorHeader } from "./ConfiguratorHeader";
 import { OptionSidebar } from "./OptionSidebar";
 import { FencePreview } from "./FencePreview";
+import { OpeningsOnlyPreview } from "./OpeningsOnlyPreview";
+import { ProductScopeStep } from "./ProductScopeStep";
 import { QuotePlanCanvas } from "./QuotePlanCanvas";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -77,6 +79,8 @@ export function ConfiguratorShell() {
     setSelection,
     setActiveTab,
     setPricing,
+    scopeConfirmed,
+    scope,
   } = useConfiguratorStore();
 
   useEffect(() => {
@@ -92,6 +96,7 @@ export function ConfiguratorShell() {
         if (cancelled) return;
         setPricing(pricingData);
         if (
+          !data.elements.length ||
           !data.posts.length ||
           !data.panels.length ||
           !data.spacerOptions.length ||
@@ -99,7 +104,7 @@ export function ConfiguratorShell() {
           !data.colors.length
         ) {
           setError(
-            "Katalog jest pusty. Zaloguj się do panelu admina i dodaj warianty lub uruchom seed danych.",
+            "Katalog jest pusty. Zaloguj się do panelu admina i wgraj dane przykładowe (seed STAL-POL).",
           );
         } else {
           setCatalog(data);
@@ -125,6 +130,7 @@ export function ConfiguratorShell() {
   const showLoading = !mounted || loading;
   const showError = mounted && !loading && error;
   const showConfigurator = mounted && !loading && !error && catalog;
+  const showScopeStep = showConfigurator && !scopeConfirmed;
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-white">
@@ -157,7 +163,9 @@ export function ConfiguratorShell() {
           </div>
         )}
 
-        {showConfigurator && (
+        {showScopeStep && <ProductScopeStep />}
+
+        {showConfigurator && scopeConfirmed && (
           <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
             <ConfiguratorSidebar
               catalog={catalog}
@@ -170,8 +178,10 @@ export function ConfiguratorShell() {
             <section className="min-h-[360px] flex-1 overflow-hidden">
               {activeTab === "quote" ? (
                 <QuotePlanCanvas />
-              ) : (
+              ) : scope.fence ? (
                 <FencePreview catalog={catalog} selection={selection} />
+              ) : (
+                <OpeningsOnlyPreview catalog={catalog} />
               )}
             </section>
           </div>

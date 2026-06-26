@@ -528,7 +528,7 @@ export function FencePreview({ catalog, selection }: Props) {
     ? [
         { label: "Wysokość", value: `${heightCm} cm` },
         { label: "Panele", value: `${previewPanelCount} szt.` },
-        { label: "Materiał", value: `Beton · ${panel!.name}` },
+        { label: "Materiał", value: `Stal · ${panel!.name}` },
         { label: "Kolor", value: color!.name },
         {
           label: "Wejścia",

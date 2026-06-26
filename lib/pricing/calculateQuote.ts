@@ -15,6 +15,7 @@ type QuoteInput = {
   selection: ConfiguratorSelection;
   pricing?: PricingSettings | null;
   perimeterM?: number | null;
+  fenceEnabled?: boolean;
   bramaEnabled?: boolean;
   bramaElementId?: string | null;
   bramaOccupiedSpanM?: number | null;
@@ -44,12 +45,11 @@ function formatBramaValue(
   enabled: boolean,
   elementName: string | undefined,
   spanM: number,
-  panels: number,
 ): string {
   if (!enabled) return "Nie";
   const label = elementName ?? "Brama";
-  if (spanM <= 0) return `${label} · ustaw na rzucie`;
-  return `${label} · ${spanM.toFixed(1)} m (${panels} panel${panels === 1 ? "" : "i"})`;
+  if (spanM <= 0) return `${label} · cena stała`;
+  return `${label} · ${spanM.toFixed(1)} m na rzucie`;
 }
 
 function formatFurtkaValue(
@@ -59,13 +59,14 @@ function formatFurtkaValue(
 ): string {
   if (!enabled) return "Nie";
   const label = elementName ?? "Furtka";
-  return positionLabel ? `${label} · ${positionLabel}` : `${label} · ustaw na rzucie`;
+  return positionLabel ? `${label} · ${positionLabel}` : `${label} · cena stała`;
 }
 
 export function calculateQuote(input: QuoteInput): QuoteResult {
   const settings = pickPricing(input.pricing);
   const { catalog, selection } = input;
   const panelWidthM = settings.panelWidthCm / 100;
+  const fenceEnabled = input.fenceEnabled ?? true;
 
   const post = catalog.posts.find((p) => p.id === selection.postId);
   const panel = catalog.panels.find((p) => p.id === selection.panelId);
@@ -100,7 +101,6 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
     ? resolveElement(catalog, "furtka", input.furtkaElementId)
     : undefined;
 
-  // Brama ma wycenę dopiero po tym, jak użytkownik wyznaczy jej odcinek na obrysie.
   const bramaSpanRawM =
     bramaEnabled && input.bramaOccupiedSpanM != null
       ? Math.max(0, input.bramaOccupiedSpanM)
@@ -112,12 +112,17 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
   const bramaSpanUsedM = bramaPanels * panelWidthM;
   const furtkaSpanUsedM = furtkaEnabled ? panelWidthM : 0;
 
-  const effectivePerimeterM = Math.max(
-    0,
-    perimeterM - bramaSpanUsedM - furtkaSpanUsedM,
-  );
+  let effectivePerimeterM = 0;
+  let fenceSubtotal = 0;
 
-  const fenceSubtotal = effectivePerimeterM * pricePerMeterNet;
+  if (fenceEnabled) {
+    effectivePerimeterM = Math.max(
+      0,
+      perimeterM - bramaSpanUsedM - furtkaSpanUsedM,
+    );
+    fenceSubtotal = effectivePerimeterM * pricePerMeterNet;
+  }
+
   const bramaUnitPrice = resolveElementPriceNet(
     catalog,
     "brama",
@@ -128,28 +133,36 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
     "furtka",
     input.furtkaElementId ?? furtkaElement?.id,
   );
-  const bramaPrice = bramaEnabled ? bramaUnitPrice * bramaPanels : 0;
+  const bramaPrice = bramaEnabled ? bramaUnitPrice : 0;
   const furtkaPrice = furtkaEnabled ? furtkaUnitPrice : 0;
   const totalNet = fenceSubtotal + bramaPrice + furtkaPrice;
 
-  const estimatedPanels = Math.max(
-    MIN_PREVIEW_PANELS,
-    Math.ceil(effectivePerimeterM / panelWidthM),
-  );
+  const estimatedPanels = fenceEnabled
+    ? Math.max(
+        MIN_PREVIEW_PANELS,
+        Math.ceil(effectivePerimeterM / panelWidthM),
+      )
+    : 0;
 
-  const configurationItems: QuoteConfigurationItem[] = [
-    { label: "Panel", value: panel?.name ?? "—" },
-    { label: "Kolor", value: color?.name ?? "—" },
-    { label: "Wysokość", value: height?.label ?? "—" },
-    { label: "Słupek", value: post?.name ?? "—" },
-    { label: "Dystans", value: spacer?.name ?? "—" },
+  const configurationItems: QuoteConfigurationItem[] = [];
+
+  if (fenceEnabled) {
+    configurationItems.push(
+      { label: "Panel", value: panel?.name ?? "—" },
+      { label: "Kolor", value: color?.name ?? "—" },
+      { label: "Wysokość", value: height?.label ?? "—" },
+      { label: "Słupek", value: post?.name ?? "—" },
+      { label: "Wykończenie", value: spacer?.name ?? "—" },
+    );
+  }
+
+  configurationItems.push(
     {
       label: "Brama wjazdowa",
       value: formatBramaValue(
         bramaEnabled,
         bramaElement?.name,
         bramaSpanUsedM,
-        bramaPanels,
       ),
     },
     {
@@ -160,71 +173,70 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
         input.furtkaPositionLabel,
       ),
     },
-  ];
+  );
 
-  const breakdown: QuoteBreakdown[] = [
-    {
+  const breakdown: QuoteBreakdown[] = [];
+
+  if (fenceEnabled) {
+    breakdown.push({
       label: "Cena bazowa",
       value: `${basePerMeter.toLocaleString("pl-PL")} PLN/m`,
       amount: effectivePerimeterM * basePerMeter * heightMultiplier,
-    },
-  ];
+    });
 
-  if (panel && panelSurcharge > 0) {
+    if (panel && panelSurcharge > 0) {
+      breakdown.push({
+        label: `Panel · ${panel.name}`,
+        value: formatPerMeter(panelSurcharge),
+        amount: effectivePerimeterM * panelSurcharge * heightMultiplier,
+      });
+    }
+
+    if (color && colorSurcharge > 0) {
+      breakdown.push({
+        label: `Kolor · ${color.name}`,
+        value: formatPerMeter(colorSurcharge),
+        amount: effectivePerimeterM * colorSurcharge * heightMultiplier,
+      });
+    }
+
+    if (post && postSurcharge > 0) {
+      breakdown.push({
+        label: `Słupek · ${post.name}`,
+        value: formatPerMeter(postSurcharge),
+        amount: effectivePerimeterM * postSurcharge * heightMultiplier,
+      });
+    }
+
+    if (spacer && spacerSurcharge > 0) {
+      breakdown.push({
+        label: `Wykończenie · ${spacer.name}`,
+        value: formatPerMeter(spacerSurcharge),
+        amount: effectivePerimeterM * spacerSurcharge * heightMultiplier,
+      });
+    }
+
+    if (height && heightMultiplier !== 1) {
+      breakdown.push({
+        label: `Wysokość · ${height.label}`,
+        value: `mnożnik × ${heightMultiplier.toFixed(2)}`,
+        amount: 0,
+      });
+    }
+
     breakdown.push({
-      label: `Panel · ${panel.name}`,
-      value: formatPerMeter(panelSurcharge),
-      amount: effectivePerimeterM * panelSurcharge * heightMultiplier,
+      label: "Ogrodzenie",
+      value: `${pricePerMeterNet.toLocaleString("pl-PL")} PLN/m × ${effectivePerimeterM.toFixed(1)} m`,
+      amount: fenceSubtotal,
     });
   }
-
-  if (color && colorSurcharge > 0) {
-    breakdown.push({
-      label: `Kolor · ${color.name}`,
-      value: formatPerMeter(colorSurcharge),
-      amount: effectivePerimeterM * colorSurcharge * heightMultiplier,
-    });
-  }
-
-  if (post && postSurcharge > 0) {
-    breakdown.push({
-      label: `Słupek · ${post.name}`,
-      value: formatPerMeter(postSurcharge),
-      amount: effectivePerimeterM * postSurcharge * heightMultiplier,
-    });
-  }
-
-  if (spacer && spacerSurcharge > 0) {
-    breakdown.push({
-      label: `Dystans · ${spacer.name}`,
-      value: formatPerMeter(spacerSurcharge),
-      amount: effectivePerimeterM * spacerSurcharge * heightMultiplier,
-    });
-  }
-
-  if (height && heightMultiplier !== 1) {
-    breakdown.push({
-      label: `Wysokość · ${height.label}`,
-      value: `mnożnik × ${heightMultiplier.toFixed(2)}`,
-      amount: 0,
-    });
-  }
-
-  breakdown.push({
-    label: "Ogrodzenie",
-    value: `${pricePerMeterNet.toLocaleString("pl-PL")} PLN/m × ${effectivePerimeterM.toFixed(1)} m`,
-    amount: fenceSubtotal,
-  });
 
   if (bramaEnabled) {
     breakdown.push({
       label: bramaElement?.name
         ? `Brama · ${bramaElement.name}`
         : "Brama wjazdowa",
-      value:
-        bramaPanels > 1
-          ? `${bramaPanels} panele × ${bramaUnitPrice.toLocaleString("pl-PL")} PLN`
-          : "1 panel",
+      value: `${bramaUnitPrice.toLocaleString("pl-PL")} PLN netto`,
       amount: bramaPrice,
     });
   }
@@ -238,9 +250,9 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
   }
 
   return {
-    perimeterM,
+    perimeterM: fenceEnabled ? perimeterM : 0,
     estimatedPanels,
-    pricePerMeterNet,
+    pricePerMeterNet: fenceEnabled ? pricePerMeterNet : 0,
     fenceSubtotal,
     bramaPrice,
     furtkaPrice,
@@ -248,6 +260,8 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
     currency: settings.currency,
     breakdown,
     configurationItems,
-    hasMeasuredPerimeter: Boolean(input.perimeterM && input.perimeterM > 0),
+    hasMeasuredPerimeter: Boolean(
+      fenceEnabled && input.perimeterM && input.perimeterM > 0,
+    ),
   };
 }

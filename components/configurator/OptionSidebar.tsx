@@ -173,6 +173,8 @@ export function OptionSidebar({
   const pricing = useConfiguratorStore((s) => s.pricing);
   const quotePerimeterM = useConfiguratorStore((s) => s.quotePerimeterM);
   const quoteFenceClosed = useConfiguratorStore((s) => s.quoteFenceClosed);
+  const scope = useConfiguratorStore((s) => s.scope);
+  const resetScope = useConfiguratorStore((s) => s.resetScope);
 
   const openingPositionLabels: Record<GatePosition, string> = {
     left: "Lewa sekcja",
@@ -196,6 +198,7 @@ export function OptionSidebar({
         selection,
         pricing,
         perimeterM: quotePerimeterM,
+        fenceEnabled: scope.fence,
         bramaEnabled,
         bramaElementId,
         bramaOccupiedSpanM,
@@ -209,6 +212,7 @@ export function OptionSidebar({
       selection,
       pricing,
       quotePerimeterM,
+      scope.fence,
       bramaEnabled,
       bramaElementId,
       bramaOccupiedSpanM,
@@ -222,15 +226,26 @@ export function OptionSidebar({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-[#2A2A26] px-5 py-4">
-        <h1 className="font-heading text-lg font-bold text-white">
-          Konfigurator Ogrodzenia
-        </h1>
-        <p className="mt-0.5 text-[11px] text-[#666]">
-          Seria Betonowa | Wielkopolska
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="font-heading text-lg font-bold text-white">
+              Konfigurator Ogrodzenia
+            </h1>
+            <p className="mt-0.5 text-[11px] text-[#666]">
+              STAL-POL | Ogrodzenia stalowe
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={resetScope}
+            className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#888] underline-offset-2 hover:text-[#e30311] hover:underline"
+          >
+            Zmień zakres
+          </button>
+        </div>
       </div>
 
-      <ConfiguratorTabs active={activeTab} onChange={onTabChange} />
+      <ConfiguratorTabs active={activeTab} scope={scope} onChange={onTabChange} />
 
       <div className="flex-1 overflow-y-auto px-5 py-5 scrollbar-dark">
         {activeTab === "model" && (
@@ -284,18 +299,14 @@ export function OptionSidebar({
             </div>
 
             <div>
-              <SectionLabel>Dystans / ażurowość</SectionLabel>
+              <SectionLabel>Wykończenie powierzchni</SectionLabel>
               <div className="flex flex-col gap-2">
                 {catalog.spacerOptions.map((spacer: SpacerOption) => (
                   <ModelCard
                     key={spacer.id}
                     selected={selection.spacerId === spacer.id}
                     title={spacer.name}
-                    subtitle={
-                      spacer.hasSpacer
-                        ? `Ażurowość ${Math.round(spacer.openness * 100)}% · ${formatSurchargePerMeter(spacer.priceSurchargePerMeter)}`
-                        : `Pełne panele · ${formatSurchargePerMeter(spacer.priceSurchargePerMeter)}`
-                    }
+                    subtitle={formatSurchargePerMeter(spacer.priceSurchargePerMeter)}
                     onClick={() => onSelect({ spacerId: spacer.id })}
                   />
                 ))}
@@ -358,6 +369,7 @@ export function OptionSidebar({
 
         {activeTab === "gates" && (
           <div className="space-y-6">
+            {scope.gate && (
             <div>
               <SectionLabel>Brama wjazdowa</SectionLabel>
               <div className="flex flex-col gap-2">
@@ -382,15 +394,22 @@ export function OptionSidebar({
                   Brak aktywnych bram w katalogu — dodaj je w panelu admina.
                 </p>
               )}
-              {bramaEnabled && (
+              {bramaEnabled && scope.fence && (
                 <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
                   Przejdź do zakładki <strong className="text-[#ccc]">Wycena</strong>,
                   zamknij obrys i przeciągnij uchwyty <strong className="text-[#ccc]">B1/B2</strong>{" "}
-                  wzdłuż linii ogrodzenia, aby ustawić szerokość bramy.
+                  wzdłuż linii ogrodzenia, aby ustawić szerokość bramy na rzucie.
+                </p>
+              )}
+              {bramaEnabled && !scope.fence && (
+                <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
+                  Cena bramy jest stała netto — nie zależy od liczby paneli.
                 </p>
               )}
             </div>
+            )}
 
+            {scope.wicket && (
             <div>
               <SectionLabel>Furtka</SectionLabel>
               <div className="flex flex-col gap-2">
@@ -415,7 +434,7 @@ export function OptionSidebar({
                   Brak aktywnych furtek w katalogu — dodaj je w panelu admina.
                 </p>
               )}
-              {furtkaEnabled && (
+              {furtkaEnabled && scope.fence && (
                 <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
                   Na zakładce <strong className="text-[#ccc]">Wycena</strong> przeciągnij marker{" "}
                   <strong className="text-[#ccc]">F</strong> wzdłuż obrysu, aby wskazać miejsce
@@ -423,7 +442,9 @@ export function OptionSidebar({
                 </p>
               )}
             </div>
+            )}
 
+            {scope.fence && (
             <div>
               <SectionLabel>Wybór słupka</SectionLabel>
               <div className="flex flex-col gap-2">
@@ -438,6 +459,7 @@ export function OptionSidebar({
                 ))}
               </div>
             </div>
+            )}
           </div>
         )}
 
@@ -455,34 +477,55 @@ export function OptionSidebar({
             <div className="space-y-4">
               <SectionLabel>Twoja konfiguracja</SectionLabel>
             {[
-              { label: "Model panelu", value: selectedPanel?.name },
-              { label: "Kolor", value: selectedColor?.name },
-              { label: "Dystans", value: selectedSpacer?.name },
-              { label: "Wysokość", value: selectedHeight?.label },
-              { label: "Panele w podglądzie", value: `${previewPanelCount} szt.` },
-              { label: "Słupek", value: selectedPost?.name },
-              {
-                label: "Brama wjazdowa",
-                value:
-                  quote.configurationItems.find((i) => i.label === "Brama wjazdowa")
-                    ?.value ?? "Nie",
-              },
-              {
-                label: "Furtka",
-                value:
-                  quote.configurationItems.find((i) => i.label === "Furtka")
-                    ?.value ?? "Nie",
-              },
-              {
-                label: "Długość z rzutu",
-                value: quoteFenceClosed && quotePerimeterM
-                  ? `${quotePerimeterM.toFixed(1)} m bieżących`
-                  : "—",
-              },
-              {
-                label: "Stawka za metr",
-                value: `${quote.pricePerMeterNet.toLocaleString("pl-PL")} PLN/m`,
-              },
+              ...(scope.fence
+                ? [
+                    { label: "Model panelu", value: selectedPanel?.name },
+                    { label: "Kolor", value: selectedColor?.name },
+                    { label: "Wykończenie", value: selectedSpacer?.name },
+                    { label: "Wysokość", value: selectedHeight?.label },
+                    {
+                      label: "Panele w podglądzie",
+                      value: `${previewPanelCount} szt.`,
+                    },
+                    { label: "Słupek", value: selectedPost?.name },
+                  ]
+                : []),
+              ...(scope.gate
+                ? [
+                    {
+                      label: "Brama wjazdowa",
+                      value:
+                        quote.configurationItems.find(
+                          (i) => i.label === "Brama wjazdowa",
+                        )?.value ?? "Nie",
+                    },
+                  ]
+                : []),
+              ...(scope.wicket
+                ? [
+                    {
+                      label: "Furtka",
+                      value:
+                        quote.configurationItems.find((i) => i.label === "Furtka")
+                          ?.value ?? "Nie",
+                    },
+                  ]
+                : []),
+              ...(scope.fence
+                ? [
+                    {
+                      label: "Długość z rzutu",
+                      value:
+                        quoteFenceClosed && quotePerimeterM
+                          ? `${quotePerimeterM.toFixed(1)} m bieżących`
+                          : "—",
+                    },
+                    {
+                      label: "Stawka za metr",
+                      value: `${quote.pricePerMeterNet.toLocaleString("pl-PL")} PLN/m`,
+                    },
+                  ]
+                : []),
               {
                 label: "Wycena orientacyjna",
                 value: `${Math.round(quote.totalNet).toLocaleString("pl-PL")} PLN netto`,

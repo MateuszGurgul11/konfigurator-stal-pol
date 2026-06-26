@@ -1,43 +1,38 @@
 import type { PricingSettings } from "@/lib/types";
 
 export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
-  basePricePerMeterNet: 300,
-  panelWidthCm: 200,
+  basePricePerMeterNet: 48,
+  panelWidthCm: 250,
   currency: "PLN",
 };
 
 export const PANEL_PRICE_BY_PATTERN: Record<string, number> = {
-  "pattern-solid": 0,
-  "pattern-lines": 25,
-  "pattern-grid": 35,
-  "pattern-brick": 45,
+  "pattern-3d": 0,
+  "pattern-palisade": 20,
 };
 
 export const COLOR_PRICE_BY_NAME: Record<string, number> = {
-  "Szary naturalny": 0,
-  Piaskowy: 20,
-  Antracyt: 25,
-  Grafit: 30,
-  Biały: 40,
-  "Czerwony cegła": 50,
+  "Ocynk naturalny": 0,
+  "RAL 6005 zielony": 8,
+  "RAL 7016 grafit": 8,
+  "RAL 9005 czarny": 8,
+  "RAL 9002 biały": 10,
 };
 
 export const HEIGHT_MULTIPLIER_BY_VALUE_M: Record<number, number> = {
-  1: 0.8,
-  1.5: 0.92,
-  1.75: 1,
-  2: 1.12,
-  2.25: 1.22,
+  1.53: 1,
+  1.8: 1.08,
+  2: 1.15,
 };
 
 export const POST_PRICE_BY_SLUG: Record<string, number> = {
   standard: 0,
-  dekor: 20,
+  reinforced: 12,
 };
 
 export const SPACER_PRICE_BY_NAME: Record<string, number> = {
-  "Bez dystansu (pełne)": 0,
-  "Z dystansem (ażurowe)": 40,
+  Ocynk: 0,
+  "Malowanie proszkowe RAL": 15,
 };
 
 export function panelPriceForPattern(patternId: string): number {

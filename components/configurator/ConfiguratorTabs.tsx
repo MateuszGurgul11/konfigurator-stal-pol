@@ -2,7 +2,7 @@
 
 import { Box, Ruler, Fence, Calculator, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ConfiguratorTab } from "@/lib/configurator/state";
+import type { ConfiguratorTab, ProductScope } from "@/lib/configurator/state";
 
 const tabs: {
   id: ConfiguratorTab;
@@ -18,13 +18,20 @@ const tabs: {
 
 type Props = {
   active: ConfiguratorTab;
+  scope: ProductScope;
   onChange: (tab: ConfiguratorTab) => void;
 };
 
-export function ConfiguratorTabs({ active, onChange }: Props) {
+export function ConfiguratorTabs({ active, scope, onChange }: Props) {
+  const visibleTabs = tabs.filter((tab) => {
+    if (tab.id === "model" || tab.id === "dimensions") return scope.fence;
+    if (tab.id === "gates") return scope.gate || scope.wicket;
+    return true;
+  });
+
   return (
     <div className="scrollbar-dark flex flex-nowrap gap-0.5 overflow-x-auto border-b border-[#2A2A26] px-2 pb-0 pt-3 sm:gap-1 sm:px-4">
-      {tabs.map(({ id, label, icon: Icon }) => {
+      {visibleTabs.map(({ id, label, icon: Icon }) => {
         const isActive = active === id;
         return (
           <button

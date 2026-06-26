@@ -74,7 +74,7 @@ function computeFenceGeometry(
   const groundY = 330;
   const fenceH = Math.round(240 * scale);
   const fenceY = groundY - fenceH;
-  const postW = Math.max(18, Math.round((postWidthCm / 20) * 24));
+  const postW = Math.max(10, Math.round((postWidthCm / 20) * 14));
   const viewW = getViewWidth(panelCount);
   const totalW = viewW - MARGIN_X * 2;
   const leftPost = MARGIN_X;
@@ -227,32 +227,22 @@ function lighten(hex: string, amount: number): string {
 function panelPatternDefs(patternId: PatternId, colorHex: string): string {
   const stroke = darken(colorHex, 0.25);
   const highlight = lighten(colorHex, 0.08);
+  const shadow = darken(colorHex, 0.15);
   switch (patternId) {
-    case "pattern-lines":
-      return `<pattern id="panelPat" width="16" height="16" patternUnits="userSpaceOnUse">
-        <rect width="16" height="16" fill="${colorHex}"/>
-        <rect x="0" y="0" width="5" height="16" fill="${highlight}" opacity="0.6"/>
-        <rect x="8" y="0" width="5" height="16" fill="${highlight}" opacity="0.6"/>
-        <line x1="5" y1="0" x2="5" y2="16" stroke="${stroke}" stroke-width="1.2"/>
-        <line x1="13" y1="0" x2="13" y2="16" stroke="${stroke}" stroke-width="0.8"/>
+    case "pattern-3d":
+      return `<pattern id="panelPat" width="24" height="24" patternUnits="userSpaceOnUse">
+        <rect width="24" height="24" fill="${colorHex}"/>
+        <rect x="0" y="0" width="24" height="5" fill="${shadow}" opacity="0.35"/>
+        <rect x="0" y="19" width="24" height="5" fill="${shadow}" opacity="0.35"/>
+        <line x1="0" y1="24" x2="24" y2="0" stroke="${stroke}" stroke-width="1.2" opacity="0.55"/>
+        <line x1="0" y1="12" x2="12" y2="0" stroke="${highlight}" stroke-width="0.8" opacity="0.4"/>
+        <line x1="12" y1="24" x2="24" y2="12" stroke="${highlight}" stroke-width="0.8" opacity="0.4"/>
+        <line x1="12" y1="0" x2="24" y2="12" stroke="${stroke}" stroke-width="1" opacity="0.45"/>
+        <line x1="0" y1="12" x2="12" y2="24" stroke="${stroke}" stroke-width="1" opacity="0.45"/>
       </pattern>`;
-    case "pattern-grid":
-      return `<pattern id="panelPat" width="16" height="16" patternUnits="userSpaceOnUse">
-        <rect width="16" height="16" fill="${colorHex}"/>
-        <rect x="1" y="1" width="6" height="6" fill="${highlight}" opacity="0.5"/>
-        <rect x="9" y="1" width="6" height="6" fill="${highlight}" opacity="0.5"/>
-        <rect x="1" y="9" width="6" height="6" fill="${highlight}" opacity="0.5"/>
-        <rect x="9" y="9" width="6" height="6" fill="${highlight}" opacity="0.5"/>
-        <path d="M0 0H16V16H0V0M0 8H16M8 0V16" fill="none" stroke="${stroke}" stroke-width="1"/>
-      </pattern>`;
-    case "pattern-brick":
-      return `<pattern id="panelPat" width="24" height="12" patternUnits="userSpaceOnUse">
-        <rect width="24" height="12" fill="${colorHex}"/>
-        <rect x="0.5" y="0.5" width="11" height="5" fill="${highlight}" opacity="0.4"/>
-        <rect x="13.5" y="0.5" width="9.5" height="5" fill="${highlight}" opacity="0.4"/>
-        <rect x="0.5" y="6.5" width="5" height="5" fill="${highlight}" opacity="0.4"/>
-        <rect x="7.5" y="6.5" width="11" height="5" fill="${highlight}" opacity="0.4"/>
-        <path d="M0 6H24M12 0V6M0 0V12M6 6V12M18 6V12" fill="none" stroke="${stroke}" stroke-width="0.8"/>
+    case "pattern-palisade":
+      return `<pattern id="panelPat" width="8" height="8" patternUnits="userSpaceOnUse">
+        <rect width="8" height="8" fill="${colorHex}"/>
       </pattern>`;
     default:
       return `<pattern id="panelPat" width="18" height="18" patternUnits="userSpaceOnUse">
@@ -294,6 +284,36 @@ function drawPlank(
   return out;
 }
 
+function drawPalisadeSlats(
+  px: number,
+  y: number,
+  sectionW: number,
+  h: number,
+  openness: number,
+  colorHex: string,
+  shadowEdge: string,
+  shadowBottom: string,
+): string {
+  const slatW = Math.max(3, sectionW * 0.07);
+  const gap = Math.max(2, slatW * (0.4 + openness * 1.2));
+  const pitch = slatW + gap;
+  const count = Math.max(1, Math.floor((sectionW + gap) / pitch));
+  const totalW = count * slatW + (count - 1) * gap;
+  const offsetX = px + (sectionW - totalW) / 2;
+  const highlight = lighten(colorHex, 0.12);
+  let out = "";
+  for (let i = 0; i < count; i++) {
+    const sx = offsetX + i * pitch;
+    out += `<rect x="${sx.toFixed(1)}" y="${y.toFixed(1)}" width="${slatW.toFixed(1)}" height="${h.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
+    out += `<rect x="${sx.toFixed(1)}" y="${y.toFixed(1)}" width="1.5" height="${h.toFixed(1)}" fill="${highlight}" opacity="0.65"/>`;
+    out += `<rect x="${(sx + slatW - 1.5).toFixed(1)}" y="${y.toFixed(1)}" width="1.5" height="${h.toFixed(1)}" fill="${shadowEdge}" opacity="0.5"/>`;
+    if (h > 4) {
+      out += `<rect x="${sx.toFixed(1)}" y="${(y + h - 2).toFixed(1)}" width="${slatW.toFixed(1)}" height="2" fill="${shadowBottom}" opacity="0.45"/>`;
+    }
+  }
+  return out;
+}
+
 function drawSectionPanels(
   px: number,
   y: number,
@@ -301,8 +321,10 @@ function drawSectionPanels(
   h: number,
   hasSpacer: boolean,
   openness: number,
+  colorHex: string,
   shadowEdge: string,
   shadowBottom: string,
+  patternId: PatternId,
   panelTextureUrl?: string | null,
   textureTileCount?: number,
 ): string {
@@ -315,6 +337,18 @@ function drawSectionPanels(
   if (panelTextureUrl) {
     out += drawTexturedStack(px, y, sectionW, h, panelTextureUrl, textureTileCount ?? 1);
     return out;
+  }
+  if (patternId === "pattern-palisade") {
+    return drawPalisadeSlats(
+      px,
+      y,
+      sectionW,
+      h,
+      openness,
+      colorHex,
+      shadowEdge,
+      shadowBottom,
+    );
   }
   if (useStacked) {
     for (let j = 0; j < plankCount; j++) {
@@ -335,6 +369,7 @@ function drawGateSection(
   hasSpacer: boolean,
   openness: number,
   colorHex: string,
+  patternId: PatternId,
   openingTextureUrl?: string | null,
   textureTileCount?: number,
 ): string {
@@ -360,7 +395,7 @@ function drawGateSection(
   const handleMetal = lighten(colorHex, 0.25);
 
   let out = "";
-  out += drawSectionPanels(px, y, frameW, h, hasSpacer, openness, shadowEdge, shadowBottom);
+  out += drawSectionPanels(px, y, frameW, h, hasSpacer, openness, colorHex, shadowEdge, shadowBottom, patternId);
   out += drawSectionPanels(
     px + panelW - frameW,
     y,
@@ -368,8 +403,10 @@ function drawGateSection(
     h,
     hasSpacer,
     openness,
+    colorHex,
     shadowEdge,
     shadowBottom,
+    patternId,
   );
   out += drawSectionPanels(
     gateX + doorOpen,
@@ -378,8 +415,10 @@ function drawGateSection(
     doorH,
     hasSpacer,
     openness,
+    colorHex,
     shadowEdge,
     shadowBottom,
+    patternId,
   );
   out += `<line x1="${gateX.toFixed(1)}" y1="${y}" x2="${(gateX + doorOpen).toFixed(1)}" y2="${(y + doorH).toFixed(1)}" stroke="${darken(colorHex, 0.2)}" stroke-width="2" opacity="0.45"/>`;
   out += `<rect x="${(gateX + gateW - 16).toFixed(1)}" y="${(y + doorH * 0.38).toFixed(1)}" width="3" height="${(doorH * 0.22).toFixed(1)}" fill="${darken(colorHex, 0.35)}" rx="1"/>`;
@@ -397,6 +436,7 @@ function panelRects(
   hasSpacer: boolean,
   openness: number,
   colorHex: string,
+  patternId: PatternId,
   openingPanelIndices: number[] = [],
   panelTextureUrl?: string | null,
   openingTextureUrl?: string | null,
@@ -418,6 +458,7 @@ function panelRects(
         hasSpacer,
         openness,
         colorHex,
+        patternId,
         openingTextureUrl,
         textureTileCount,
       );
@@ -429,8 +470,10 @@ function panelRects(
         h,
         hasSpacer,
         openness,
+        colorHex,
         shadowEdge,
         shadowBottom,
+        patternId,
         panelTextureUrl,
         textureTileCount,
       );
@@ -476,9 +519,6 @@ export function buildFenceSvg(params: FenceRenderParams): string {
   const postLight = lighten(colorHex, 0.15);
   const postDark = darken(colorHex, 0.25);
   const postCap = darken(colorHex, 0.2);
-  const footingColor = "#8c8c8c";
-
-  const defs = panelPatternDefs(patternId, colorHex);
 
   // Dimension line positioning
   const dimX = rightPost + postW + 22;
@@ -486,37 +526,28 @@ export function buildFenceSvg(params: FenceRenderParams): string {
   const dimBotY = groundY;
   const dimMidY = (dimTopY + dimBotY) / 2;
 
-  function postCapPolygon(px: number): string {
-    const capW = postW + 6;
-    const capX = px - 3;
-    const capBaseY = fenceY - 12;
-    const capTipY = fenceY - 12 - Math.max(10, postW * 0.5);
-    const capMidX = capX + capW / 2;
-    return `<polygon points="${capX},${capBaseY} ${capX + capW},${capBaseY} ${capMidX},${capTipY}" fill="${postCap}"/>`;
-  }
+  const defs = panelPatternDefs(patternId, colorHex);
 
-  function postFootingPad(px: number): string {
-    const padW = postW + 8;
-    const padX = px - 4;
-    const padH = 8;
-    const padY = groundY - padH;
-    return `<rect x="${padX}" y="${padY}" width="${padW}" height="${padH}" fill="${footingColor}" rx="1"/>`;
+  function postCapRect(px: number): string {
+    const capW = postW + 4;
+    const capX = px - 2;
+    const capY = fenceY - 14;
+    const capH = 4;
+    return `<rect x="${capX}" y="${capY}" width="${capW}" height="${capH}" fill="${postCap}" rx="1"/>`;
   }
 
   function renderPost(px: number): string {
     if (postTextureUrl) {
       const safeUrl = escapeXmlAttr(postTextureUrl);
       return `<!-- Post at ${px.toFixed(0)} -->
-    ${postFootingPad(px)}
-    <image href="${safeUrl}" x="${px}" y="${fenceY - 12}" width="${postW}" height="${fenceH + 12}" preserveAspectRatio="none"/>
-    ${postCapPolygon(px)}`;
+    <image href="${safeUrl}" x="${px}" y="${fenceY - 8}" width="${postW}" height="${fenceH + 8}" preserveAspectRatio="none"/>
+    ${postCapRect(px)}`;
     }
     return `<!-- Post at ${px.toFixed(0)} -->
-    ${postFootingPad(px)}
-    <rect x="${px}" y="${fenceY - 12}" width="${postW}" height="${fenceH + 12}" fill="${postBase}" rx="2"/>
-    <rect x="${px}" y="${fenceY - 12}" width="3" height="${fenceH + 12}" fill="${postLight}" opacity="0.7" rx="2"/>
-    <rect x="${px + postW - 4}" y="${fenceY - 12}" width="4" height="${fenceH + 12}" fill="${postDark}" opacity="0.55"/>
-    ${postCapPolygon(px)}`;
+    <rect x="${px}" y="${fenceY - 8}" width="${postW}" height="${fenceH + 8}" fill="${postBase}" rx="1"/>
+    <rect x="${px}" y="${fenceY - 8}" width="2" height="${fenceH + 8}" fill="${postLight}" opacity="0.75" rx="1"/>
+    <rect x="${px + postW - 3}" y="${fenceY - 8}" width="3" height="${fenceH + 8}" fill="${postDark}" opacity="0.5"/>
+    ${postCapRect(px)}`;
   }
 
   let intermediatePosts = "";
@@ -576,6 +607,7 @@ export function buildFenceSvg(params: FenceRenderParams): string {
       hasSpacer,
       openness,
       colorHex,
+      patternId,
       openingPanelIndices,
       panelTextureUrl,
       openingTextureUrl,

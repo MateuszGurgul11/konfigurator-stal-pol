@@ -14,9 +14,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Konfigurator ogrodzeń betonowych | Wielkopolska",
+  title: "Konfigurator ogrodzeń stalowych | STAL-POL",
   description:
-    "Skonfiguruj ogrodzenie betonowe — wybierz słupek, panel, wysokość i kolor.",
+    "Skonfiguruj ogrodzenie stalowe STAL-POL — panele 3D, palisada, bramy i furtki z wyceną netto.",
 };
 
 export default function RootLayout({

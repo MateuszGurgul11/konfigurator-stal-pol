@@ -51,7 +51,7 @@ export type OpeningElement = {
   active: boolean;
   textureUrl?: string;
   description?: string;
-  /** Brama: cena za panel/odcinek. Furtka: cena jednorazowa. */
+  /** Brama i furtka: cena stała netto (PLN). */
   priceNet?: number;
 };
 

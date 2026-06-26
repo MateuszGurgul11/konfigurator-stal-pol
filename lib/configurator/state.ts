@@ -17,13 +17,25 @@ export type ConfiguratorTab =
   | "quote"
   | "review";
 
+export type ProductScope = {
+  fence: boolean;
+  gate: boolean;
+  wicket: boolean;
+};
+
 export type GatePosition = "left" | "center" | "right";
 export type QuoteDrawMode = "calibrate" | "fence";
 
 export const MIN_PREVIEW_PANELS = 3;
 export const MAX_PREVIEW_PANELS = 12;
 export const DEFAULT_PREVIEW_PANELS = 5;
-export const DEFAULT_HEIGHT_M = 2;
+export const DEFAULT_HEIGHT_M = 1.53;
+
+function firstTabForScope(scope: ProductScope): ConfiguratorTab {
+  if (scope.fence) return "model";
+  if (scope.gate || scope.wicket) return "gates";
+  return "quote";
+}
 
 function pickDefaultHeightId(
   heights: CatalogCollections["heights"],
@@ -58,6 +70,8 @@ type ConfiguratorState = {
   pricing: PricingSettings;
   loading: boolean;
   error: string | null;
+  scope: ProductScope;
+  scopeConfirmed: boolean;
   selection: ConfiguratorSelection;
   activeTab: ConfiguratorTab;
   backgroundImageUrl: string | null;
@@ -87,6 +101,9 @@ type ConfiguratorState = {
   setPricing: (pricing: PricingSettings) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setScope: (partial: Partial<ProductScope>) => void;
+  confirmScope: () => void;
+  resetScope: () => void;
   initSelection: (catalog: CatalogCollections) => void;
   setSelection: (partial: Partial<ConfiguratorSelection>) => void;
   setActiveTab: (tab: ConfiguratorTab) => void;
@@ -146,6 +163,8 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   pricing: DEFAULT_PRICING_SETTINGS,
   loading: true,
   error: null,
+  scope: { fence: false, gate: false, wicket: false },
+  scopeConfirmed: false,
   selection: {
     postId: null,
     panelId: null,
@@ -181,6 +200,48 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   setPricing: (pricing) => set({ pricing }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  setScope: (partial) =>
+    set((s) => ({ scope: { ...s.scope, ...partial } })),
+  confirmScope: () => {
+    const { scope, catalog } = get();
+    if (!scope.fence && !scope.gate && !scope.wicket) return;
+
+    const next: Partial<ConfiguratorState> = {
+      scopeConfirmed: true,
+      activeTab: firstTabForScope(scope),
+      bramaEnabled: scope.gate,
+      furtkaEnabled: scope.wicket,
+    };
+
+    if (scope.gate && catalog) {
+      next.bramaElementId = pickDefaultElementId(catalog, "brama");
+    } else {
+      next.bramaElementId = null;
+      next.bramaArcStart = null;
+      next.bramaArcEnd = null;
+      next.bramaOccupiedSpanM = null;
+    }
+
+    if (scope.wicket && catalog) {
+      next.furtkaElementId = pickDefaultElementId(catalog, "furtka");
+    } else {
+      next.furtkaElementId = null;
+      next.furtkaArcPosition = null;
+    }
+
+    set(next);
+  },
+  resetScope: () =>
+    set({
+      scopeConfirmed: false,
+      scope: { fence: false, gate: false, wicket: false },
+      activeTab: "model",
+      bramaEnabled: false,
+      bramaElementId: null,
+      furtkaEnabled: false,
+      furtkaElementId: null,
+      ...OPENING_CLEAR,
+    }),
   initSelection: (catalog) => {
     const current = get().selection;
     set({
@@ -460,6 +521,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       selection,
       pricing,
       perimeterM: quotePerimeterM,
+      fenceEnabled: state.scope.fence,
       bramaEnabled: state.bramaEnabled,
       bramaElementId: state.bramaElementId,
       bramaOccupiedSpanM: state.bramaOccupiedSpanM,
