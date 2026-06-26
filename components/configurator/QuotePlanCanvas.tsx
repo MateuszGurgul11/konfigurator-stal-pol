@@ -53,6 +53,7 @@ export function QuotePlanCanvas() {
   );
   const quoteFencePoints = useConfiguratorStore((s) => s.quoteFencePoints);
   const quoteFenceClosed = useConfiguratorStore((s) => s.quoteFenceClosed);
+  const quotePerimeterM = useConfiguratorStore((s) => s.quotePerimeterM);
   const quotePxPerMeter = useConfiguratorStore((s) => s.quotePxPerMeter);
   const bramaEnabled = useConfiguratorStore((s) => s.bramaEnabled);
   const bramaArcStart = useConfiguratorStore((s) => s.bramaArcStart);
@@ -328,6 +329,25 @@ export function QuotePlanCanvas() {
       ? pointAtArcT(furtkaArcPosition, quoteFencePoints, imageLayout)
       : null;
 
+  const calibrationMidpoint = quoteCalibrationLine
+    ? {
+        x: (quoteCalibrationLine.x1 + quoteCalibrationLine.x2) / 2,
+        y: (quoteCalibrationLine.y1 + quoteCalibrationLine.y2) / 2,
+      }
+    : null;
+
+  const fenceCentroid =
+    quoteFenceClosed && quoteFencePoints.length >= 3
+      ? {
+          x:
+            quoteFencePoints.reduce((sum, p) => sum + p.x, 0) /
+            quoteFencePoints.length,
+          y:
+            quoteFencePoints.reduce((sum, p) => sum + p.y, 0) /
+            quoteFencePoints.length,
+        }
+      : null;
+
   function startOpeningDrag(
     e: React.PointerEvent,
     target: OpeningDragTarget,
@@ -347,51 +367,53 @@ export function QuotePlanCanvas() {
         onChange={handleUpload}
       />
 
-      <div className="absolute right-4 top-4 z-20 flex flex-wrap gap-2">
+      <div className="absolute right-4 top-4 z-20 flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex h-9 items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white/92 px-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#303638] shadow-sm"
+          className="flex h-9 items-center gap-2 rounded-full border border-black/5 bg-white/85 px-3.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#303638] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white"
         >
           <ImagePlus className="h-4 w-4 text-[#e30311]" />
           {quotePlanImageUrl ? "Zmień rzut" : "Wgraj rzut"}
         </button>
         {quotePlanImageUrl && (
           <>
-            <button
-              type="button"
-              onClick={() => {
-                setQuoteDrawMode("calibrate");
-                setQuoteCalibrationPending(null);
-              }}
-              className={cn(
-                "flex h-9 items-center gap-1.5 rounded-lg border px-3 text-[11px] font-bold uppercase tracking-[0.08em] shadow-sm",
-                quoteDrawMode === "calibrate"
-                  ? "border-[#e30311] bg-[#e30311] text-white"
-                  : "border-[#e5e7eb] bg-white/92 text-[#303638]",
-              )}
-            >
-              <Ruler className="h-4 w-4" />
-              Skala
-            </button>
-            <button
-              type="button"
-              disabled={!quotePxPerMeter}
-              onClick={() => setQuoteDrawMode("fence")}
-              className={cn(
-                "flex h-9 items-center gap-1.5 rounded-lg border px-3 text-[11px] font-bold uppercase tracking-[0.08em] shadow-sm disabled:opacity-40",
-                quoteDrawMode === "fence"
-                  ? "border-[#e30311] bg-[#e30311] text-white"
-                  : "border-[#e5e7eb] bg-white/92 text-[#303638]",
-              )}
-            >
-              <Fence className="h-4 w-4" />
-              Obrys
-            </button>
+            <div className="flex items-center gap-1 rounded-full border border-black/5 bg-white/85 p-1 shadow-md shadow-black/10 backdrop-blur">
+              <button
+                type="button"
+                onClick={() => {
+                  setQuoteDrawMode("calibrate");
+                  setQuoteCalibrationPending(null);
+                }}
+                className={cn(
+                  "flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors",
+                  quoteDrawMode === "calibrate"
+                    ? "bg-[#e30311] text-white shadow-sm"
+                    : "text-[#5b6164] hover:bg-black/5",
+                )}
+              >
+                <Ruler className="h-3.5 w-3.5" />
+                Skala
+              </button>
+              <button
+                type="button"
+                disabled={!quotePxPerMeter}
+                onClick={() => setQuoteDrawMode("fence")}
+                className={cn(
+                  "flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
+                  quoteDrawMode === "fence"
+                    ? "bg-[#e30311] text-white shadow-sm"
+                    : "text-[#5b6164] hover:bg-black/5",
+                )}
+              >
+                <Fence className="h-3.5 w-3.5" />
+                Obrys
+              </button>
+            </div>
             <button
               type="button"
               onClick={resetQuoteDrawing}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#6b7280] shadow-sm"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-black/5 bg-white/85 text-[#6b7280] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white hover:text-[#e30311]"
               title="Resetuj rysowanie"
             >
               <RotateCcw className="h-4 w-4" />
@@ -402,19 +424,34 @@ export function QuotePlanCanvas() {
 
       {!quotePlanImageUrl ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-          <div className="rounded-2xl border-2 border-dashed border-[#ccc] bg-white/60 px-10 py-12">
-            <ImagePlus className="mx-auto mb-3 h-10 w-10 text-[#e30311]" />
-            <p className="text-sm font-semibold text-[#303638]">
+          <div className="max-w-sm rounded-2xl border border-dashed border-[#c4c6ca] bg-white/80 px-8 py-10 shadow-xl shadow-black/5 backdrop-blur-sm">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e30311] shadow-lg shadow-[#e30311]/25">
+              <ImagePlus className="h-8 w-8 text-white" />
+            </div>
+            <p className="font-heading text-base font-bold text-[#222]">
               Wgraj plan działki lub zrzut mapy
             </p>
-            <p className="mt-1 max-w-xs text-xs text-[#6b7280]">
-              Najpierw ustaw skalę (2 kliknięcia + długość w m), potem klikaj
-              punkty na obwodzie działki, gdzie stanie płot.
+            <p className="mx-auto mt-1.5 max-w-xs text-xs leading-relaxed text-[#6b7280]">
+              Ustaw skalę (2 kliknięcia + długość w&nbsp;metrach), a&nbsp;potem
+              klikaj narożniki działki, gdzie stanie płot.
             </p>
+            <div className="my-5 flex items-center justify-center gap-2">
+              {["Skala", "Obrys", "Cena"].map((label, i) => (
+                <div key={label} className="flex items-center gap-2">
+                  {i > 0 && <span className="h-px w-4 bg-[#d4d6da]" />}
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#888]">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f0d3d5] text-[10px] font-bold text-[#e30311]">
+                      {i + 1}
+                    </span>
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="mt-4 rounded-lg bg-[#e30311] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white"
+              className="rounded-lg bg-[#e30311] px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white shadow-md shadow-[#e30311]/25 transition-colors hover:bg-[#c9020f]"
             >
               Wybierz plik
             </button>
@@ -492,14 +529,6 @@ export function QuotePlanCanvas() {
                   strokeDasharray="1.2 0.8"
                 />
               )}
-              {quoteCalibrationPending && (
-                <circle
-                  cx={quoteCalibrationPending.x}
-                  cy={quoteCalibrationPending.y}
-                  r="0.8"
-                  fill="#e30311"
-                />
-              )}
               {quoteFenceClosed && quoteFencePoints.length >= 3 ? (
                 <polygon
                   points={quoteFencePoints.map((p) => `${p.x},${p.y}`).join(" ")}
@@ -520,28 +549,6 @@ export function QuotePlanCanvas() {
                   />
                 )
               )}
-              {quoteFencePoints.map((p, i) => (
-                <circle
-                  key={`${p.x}-${p.y}-${i}`}
-                  cx={p.x}
-                  cy={p.y}
-                  r="1.1"
-                  fill="rgba(255, 49, 49, 0.15)"
-                  stroke="#e30311"
-                  strokeWidth="0.35"
-                />
-              ))}
-              {quoteFencePoints.map((p, i) => (
-                <circle
-                  key={`dot-${p.x}-${p.y}-${i}`}
-                  cx={p.x}
-                  cy={p.y}
-                  r="0.55"
-                  fill="#fff"
-                  stroke="#e30311"
-                  strokeWidth="0.3"
-                />
-              ))}
               {bramaSlicePoints.length > 1 && (
                 <polyline
                   points={bramaSlicePoints
@@ -554,6 +561,73 @@ export function QuotePlanCanvas() {
                 />
               )}
             </svg>
+          </div>
+
+          <div
+            className="pointer-events-none absolute"
+            style={{
+              left: imageLayout.left,
+              top: imageLayout.top,
+              width: imageLayout.width,
+              height: imageLayout.height,
+            }}
+          >
+            {calibrationPreviewLine &&
+              [
+                { x: calibrationPreviewLine.x1, y: calibrationPreviewLine.y1 },
+                { x: calibrationPreviewLine.x2, y: calibrationPreviewLine.y2 },
+              ].map((end, i) => (
+                <span
+                  key={`cal-end-${i}`}
+                  className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#e30311] shadow-md"
+                  style={{ left: `${end.x}%`, top: `${end.y}%` }}
+                />
+              ))}
+            {quoteCalibrationPending && (
+              <span
+                className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full border-2 border-white bg-[#e30311] shadow-md"
+                style={{
+                  left: `${quoteCalibrationPending.x}%`,
+                  top: `${quoteCalibrationPending.y}%`,
+                }}
+              />
+            )}
+            {quoteFencePoints.map((p, i) => (
+              <span
+                key={`dot-${p.x}-${p.y}-${i}`}
+                className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#e30311] bg-white shadow-sm"
+                style={{ left: `${p.x}%`, top: `${p.y}%` }}
+              />
+            ))}
+            {calibrationMidpoint && quoteCalibrationLengthM > 0 && (
+              <span
+                className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full bg-[#e30311] px-2 py-0.5 text-[10px] font-bold text-white shadow-md ring-2 ring-white/70"
+                style={{
+                  left: `${calibrationMidpoint.x}%`,
+                  top: `${calibrationMidpoint.y}%`,
+                }}
+              >
+                <Ruler className="h-2.5 w-2.5" />
+                {quoteCalibrationLengthM} m
+              </span>
+            )}
+            {fenceCentroid && quotePerimeterM && (
+              <span
+                className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-lg bg-[#1A1A18]/92 px-2.5 py-1 text-center shadow-lg ring-2 ring-white/15 backdrop-blur"
+                style={{
+                  left: `${fenceCentroid.x}%`,
+                  top: `${fenceCentroid.y}%`,
+                }}
+              >
+                <span className="text-[8px] font-bold uppercase tracking-wider text-white/55">
+                  Obwód
+                </span>
+                <span className="font-heading text-sm font-bold leading-none text-white">
+                  {quotePerimeterM.toFixed(1)}{" "}
+                  <span className="text-[9px] font-medium text-white/60">m</span>
+                </span>
+              </span>
+            )}
           </div>
 
           {quoteFenceClosed && (
@@ -611,26 +685,41 @@ export function QuotePlanCanvas() {
             </div>
           )}
 
-          <div className="pointer-events-none absolute bottom-4 left-4 rounded-lg border border-[#e5e7eb] bg-white/92 px-3 py-2 text-xs shadow-sm">
-            {quoteDrawMode === "calibrate" ? (
-              <span className="font-semibold text-[#303638]">
-                {quoteCalibrationPending
-                  ? "Kliknij drugi punkt — linia skali"
-                  : quoteCalibrationLine
-                    ? "Kliknij, aby ustawić skalę od nowa"
-                    : "Kliknij pierwszy punkt linii skali"}
-              </span>
-            ) : (
-              <span className="font-semibold text-[#303638]">
-                {quoteFenceClosed
-                  ? bramaEnabled || furtkaEnabled
-                    ? "Przeciągnij uchwyty bramy (B1/B2) lub furtkę (F) wzdłuż obrysu"
-                    : "Obrys gotowy — × na kropce usuwa punkt"
-                  : quoteFencePoints.length === 0
-                    ? "Klikaj punkty na obwodzie działki (min. 3). × usuwa punkt"
-                    : `Punkt ${quoteFencePoints.length} — kliknij kolejny na obwodzie lub ×, aby usunąć`}
-              </span>
-            )}
+          <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex items-center gap-2.5 rounded-xl border border-black/5 bg-white/90 px-3 py-2.5 shadow-lg shadow-black/10 backdrop-blur sm:right-auto sm:max-w-md">
+            <span
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white",
+                quoteDrawMode === "calibrate" ? "bg-[#e30311]" : "bg-[#1A1A18]",
+              )}
+            >
+              {quoteDrawMode === "calibrate" ? (
+                <Ruler className="h-4 w-4" />
+              ) : (
+                <Fence className="h-4 w-4" />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#e30311]">
+                {quoteDrawMode === "calibrate"
+                  ? "Krok 1 · Skala"
+                  : "Krok 2 · Obrys"}
+              </p>
+              <p className="text-xs font-semibold leading-snug text-[#303638]">
+                {quoteDrawMode === "calibrate"
+                  ? quoteCalibrationPending
+                    ? "Kliknij drugi punkt, aby domknąć linię skali"
+                    : quoteCalibrationLine
+                      ? "Kliknij, aby ustawić skalę od nowa"
+                      : "Kliknij pierwszy punkt linii skali"
+                  : quoteFenceClosed
+                    ? bramaEnabled || furtkaEnabled
+                      ? "Przeciągnij uchwyty bramy (B1/B2) lub furtkę (F) wzdłuż obrysu"
+                      : "Obrys gotowy — × na kropce usuwa punkt"
+                    : quoteFencePoints.length === 0
+                      ? "Klikaj narożniki działki (min. 3). × usuwa punkt"
+                      : `Punkt ${quoteFencePoints.length} — kliknij kolejny narożnik lub × by usunąć`}
+              </p>
+            </div>
           </div>
         </div>
       )}

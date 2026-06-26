@@ -61,13 +61,39 @@ type ResizeState = {
   startX: number;
   startY: number;
   origScale: number;
+  origX: number;
+  origY: number;
+  origPanelCount: number;
+  sceneWidth: number;
 };
 type StretchState = {
   pointerId: number;
   side: "west" | "east";
   startX: number;
   origPanelCount: number;
+  origX: number;
+  origScale: number;
+  sceneWidth: number;
 };
+
+function clampPanelCount(count: number): number {
+  return Math.min(MAX_PREVIEW_PANELS, Math.max(MIN_PREVIEW_PANELS, count));
+}
+
+function compensateXForWidthChange(
+  anchor: "west" | "east",
+  origX: number,
+  origPanelCount: number,
+  newPanelCount: number,
+  scale: number,
+  sceneWidth: number,
+): number {
+  const oldW = getFenceBaseWidthPx(sceneWidth, origPanelCount);
+  const newW = getFenceBaseWidthPx(sceneWidth, newPanelCount);
+  const deltaW = newW - oldW;
+  if (anchor === "west") return origX - (deltaW * scale) / 2;
+  return origX + (deltaW * scale) / 2;
+}
 
 function clampScale(scale: number) {
   return Math.min(MAX_FENCE_SCALE, Math.max(MIN_FENCE_SCALE, scale));
@@ -92,19 +118,6 @@ function getDefaultFenceScale(sceneWidth: number, panelCount: number): number {
     FENCE_TARGET_WIDTH_RATIO +
     (panelCount - MIN_PREVIEW_PANELS) * FENCE_TARGET_WIDTH_PER_PANEL;
   return clampScale((sceneWidth * targetFraction) / baseWidth);
-}
-
-function cornerDelta(corner: ResizeState["corner"], dx: number, dy: number) {
-  switch (corner) {
-    case "se":
-      return dx + dy;
-    case "nw":
-      return -dx - dy;
-    case "ne":
-      return dx - dy;
-    case "sw":
-      return -dx + dy;
-  }
 }
 
 function StretchHandle({
@@ -305,12 +318,28 @@ export function FencePreview({ catalog, selection }: Props) {
       const resize = resizeRef.current;
       if (resize && e.pointerId === resize.pointerId) {
         const dx = e.clientX - resize.startX;
-        const dy = e.clientY - resize.startY;
-        const delta = cornerDelta(resize.corner, dx, dy);
-        setFenceTransform((t) => ({
-          ...t,
-          scale: clampScale(resize.origScale + delta * 0.008),
-        }));
+        const widthPx = getFenceBaseWidthPx(
+          resize.sceneWidth,
+          resize.origPanelCount,
+        );
+        // Chwytany bok ma śledzić kursor 1:1. Prawe rogi (ne/se) rozciągają
+        // prawą krawędź, lewe (nw/sw) — lewą. Przesunięcie krawędzi przy skali
+        // o origin "center" wynosi widthPx * scaleDiff, więc skala = dx/widthPx.
+        const anchorLeftEdge =
+          resize.corner === "ne" || resize.corner === "se";
+        const horizontalSign = anchorLeftEdge ? 1 : -1;
+        const newScale = clampScale(
+          resize.origScale + (horizontalSign * dx) / widthPx,
+        );
+        const scaleDiff = newScale - resize.origScale;
+        const newX = anchorLeftEdge
+          ? resize.origX + (widthPx * scaleDiff) / 2
+          : resize.origX - (widthPx * scaleDiff) / 2;
+        setFenceTransform({
+          x: newX,
+          y: resize.origY,
+          scale: newScale,
+        });
       }
 
       const stretch = stretchRef.current;
@@ -318,7 +347,19 @@ export function FencePreview({ catalog, selection }: Props) {
         const dx = e.clientX - stretch.startX;
         const signedDx = stretch.side === "east" ? dx : -dx;
         const deltaPanels = Math.round(signedDx / 45);
-        setPreviewPanelCount(stretch.origPanelCount + deltaPanels);
+        const newCount = clampPanelCount(stretch.origPanelCount + deltaPanels);
+        setPreviewPanelCount(newCount);
+        setFenceTransform((t) => ({
+          ...t,
+          x: compensateXForWidthChange(
+            stretch.side,
+            stretch.origX,
+            stretch.origPanelCount,
+            newCount,
+            stretch.origScale,
+            stretch.sceneWidth,
+          ),
+        }));
       }
     }
 
@@ -397,6 +438,9 @@ export function FencePreview({ catalog, selection }: Props) {
       side,
       startX: e.clientX,
       origPanelCount: previewPanelCount,
+      origX: fenceTransform.x,
+      origScale: fenceTransform.scale,
+      sceneWidth,
     };
   }
 
@@ -409,6 +453,10 @@ export function FencePreview({ catalog, selection }: Props) {
       startX: e.clientX,
       startY: e.clientY,
       origScale: fenceTransform.scale,
+      origX: fenceTransform.x,
+      origY: fenceTransform.y,
+      origPanelCount: previewPanelCount,
+      sceneWidth,
     };
   }
 
@@ -674,7 +722,7 @@ export function FencePreview({ catalog, selection }: Props) {
 
         {fenceSelected && svgMarkup && (
           <p className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-md border border-[#e5e7eb] bg-white/92 px-3 py-1 text-[10px] text-[#6b7280] shadow-sm backdrop-blur-sm">
-            Przeciągnij aby przesunąć · rogi: skala · boki: więcej paneli · scroll: zoom
+            Przeciągnij aby przesunąć · boki: panele · rogi: skala · scroll: zoom
           </p>
         )}
       </div>

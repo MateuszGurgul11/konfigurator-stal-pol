@@ -25,7 +25,7 @@ CollectionName = Literal[
 ]
 
 HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
-PATTERN_IDS = ("pattern-3d", "pattern-palisade")
+PATTERN_IDS = ("pattern-3d", "pattern-palisade", "pattern-panel-horizontal")
 
 
 class BaseEntity(BaseModel):
@@ -48,7 +48,9 @@ class PostOut(PostCreate):
 
 
 class PanelCreate(BaseEntity):
-    patternId: Literal["pattern-3d", "pattern-palisade"]
+    patternId: Literal[
+        "pattern-3d", "pattern-palisade", "pattern-panel-horizontal"
+    ]
     priceSurchargePerMeter: float = Field(ge=0, default=0)
     baseTextureUrl: str | None = None
     textureTileHeightM: float | None = Field(default=None, ge=0.1, le=2.25)

@@ -1,7 +1,17 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import { ImagePlus, Undo2, Trash2, Check, X } from "lucide-react";
+import {
+  ImagePlus,
+  Undo2,
+  Trash2,
+  Check,
+  X,
+  Ruler,
+  PencilLine,
+  Gauge,
+  Spline,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateQuote } from "@/lib/pricing/calculateQuote";
 import {
@@ -19,6 +29,55 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     </p>
   );
 }
+
+type StepStatus = { label: string; tone: "idle" | "active" | "done" };
+
+function StepHeader({
+  index,
+  title,
+  status,
+}: {
+  index: number;
+  title: string;
+  status?: StepStatus;
+}) {
+  const toneClass: Record<StepStatus["tone"], string> = {
+    idle: "border-[#3a3a36] bg-[#1f1f1d] text-[#8a8a85]",
+    active: "border-[#e30311]/50 bg-[#2a0e10] text-[#ff8a90]",
+    done: "border-[#1f7a4a]/60 bg-[#0e2a1a] text-[#4ade80]",
+  };
+  return (
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2.5">
+        <span
+          className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white transition-shadow",
+            status?.tone === "done"
+              ? "bg-[#1f7a4a] shadow-[0_0_0_3px_rgba(31,122,74,0.18)]"
+              : "bg-[#e30311] shadow-[0_0_0_3px_rgba(227,3,17,0.16)]",
+          )}
+        >
+          {status?.tone === "done" ? <Check className="h-3.5 w-3.5" /> : index}
+        </span>
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-white">
+          {title}
+        </span>
+      </div>
+      {status && (
+        <span
+          className={cn(
+            "flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+            toneClass[status.tone],
+          )}
+        >
+          {status.label}
+        </span>
+      )}
+    </div>
+  );
+}
+
+const CARD_CLASS = "rounded-xl border border-[#333] bg-[#222] p-4";
 
 type Props = {
   catalog: CatalogCollections;
@@ -122,16 +181,38 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
     MAX_PREVIEW_PANELS,
   );
 
+  const calibrationStatus: StepStatus = quotePxPerMeter
+    ? { label: "Skala OK", tone: "done" }
+    : quoteDrawMode === "calibrate"
+      ? { label: "Zaznaczasz", tone: "active" }
+      : { label: "Do zrobienia", tone: "idle" };
+
+  const fenceStatus: StepStatus = quoteFenceClosed
+    ? { label: "Zamknięty", tone: "done" }
+    : quoteFencePoints.length > 0
+      ? { label: `${quoteFencePoints.length} pkt`, tone: "active" }
+      : { label: "Do zrobienia", tone: "idle" };
+
   return (
     <div className="space-y-5">
-      <div className="rounded-lg bg-[#e30311] px-4 py-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white">
+      <div className="overflow-hidden rounded-xl bg-[#e30311] px-4 py-3.5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white">
           Wycena na rzucie
         </p>
-        <p className="mt-1 text-[11px] text-white/85">
-          1. Wgraj plan działki · 2. Ustaw skalę (2 kliknięcia) · 3. Zaznacz obwód
-          działki · 4. Zamknij obrys i sprawdź cenę
+        <p className="mt-1 text-[11px] leading-relaxed text-white/85">
+          Wgraj plan działki, ustaw skalę i obrysuj teren — cena policzy się
+          automatycznie.
         </p>
+        <div className="mt-2.5 flex flex-wrap gap-1">
+          {["Rzut", "Skala", "Obrys", "Cena"].map((label, i) => (
+            <span
+              key={label}
+              className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/95"
+            >
+              {i + 1}. {label}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div>
@@ -139,7 +220,12 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#555] bg-white px-4 py-3 text-sm font-semibold text-[#303638] transition-colors hover:bg-[#f5f5f5]"
+          className={cn(
+            "group flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition-colors",
+            quotePlanImageUrl
+              ? "border-[#3a3a36] bg-[#222] text-[#ccc] hover:border-[#555] hover:bg-[#2a2a28]"
+              : "border-dashed border-[#e30311]/60 bg-[#2a0e10]/40 text-white hover:bg-[#2a0e10]",
+          )}
         >
           <ImagePlus className="h-4 w-4 text-[#e30311]" />
           {quotePlanImageUrl ? "Zmień rzut" : "Prześlij rzut"}
@@ -156,61 +242,103 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
       {quotePlanImageUrl && (
         <>
           <div>
-            <SectionLabel>Kalibracja skali</SectionLabel>
-            <div className="space-y-3 rounded-lg border border-[#333] bg-[#222] p-4">
-              <p className="text-[11px] leading-relaxed text-[#888]">
-                Kliknij 2 punkty na znanej linii (np. bok działki 20 m), potem wpisz
-                jej długość w metrach.
+            <StepHeader index={1} title="Kalibracja skali" status={calibrationStatus} />
+            <div className={cn(CARD_CLASS, "space-y-3")}>
+              <p className="text-[11px] leading-relaxed text-[#9a9a95]">
+                Kliknij 2 punkty na znanym odcinku (np. bok działki 20 m), a potem
+                wpisz jego długość w metrach.
               </p>
               <button
                 type="button"
                 onClick={() => setQuoteDrawMode("calibrate")}
                 className={cn(
-                  "w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold",
+                  "flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
                   quoteDrawMode === "calibrate"
-                    ? "border-[#e30311] bg-[#2a0e10] text-white"
-                    : "border-[#444] text-[#aaa]",
+                    ? "border-[#e30311] bg-[#2a0e10]"
+                    : "border-[#3a3a36] hover:border-[#555] hover:bg-[#222]",
                 )}
               >
-                Tryb: kalibracja skali
+                <span
+                  className={cn(
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
+                    quoteDrawMode === "calibrate"
+                      ? "bg-[#e30311] text-white"
+                      : "bg-[#161614] text-[#888]",
+                  )}
+                >
+                  <Ruler className="h-4 w-4" />
+                </span>
+                <span className="flex flex-col">
+                  <span
+                    className={cn(
+                      "text-xs font-bold",
+                      quoteDrawMode === "calibrate" ? "text-white" : "text-[#bbb]",
+                    )}
+                  >
+                    Narysuj linię skali
+                  </span>
+                  <span className="text-[10px] text-[#777]">
+                    2 kliknięcia na rzucie
+                  </span>
+                </span>
               </button>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#666]">
-                Długość linii odniesienia (m)
-              </label>
-              <input
-                type="number"
-                min={0.1}
-                step={0.1}
-                value={quoteCalibrationLengthM}
-                onChange={(e) =>
-                  setQuoteCalibrationLengthM(Number(e.target.value))
-                }
-                className="w-full rounded-lg border border-[#444] bg-[#1A1A18] px-3 py-2 text-sm text-white"
-              />
+
+              <div>
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[#777]">
+                  Długość linii odniesienia
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0.1}
+                    step={0.1}
+                    value={quoteCalibrationLengthM}
+                    onChange={(e) =>
+                      setQuoteCalibrationLengthM(Number(e.target.value))
+                    }
+                    className="w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 pr-10 text-sm font-semibold text-white outline-none transition-colors focus:border-[#e30311]"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
+                    m
+                  </span>
+                </div>
+              </div>
+
               {quotePxPerMeter ? (
-                <p className="text-xs font-semibold text-[#4ade80]">
-                  Skala ustawiona ({quotePxPerMeter.toFixed(1)} px/m) — tryb
-                  obrysu aktywny
-                </p>
+                <div className="flex items-center gap-3 rounded-lg border border-[#1f7a4a]/40 bg-[#0e2a1a] px-3 py-2.5">
+                  <Gauge className="h-5 w-5 shrink-0 text-[#4ade80]" />
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#4ade80]/70">
+                      Skala ustawiona
+                    </p>
+                    <p className="text-sm font-bold text-white">
+                      {quotePxPerMeter.toFixed(1)}{" "}
+                      <span className="text-[11px] font-medium text-[#888]">
+                        px / metr
+                      </span>
+                    </p>
+                  </div>
+                  <span className="ml-auto shrink-0 rounded-md bg-[#1f7a4a]/25 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-[#4ade80]">
+                    Obrys aktywny
+                  </span>
+                </div>
               ) : (
-                <p className="text-xs text-[#666]">
+                <div className="flex items-center gap-2 rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-[11px] text-[#888]">
+                  <span className="flex h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#e30311]" />
                   {quoteCalibrationLine
-                    ? "Wpisz długość linii w metrach"
-                    : "Kliknij 2 punkty na rzucie"}
-                </p>
+                    ? "Wpisz długość linii w metrach powyżej"
+                    : "Kliknij 2 punkty na rzucie, aby wyznaczyć skalę"}
+                </div>
               )}
             </div>
           </div>
 
           <div>
-            <SectionLabel>Obrys ogrodzenia</SectionLabel>
-            <div className="space-y-2 rounded-lg border border-[#333] bg-[#222] p-4">
-              <p className="text-[11px] leading-relaxed text-[#888]">
-                Klikaj kolejne punkty na obwodzie działki — tam ma przebiegać płot
-                (min. 3). Kliknij × na kropce lub w liście poniżej, aby usunąć punkt.
-              </p>
-              <p className="text-[10px] leading-relaxed text-[#666]">
-                Po zaznaczeniu wszystkich narożników kliknij Zamknij obrys.
+            <StepHeader index={2} title="Obrys ogrodzenia" status={fenceStatus} />
+            <div className={cn(CARD_CLASS, "space-y-3")}>
+              <p className="text-[11px] leading-relaxed text-[#9a9a95]">
+                Klikaj kolejne narożniki działki (min. 3) — tam ma przebiegać płot.
+                Kliknij × na kropce lub w liście poniżej, aby usunąć punkt.
               </p>
               <div className="flex gap-2">
                 <button
@@ -218,19 +346,20 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                   disabled={!quotePxPerMeter}
                   onClick={() => setQuoteDrawMode("fence")}
                   className={cn(
-                    "flex-1 rounded-lg border px-2 py-2 text-[10px] font-bold uppercase tracking-wide disabled:opacity-40",
+                    "flex flex-1 items-center justify-center gap-2 rounded-lg border px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-colors disabled:opacity-40",
                     quoteDrawMode === "fence"
                       ? "border-[#e30311] bg-[#2a0e10] text-white"
-                      : "border-[#444] text-[#aaa]",
+                      : "border-[#3a3a36] text-[#aaa] hover:border-[#555] hover:bg-[#222]",
                   )}
                 >
+                  <PencilLine className="h-4 w-4" />
                   Rysuj obrys
                 </button>
                 <button
                   type="button"
                   disabled={quoteFencePoints.length === 0}
                   onClick={undoQuoteFencePoint}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#444] text-[#aaa] disabled:opacity-40"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#3a3a36] text-[#aaa] transition-colors hover:border-[#555] hover:text-white disabled:opacity-40 disabled:hover:border-[#3a3a36]"
                   title="Cofnij punkt"
                 >
                   <Undo2 className="h-4 w-4" />
@@ -239,7 +368,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                   type="button"
                   disabled={quoteFencePoints.length === 0}
                   onClick={clearQuoteFence}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#444] text-[#aaa] disabled:opacity-40"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#3a3a36] text-[#aaa] transition-colors hover:border-[#e30311] hover:text-[#e30311] disabled:opacity-40 disabled:hover:border-[#3a3a36] disabled:hover:text-[#aaa]"
                   title="Wyczyść obrys"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -256,7 +385,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                         key={`point-${index}`}
                         type="button"
                         onClick={() => removeQuoteFencePointAt(index)}
-                        className="flex items-center gap-1 rounded-md border border-[#444] bg-[#1A1A18] px-2 py-1 text-[11px] font-semibold text-[#ccc] transition-colors hover:border-[#e30311] hover:text-white"
+                        className="flex items-center gap-1 rounded-md border border-[#3a3a36] bg-[#161614] px-2 py-1 text-[11px] font-semibold text-[#ccc] transition-colors hover:border-[#e30311] hover:text-white"
                         title={`Usuń punkt ${index + 1}`}
                       >
                         <span>{index + 1}</span>
@@ -270,16 +399,27 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                 <button
                   type="button"
                   onClick={closeQuoteFence}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#c9020f]"
                 >
                   <Check className="h-4 w-4" />
                   Zamknij obrys
                 </button>
               )}
               {quoteFenceClosed && quotePerimeterM && (
-                <p className="text-sm font-bold text-white">
-                  Obwód: {quotePerimeterM.toFixed(1)} m bieżących
-                </p>
+                <div className="flex items-center gap-3 rounded-lg border border-[#e30311]/30 bg-[#2a0e10] px-3 py-3">
+                  <Spline className="h-5 w-5 shrink-0 text-[#e30311]" />
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#888]">
+                      Obwód działki
+                    </p>
+                    <p className="font-heading text-lg font-bold leading-none text-white">
+                      {quotePerimeterM.toFixed(1)}{" "}
+                      <span className="text-xs font-medium text-[#888]">
+                        m bież.
+                      </span>
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           </div>

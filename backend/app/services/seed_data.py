@@ -32,6 +32,13 @@ SEED_DATA = {
             "sortOrder": 1,
             "active": True,
         },
+        {
+            "name": "Panel poziomy",
+            "patternId": "pattern-panel-horizontal",
+            "priceSurchargePerMeter": 15,
+            "sortOrder": 2,
+            "active": True,
+        },
     ],
     "spacerOptions": [
         {
@@ -175,6 +182,7 @@ DEFAULT_PRICING_SETTINGS = {
 PANEL_PRICE_BY_PATTERN = {
     "pattern-3d": 0,
     "pattern-palisade": 20,
+    "pattern-panel-horizontal": 15,
 }
 
 COLOR_PRICE_BY_NAME = {

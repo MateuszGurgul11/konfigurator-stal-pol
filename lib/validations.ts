@@ -44,7 +44,11 @@ export const postSchema = z.object({
 
 export const panelSchema = z.object({
   name: z.string().min(1, "Nazwa jest wymagana"),
-  patternId: z.enum(["pattern-3d", "pattern-palisade"]),
+  patternId: z.enum([
+    "pattern-3d",
+    "pattern-palisade",
+    "pattern-panel-horizontal",
+  ]),
   priceSurchargePerMeter: z.coerce.number().min(0).default(0),
   description: optionalString,
   previewAsset: optionalString,

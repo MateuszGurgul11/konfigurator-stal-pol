@@ -9,6 +9,7 @@ export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
 export const PANEL_PRICE_BY_PATTERN: Record<string, number> = {
   "pattern-3d": 0,
   "pattern-palisade": 20,
+  "pattern-panel-horizontal": 15,
 };
 
 export const COLOR_PRICE_BY_NAME: Record<string, number> = {

@@ -46,6 +46,14 @@ export const MOCK_CATALOG: CatalogCollections = {
       sortOrder: 1,
       active: true,
     },
+    {
+      id: "panel-3",
+      name: "Panel poziomy",
+      patternId: "pattern-panel-horizontal",
+      priceSurchargePerMeter: PANEL_PRICE_BY_PATTERN["pattern-panel-horizontal"],
+      sortOrder: 2,
+      active: true,
+    },
   ],
   spacerOptions: [
     {

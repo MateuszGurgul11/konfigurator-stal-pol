@@ -224,25 +224,154 @@ function lighten(hex: string, amount: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
+function draw3DMeshPanel(
+  px: number,
+  y: number,
+  sectionW: number,
+  h: number,
+  colorHex: string,
+  shadowEdge: string,
+  shadowBottom: string,
+): string {
+  const railH = Math.max(4, h * 0.055);
+  const meshY = y + railH;
+  const meshH = Math.max(0, h - railH * 2);
+  const meshX = px;
+  const meshW = sectionW;
+  const vPitch = Math.max(3.5, Math.min(5.5, sectionW * 0.028));
+  const hPitch = Math.max(16, Math.min(24, meshH * 0.11));
+  const stroke = darken(colorHex, 0.28);
+  const highlight = lighten(colorHex, 0.1);
+  const frameLight = lighten(colorHex, 0.08);
+  const wireW = 1.15;
+
+  let out = "";
+
+  out += `<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${sectionW.toFixed(1)}" height="${railH.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
+  out += `<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${sectionW.toFixed(1)}" height="2" fill="${frameLight}" opacity="0.55"/>`;
+  out += `<rect x="${px.toFixed(1)}" y="${(y + h - railH).toFixed(1)}" width="${sectionW.toFixed(1)}" height="${railH.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
+  out += `<rect x="${px.toFixed(1)}" y="${(y + h - railH).toFixed(1)}" width="${sectionW.toFixed(1)}" height="2" fill="${shadowBottom}" opacity="0.45"/>`;
+
+  if (meshH > 4 && meshW > 4) {
+    const spikeH = Math.max(2, railH * 0.45);
+    for (let vx = meshX + vPitch * 0.5; vx < meshX + meshW; vx += vPitch) {
+      out += `<line x1="${vx.toFixed(1)}" y1="${(meshY - spikeH).toFixed(1)}" x2="${vx.toFixed(1)}" y2="${(meshY + meshH).toFixed(1)}" stroke="${stroke}" stroke-width="${wireW}" opacity="0.8"/>`;
+    }
+
+    for (let hy = meshY + hPitch * 0.5; hy < meshY + meshH; hy += hPitch) {
+      out += `<line x1="${meshX.toFixed(1)}" y1="${hy.toFixed(1)}" x2="${(meshX + meshW).toFixed(1)}" y2="${hy.toFixed(1)}" stroke="${stroke}" stroke-width="${wireW * 0.9}" opacity="0.72"/>`;
+    }
+
+    const foldDepth = Math.max(4, meshH * 0.04);
+    const foldBandH = Math.max(3, meshH * 0.025);
+    for (const ratio of [0.22, 0.5, 0.78]) {
+      const bandY = meshY + meshH * ratio - foldBandH / 2;
+      const segW = vPitch * 2.2;
+      for (let sx = meshX; sx < meshX + meshW - 1; sx += segW) {
+        const ex = Math.min(meshX + meshW, sx + segW);
+        const midX = (sx + ex) / 2;
+        const tipY = bandY + foldBandH / 2 + foldDepth;
+        out += `<polyline points="${sx.toFixed(1)},${bandY.toFixed(1)} ${midX.toFixed(1)},${tipY.toFixed(1)} ${ex.toFixed(1)},${bandY.toFixed(1)}" fill="none" stroke="${highlight}" stroke-width="${wireW * 1.1}" opacity="0.85"/>`;
+      }
+    }
+  }
+
+  out += `<rect x="${(px + sectionW - 2).toFixed(1)}" y="${y.toFixed(1)}" width="2" height="${h.toFixed(1)}" fill="${shadowEdge}" opacity="0.35"/>`;
+
+  return out;
+}
+
+function drawHorizontalPanel(
+  px: number,
+  y: number,
+  sectionW: number,
+  h: number,
+  openness: number,
+  colorHex: string,
+  shadowEdge: string,
+  shadowBottom: string,
+): string {
+  const frame = Math.max(3, sectionW * 0.045);
+  const innerX = px + frame;
+  const innerY = y + frame;
+  const innerW = sectionW - frame * 2;
+  const innerH = h - frame * 2;
+  const highlight = lighten(colorHex, 0.1);
+  const slatCount = 7;
+  const gapRatio = Math.min(0.35, 0.22 + openness * 0.18);
+  const pitch = innerH / slatCount;
+  const slatH = pitch * (1 - gapRatio);
+  const gap = pitch - slatH;
+
+  let out = "";
+
+  out += `<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${frame.toFixed(1)}" height="${h.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
+  out += `<rect x="${(px + sectionW - frame).toFixed(1)}" y="${y.toFixed(1)}" width="${frame.toFixed(1)}" height="${h.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
+  out += `<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${sectionW.toFixed(1)}" height="${frame.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
+  out += `<rect x="${px.toFixed(1)}" y="${(y + h - frame).toFixed(1)}" width="${sectionW.toFixed(1)}" height="${frame.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
+
+  for (let i = 0; i < slatCount; i++) {
+    const sy = innerY + i * pitch + gap / 2;
+    out += `<rect x="${innerX.toFixed(1)}" y="${sy.toFixed(1)}" width="${innerW.toFixed(1)}" height="${slatH.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
+    out += `<rect x="${innerX.toFixed(1)}" y="${sy.toFixed(1)}" width="${innerW.toFixed(1)}" height="1.5" fill="${highlight}" opacity="0.55"/>`;
+    out += `<rect x="${innerX.toFixed(1)}" y="${(sy + slatH - 1.5).toFixed(1)}" width="${innerW.toFixed(1)}" height="1.5" fill="${shadowBottom}" opacity="0.4"/>`;
+  }
+
+  out += `<rect x="${(px + sectionW - 2).toFixed(1)}" y="${y.toFixed(1)}" width="2" height="${h.toFixed(1)}" fill="${shadowEdge}" opacity="0.35"/>`;
+
+  return out;
+}
+
+function drawFootingPlinth(
+  x: number,
+  fenceBottomY: number,
+  w: number,
+): string {
+  const plinthH = 14;
+  const plinthY = fenceBottomY - plinthH;
+  const base = "#9ca3af";
+  const light = "#b4b8be";
+  const dark = "#6b7280";
+  const inset = 4;
+
+  let out = "";
+  out += `<rect x="${x.toFixed(1)}" y="${plinthY.toFixed(1)}" width="${w.toFixed(1)}" height="${plinthH.toFixed(1)}" fill="${base}" rx="1"/>`;
+  out += `<rect x="${(x + inset).toFixed(1)}" y="${(plinthY + 2).toFixed(1)}" width="${(w - inset * 2).toFixed(1)}" height="${(plinthH - 4).toFixed(1)}" fill="none" stroke="${dark}" stroke-width="1" opacity="0.35"/>`;
+  out += `<rect x="${(x + inset + 2).toFixed(1)}" y="${(plinthY + 4).toFixed(1)}" width="${(w - inset * 2 - 4).toFixed(1)}" height="${(plinthH - 8).toFixed(1)}" fill="${light}" opacity="0.25"/>`;
+  return out;
+}
+
+function drawPostClamp(
+  postX: number,
+  postW: number,
+  clampY: number,
+  clampH: number,
+  side: "left" | "right",
+  colorHex: string,
+): string {
+  const clampW = Math.max(5, postW * 0.9);
+  const clampX = side === "left" ? postX + postW : postX - clampW;
+  const fill = darken(colorHex, 0.35);
+  return `<rect x="${clampX.toFixed(1)}" y="${clampY.toFixed(1)}" width="${clampW.toFixed(1)}" height="${clampH.toFixed(1)}" fill="${fill}" rx="0.5" opacity="0.9"/>`;
+}
+
 function panelPatternDefs(patternId: PatternId, colorHex: string): string {
   const stroke = darken(colorHex, 0.25);
   const highlight = lighten(colorHex, 0.08);
-  const shadow = darken(colorHex, 0.15);
   switch (patternId) {
     case "pattern-3d":
       return `<pattern id="panelPat" width="24" height="24" patternUnits="userSpaceOnUse">
-        <rect width="24" height="24" fill="${colorHex}"/>
-        <rect x="0" y="0" width="24" height="5" fill="${shadow}" opacity="0.35"/>
-        <rect x="0" y="19" width="24" height="5" fill="${shadow}" opacity="0.35"/>
         <line x1="0" y1="24" x2="24" y2="0" stroke="${stroke}" stroke-width="1.2" opacity="0.55"/>
-        <line x1="0" y1="12" x2="12" y2="0" stroke="${highlight}" stroke-width="0.8" opacity="0.4"/>
-        <line x1="12" y1="24" x2="24" y2="12" stroke="${highlight}" stroke-width="0.8" opacity="0.4"/>
         <line x1="12" y1="0" x2="24" y2="12" stroke="${stroke}" stroke-width="1" opacity="0.45"/>
         <line x1="0" y1="12" x2="12" y2="24" stroke="${stroke}" stroke-width="1" opacity="0.45"/>
       </pattern>`;
     case "pattern-palisade":
       return `<pattern id="panelPat" width="8" height="8" patternUnits="userSpaceOnUse">
         <rect width="8" height="8" fill="${colorHex}"/>
+      </pattern>`;
+    case "pattern-panel-horizontal":
+      return `<pattern id="panelPat" width="12" height="12" patternUnits="userSpaceOnUse">
+        <rect width="12" height="5" fill="${colorHex}"/>
       </pattern>`;
     default:
       return `<pattern id="panelPat" width="18" height="18" patternUnits="userSpaceOnUse">
@@ -349,6 +478,21 @@ function drawSectionPanels(
       shadowEdge,
       shadowBottom,
     );
+  }
+  if (patternId === "pattern-panel-horizontal") {
+    return drawHorizontalPanel(
+      px,
+      y,
+      sectionW,
+      h,
+      openness,
+      colorHex,
+      shadowEdge,
+      shadowBottom,
+    );
+  }
+  if (patternId === "pattern-3d") {
+    return draw3DMeshPanel(px, y, sectionW, h, colorHex, shadowEdge, shadowBottom);
   }
   if (useStacked) {
     for (let j = 0; j < plankCount; j++) {
@@ -536,25 +680,34 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     return `<rect x="${capX}" y="${capY}" width="${capW}" height="${capH}" fill="${postCap}" rx="1"/>`;
   }
 
-  function renderPost(px: number): string {
+  function renderPost(px: number, withClamps = false): string {
+    const clampH = Math.max(8, fenceH * 0.12);
+    const topClampY = fenceY + fenceH * 0.12;
+    const botClampY = fenceY + fenceH - clampH - fenceH * 0.15;
+    let clamps = "";
+    if (withClamps && patternId === "pattern-3d") {
+      clamps = `
+    ${drawPostClamp(px, postW, topClampY, clampH, "right", colorHex)}
+    ${drawPostClamp(px, postW, botClampY, clampH, "right", colorHex)}`;
+    }
     if (postTextureUrl) {
       const safeUrl = escapeXmlAttr(postTextureUrl);
       return `<!-- Post at ${px.toFixed(0)} -->
     <image href="${safeUrl}" x="${px}" y="${fenceY - 8}" width="${postW}" height="${fenceH + 8}" preserveAspectRatio="none"/>
-    ${postCapRect(px)}`;
+    ${postCapRect(px)}${clamps}`;
     }
     return `<!-- Post at ${px.toFixed(0)} -->
     <rect x="${px}" y="${fenceY - 8}" width="${postW}" height="${fenceH + 8}" fill="${postBase}" rx="1"/>
     <rect x="${px}" y="${fenceY - 8}" width="2" height="${fenceH + 8}" fill="${postLight}" opacity="0.75" rx="1"/>
     <rect x="${px + postW - 3}" y="${fenceY - 8}" width="3" height="${fenceH + 8}" fill="${postDark}" opacity="0.5"/>
-    ${postCapRect(px)}`;
+    ${postCapRect(px)}${clamps}`;
   }
 
   let intermediatePosts = "";
   for (let i = 1; i < panelCount; i++) {
     const dividerCenter = panelsX + i * sectionPanelW + (i - 0.5) * gap;
     const px = dividerCenter - postW / 2;
-    intermediatePosts += renderPost(px);
+    intermediatePosts += renderPost(px, true);
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewW} ${VIEW_H}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Podgląd ogrodzenia">
@@ -595,6 +748,11 @@ export function buildFenceSvg(params: FenceRenderParams): string {
   <ellipse cx="${fenceCenterX}" cy="${groundY + 4}" rx="${(totalW * 0.5).toFixed(1)}" ry="14" fill="#000000" opacity="0.08"/>`
   }
 
+  <!-- Footing plinth -->
+  <g>
+    ${drawFootingPlinth(leftPost, fenceY + fenceH, rightPost + postW - leftPost)}
+  </g>
+
   <!-- Panels group -->
   <g filter="url(#panelShadow)">
     ${panelRects(
@@ -617,9 +775,9 @@ export function buildFenceSvg(params: FenceRenderParams): string {
 
   <!-- Posts group -->
   <g filter="url(#postShadow)">
-    ${renderPost(leftPost)}
+    ${renderPost(leftPost, true)}
     ${intermediatePosts}
-    ${renderPost(rightPost)}
+    ${renderPost(rightPost, true)}
   </g>
 
   ${
