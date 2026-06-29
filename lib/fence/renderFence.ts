@@ -548,30 +548,43 @@ function drawWicketFrame(
     <rect x="${(gateX + gateW - frameT).toFixed(1)}" y="${y.toFixed(1)}" width="${frameT.toFixed(1)}" height="${h.toFixed(1)}" fill="${colorHex}" rx="0.5"/>`;
 }
 
+// Ocynkowane (jasny metal) okucia — stały kolor, by kontrastowały z dowolną
+// barwą ramy/słupka, tak jak na zdjęciach referencyjnych.
+const GALV_BODY = "#cdd2d8";
+const GALV_EDGE = "#5f656c";
+const GALV_HI = "#f1f4f7";
+const GALV_BOLT = "#3f444b";
+
 function drawWicketHinges(
   segmentEdgeX: number,
   postW: number,
   y: number,
   h: number,
-  colorHex: string,
+  _colorHex: string,
   side: WicketHingeSide,
 ): string {
-  const hingeW = Math.max(3, postW * 0.45);
-  const hingeH = Math.max(6, h * 0.085);
-  const hingeX =
-    side === "right"
-      ? segmentEdgeX - hingeW + 0.5
-      : segmentEdgeX - 0.5;
-  const fill = darken(colorHex, 0.35);
-  const topY = y + h * 0.18;
-  const botY = y + h - hingeH - h * 0.18;
-  const pinX =
-    side === "right" ? hingeX + 1.2 : hingeX + hingeW - 1.2;
+  // Regulowany zawias śrubowy spinający słupek z ramą skrzydła: pozioma śruba z
+  // nakrętką + walcowy korpus na linii styku. Dwa zawiasy — górny i dolny.
+  const postDir = side === "right" ? 1 : -1; // kierunek od styku w stronę słupka
+  const postArm = Math.max(7, postW * 0.85); // ramię na słupku (mocowanie)
+  const frameArm = Math.max(4, h * 0.022); // ramię na ramie skrzydła
+  const strapH = Math.max(2.6, h * 0.016);
+  const barrelW = Math.max(4, postW * 0.5);
+  const barrelH = Math.max(9, h * 0.055);
+  const strapW = postArm + frameArm;
+  const strapX = postDir > 0 ? segmentEdgeX - frameArm : segmentEdgeX - postArm;
+  const boltX = segmentEdgeX + postDir * postArm * 0.62;
+
+  const hinge = (cy: number) => `
+    <rect x="${strapX.toFixed(1)}" y="${(cy - strapH / 2).toFixed(1)}" width="${strapW.toFixed(1)}" height="${strapH.toFixed(1)}" fill="${GALV_BODY}" stroke="${GALV_EDGE}" stroke-width="0.6" rx="1"/>
+    <rect x="${(segmentEdgeX - barrelW / 2).toFixed(1)}" y="${(cy - barrelH / 2).toFixed(1)}" width="${barrelW.toFixed(1)}" height="${barrelH.toFixed(1)}" fill="${GALV_BODY}" stroke="${GALV_EDGE}" stroke-width="0.7" rx="${(barrelW / 2).toFixed(1)}"/>
+    <rect x="${(segmentEdgeX - barrelW / 2 + 0.6).toFixed(1)}" y="${(cy - barrelH / 2 + 0.6).toFixed(1)}" width="1.2" height="${(barrelH - 1.2).toFixed(1)}" fill="${GALV_HI}" opacity="0.85" rx="0.6"/>
+    <circle cx="${boltX.toFixed(1)}" cy="${cy.toFixed(1)}" r="${Math.max(1.6, barrelW * 0.32).toFixed(1)}" fill="${GALV_BOLT}"/>
+    <circle cx="${boltX.toFixed(1)}" cy="${cy.toFixed(1)}" r="${Math.max(0.7, barrelW * 0.14).toFixed(1)}" fill="${GALV_HI}" opacity="0.7"/>`;
+
   return `<!-- Wicket hinges -->
-    <rect x="${hingeX.toFixed(1)}" y="${topY.toFixed(1)}" width="${hingeW.toFixed(1)}" height="${hingeH.toFixed(1)}" fill="${fill}" rx="0.5" opacity="0.92"/>
-    <rect x="${hingeX.toFixed(1)}" y="${botY.toFixed(1)}" width="${hingeW.toFixed(1)}" height="${hingeH.toFixed(1)}" fill="${fill}" rx="0.5" opacity="0.92"/>
-    <circle cx="${pinX.toFixed(1)}" cy="${(topY + hingeH / 2).toFixed(1)}" r="1" fill="${lighten(colorHex, 0.2)}" opacity="0.8"/>
-    <circle cx="${pinX.toFixed(1)}" cy="${(botY + hingeH / 2).toFixed(1)}" r="1" fill="${lighten(colorHex, 0.2)}" opacity="0.8"/>`;
+    ${hinge(y + h * 0.17)}
+    ${hinge(y + h * 0.74)}`;
 }
 
 function drawWicketHandle(
@@ -580,34 +593,41 @@ function drawWicketHandle(
   y: number,
   h: number,
   frameT: number,
-  colorHex: string,
+  _colorHex: string,
   side: WicketHingeSide,
 ): string {
-  const plateW = Math.max(5, frameT * 1.4);
-  const plateH = Math.max(12, h * 0.13);
+  // Czarny zamek z dźwignią na pionowym szyldzie, na listwie zatrzaskowej.
+  // Dźwignia skierowana do wnętrza skrzydła (w stronę zawiasów).
+  const hwBlack = "#23262b";
+  const hwEdge = "#0e0f12";
+  const hwHi = "#6b7178";
+  const plateW = Math.max(6, frameT * 1.7);
+  const plateH = Math.max(16, h * 0.15);
   const plateX =
-    side === "right"
+    side === "left"
       ? gateX + frameT + 0.5
       : gateX + gateW - frameT - plateW - 0.5;
-  const plateY = y + h * 0.4 - plateH / 2;
-  const handleLen = Math.max(6, Math.min(gateW * 0.22, plateH * 0.75));
-  const handleY = plateY + plateH * 0.38;
-  const handleMetal = lighten(colorHex, 0.3);
-  const hardwareDark = darken(colorHex, 0.4);
-  const lockY = plateY + plateH + 4;
-  const handleBarX =
-    side === "right"
-      ? plateX + plateW + 0.5
-      : plateX - handleLen - 0.5;
-  const handleGripX =
-    side === "right"
-      ? plateX + plateW + handleLen - 1
-      : plateX - handleLen;
+  const plateY = y + h * 0.42 - plateH / 2;
+  const plateCx = plateX + plateW / 2;
+  // Dźwignia: skierowana do środka skrzydła (przeciwnie do strony zatrzasku).
+  const inward = side === "left" ? 1 : -1;
+  const leverLen = Math.max(8, Math.min(gateW * 0.26, plateH * 0.7));
+  const leverThick = Math.max(2.4, plateW * 0.42);
+  const leverY = plateY + plateH * 0.32;
+  const hubR = Math.max(2.4, plateW * 0.45);
+  const hubY = leverY + leverThick / 2;
+  const leverX = inward > 0 ? plateCx : plateCx - leverLen;
+  const tipX = inward > 0 ? plateCx + leverLen : plateCx - leverLen;
+  const lockY = plateY + plateH - Math.max(5, plateH * 0.26);
   return `<!-- Wicket handle -->
-    <rect x="${plateX.toFixed(1)}" y="${plateY.toFixed(1)}" width="${plateW.toFixed(1)}" height="${plateH.toFixed(1)}" fill="${hardwareDark}" rx="1" opacity="0.9"/>
-    <rect x="${handleBarX.toFixed(1)}" y="${handleY.toFixed(1)}" width="${handleLen.toFixed(1)}" height="2.5" fill="${handleMetal}" rx="1.5"/>
-    <rect x="${handleGripX.toFixed(1)}" y="${(handleY - 1.5).toFixed(1)}" width="2.5" height="5" fill="${handleMetal}" rx="1"/>
-    <circle cx="${(plateX + plateW / 2).toFixed(1)}" cy="${lockY.toFixed(1)}" r="2" fill="#1a1a1a" stroke="${hardwareDark}" stroke-width="0.8"/>`;
+    <rect x="${plateX.toFixed(1)}" y="${plateY.toFixed(1)}" width="${plateW.toFixed(1)}" height="${plateH.toFixed(1)}" fill="${hwBlack}" stroke="${hwEdge}" stroke-width="0.6" rx="${Math.min(plateW / 2, 2.4).toFixed(1)}"/>
+    <rect x="${(plateX + 0.7).toFixed(1)}" y="${(plateY + 0.7).toFixed(1)}" width="0.9" height="${(plateH - 1.4).toFixed(1)}" fill="${hwHi}" opacity="0.5"/>
+    <circle cx="${plateCx.toFixed(1)}" cy="${hubY.toFixed(1)}" r="${hubR.toFixed(1)}" fill="${hwBlack}" stroke="${hwEdge}" stroke-width="0.6"/>
+    <rect x="${leverX.toFixed(1)}" y="${leverY.toFixed(1)}" width="${leverLen.toFixed(1)}" height="${leverThick.toFixed(1)}" fill="${hwBlack}" stroke="${hwEdge}" stroke-width="0.5" rx="${(leverThick / 2).toFixed(1)}"/>
+    <rect x="${leverX.toFixed(1)}" y="${(leverY + 0.4).toFixed(1)}" width="${leverLen.toFixed(1)}" height="0.8" fill="${hwHi}" opacity="0.55" rx="0.4"/>
+    <circle cx="${tipX.toFixed(1)}" cy="${(leverY + leverThick / 2).toFixed(1)}" r="${(leverThick * 0.62).toFixed(1)}" fill="${hwBlack}" stroke="${hwEdge}" stroke-width="0.5"/>
+    <circle cx="${plateCx.toFixed(1)}" cy="${lockY.toFixed(1)}" r="${Math.max(1.6, plateW * 0.3).toFixed(1)}" fill="#0c0d10" stroke="${hwHi}" stroke-width="0.5"/>
+    <rect x="${(plateCx - 0.5).toFixed(1)}" y="${lockY.toFixed(1)}" width="1" height="2.4" fill="#0c0d10"/>`;
 }
 
 function drawWicketStriker(
@@ -833,6 +853,42 @@ function drawSectionPanels(
   return out;
 }
 
+/** Który bok segmentu furtki przylega do słupka skrajnego (ma margines +4px). */
+type GateEndSide = "left" | "right" | "none";
+
+function computeWicketGateLayout(
+  px: number,
+  segmentW: number,
+  hingeSide: WicketHingeSide,
+  endSide: GateEndSide,
+): {
+  gateX: number;
+  gateW: number;
+  latchSide: WicketHingeSide;
+  hingeEdgeX: number;
+} {
+  // Pozycja skrzydła NIE zależy od strony zawiasów — tak by zmiana zawiasów
+  // przesuwała wyłącznie okucia, a samo skrzydło było zawsze tak samo (idealnie)
+  // wyśrodkowane w prześwicie. Bok przylegający do słupka skrajnego ma dodatkowy
+  // margines pola (panelsX/panelsW = +4px), więc po tej stronie luz wewnętrzny
+  // jest o tyle mniejszy, aby wizualnie luzy z obu stron były równe.
+  const END_MARGIN = 4;
+  const baseGap = Math.max(6, segmentW * 0.06);
+  let leftGap = baseGap;
+  let rightGap = baseGap;
+  if (endSide === "right") {
+    rightGap = Math.max(1.5, baseGap - END_MARGIN);
+  } else if (endSide === "left") {
+    leftGap = Math.max(1.5, baseGap - END_MARGIN);
+  }
+  const gateX = px + leftGap;
+  const gateW = segmentW - leftGap - rightGap;
+  // Strona zawiasów steruje tylko okuciami.
+  const latchSide: WicketHingeSide = hingeSide === "right" ? "left" : "right";
+  const hingeEdgeX = hingeSide === "right" ? gateX + gateW : gateX;
+  return { gateX, gateW, latchSide, hingeEdgeX };
+}
+
 function drawGateSection(
   px: number,
   y: number,
@@ -844,42 +900,48 @@ function drawGateSection(
   colorHex: string,
   patternId: PatternId,
   hingeSide: WicketHingeSide,
+  endSide: GateEndSide,
   openingTextureUrl?: string | null,
   textureTileCount?: number,
-): string {
+): { body: string; hardware: string } {
+  const { gateX, gateW, latchSide, hingeEdgeX } = computeWicketGateLayout(
+    px,
+    segmentW,
+    hingeSide,
+    endSide,
+  );
+  const frameT = Math.max(3, Math.min(5, gateW * 0.07));
+
+  let hardware = "";
+  hardware += drawWicketStriker(px, segmentW, fencePostW, y, h, colorHex, latchSide);
+  hardware += drawWicketHinges(hingeEdgeX, fencePostW, y, h, colorHex, hingeSide);
+  hardware += drawWicketHandle(gateX, gateW, y, h, frameT, colorHex, latchSide);
+
   if (openingTextureUrl) {
-    return drawTexturedStack(
-      px,
-      y,
-      segmentW,
-      h,
-      openingTextureUrl,
-      textureTileCount ?? 1,
-    );
+    return {
+      body: drawTexturedStack(
+        gateX,
+        y,
+        gateW,
+        h,
+        openingTextureUrl,
+        textureTileCount ?? 1,
+      ),
+      hardware,
+    };
   }
 
   const shadowEdge = darken(colorHex, 0.3);
   const shadowBottom = darken(colorHex, 0.2);
-  const hingeGap = 1.5;
-  const latchGap = 1.5;
-  const gateX = hingeSide === "right" ? px + latchGap : px + hingeGap;
-  const gateW =
-    hingeSide === "right"
-      ? segmentW - latchGap - hingeGap
-      : segmentW - hingeGap - latchGap;
-  const frameT = Math.max(3, Math.min(5, gateW * 0.07));
   const innerX = gateX + frameT;
   const innerY = y + frameT;
   const innerW = gateW - frameT * 2;
   const innerH = h - frameT * 2;
-  const latchSide: WicketHingeSide = hingeSide === "right" ? "left" : "right";
-  const hingeEdgeX = hingeSide === "right" ? px + segmentW : px;
 
-  let out = "";
-  out += drawWicketStriker(px, segmentW, fencePostW, y, h, colorHex, latchSide);
-  out += drawWicketFrame(gateX, y, gateW, h, frameT, colorHex, shadowBottom);
+  let body = "";
+  body += drawWicketFrame(gateX, y, gateW, h, frameT, colorHex, shadowBottom);
   if (innerW > 2 && innerH > 2) {
-    out += drawMeshInfill(
+    body += drawMeshInfill(
       innerX,
       innerY,
       innerW,
@@ -892,9 +954,8 @@ function drawGateSection(
       patternId,
     );
   }
-  out += drawWicketHinges(hingeEdgeX, fencePostW, y, h, colorHex, hingeSide);
-  out += drawWicketHandle(gateX, gateW, y, h, frameT, colorHex, latchSide);
-  return out;
+
+  return { body, hardware };
 }
 
 function renderFenceSegments(
@@ -915,7 +976,7 @@ function renderFenceSegments(
   openingTextureUrl?: string | null,
   textureTileCount?: number,
   wicketHingeSide: WicketHingeSide = "right",
-): { svg: string; footingSegments: { x: number; w: number }[] } {
+): { svg: string; footingSegments: { x: number; w: number }[]; wicketHardware: string } {
   const weights = segmentWidthWeights(segments, wicketWidthCm, panelWidthCm);
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
   const innerW = totalW - gap * Math.max(0, segments.length - 1);
@@ -923,13 +984,19 @@ function renderFenceSegments(
   const shadowBottom = darken(colorHex, 0.2);
   const footingSegments: { x: number; w: number }[] = [];
   let out = "";
+  let wicketHardware = "";
   let cursorX = x;
 
   for (let i = 0; i < segments.length; i++) {
     const segW = (innerW * weights[i]) / totalWeight;
     const seg = segments[i];
     if (seg.type === "wicket") {
-      out += drawGateSection(
+      // Bok przy słupku skrajnym (pierwszy/ostatni segment) ma margines +4px.
+      const isFirst = i === 0;
+      const isLast = i === segments.length - 1;
+      const endSide: GateEndSide =
+        isLast && !isFirst ? "right" : isFirst && !isLast ? "left" : "none";
+      const gate = drawGateSection(
         cursorX,
         y,
         segW,
@@ -940,9 +1007,12 @@ function renderFenceSegments(
         colorHex,
         patternId,
         wicketHingeSide,
+        endSide,
         openingTextureUrl,
         textureTileCount,
       );
+      out += gate.body;
+      wicketHardware += gate.hardware;
     } else {
       out += drawSectionPanels(
         cursorX,
@@ -963,7 +1033,7 @@ function renderFenceSegments(
     cursorX += segW + gap;
   }
 
-  return { svg: out, footingSegments };
+  return { svg: out, footingSegments, wicketHardware };
 }
 
 export function buildFenceSvg(params: FenceRenderParams): string {
@@ -1071,7 +1141,7 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     cursorX += gap;
   }
 
-  const { svg: segmentsSvg, footingSegments } = renderFenceSegments(
+  const { svg: segmentsSvg, footingSegments, wicketHardware } = renderFenceSegments(
     panelsX,
     fenceY,
     panelsW,
@@ -1140,6 +1210,15 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     ${intermediatePosts}
     ${renderPost(rightPost, ["west"])}
   </g>
+
+  ${
+    wicketHardware
+      ? `<!-- Wicket hardware -->
+  <g>
+    ${wicketHardware}
+  </g>`
+      : ""
+  }
 
   ${
     footingEnabled
