@@ -116,25 +116,41 @@ export default function AdminPricingPage() {
         <CardHeader>
           <CardTitle>Stawki bazowe</CardTitle>
           <CardDescription>
-            Cena za metr bieżący i szerokość panelu. Ceny bramy i furtki
-            ustawiasz w zakładce Elementy.
+            Wycena za panel (nie za metr bieżący). Brama i furtka — w zakładce
+            Elementy. Podmurówka — opcjonalnie, stawka za panel poniżej.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="basePricePerMeterNet">
-              Cena bazowa za metr bieżący (PLN netto)
-            </Label>
+            <Label htmlFor="panelPriceNet">Cena panelu (PLN netto / szt.)</Label>
             <Input
-              id="basePricePerMeterNet"
+              id="panelPriceNet"
               type="number"
               min={0}
               step={1}
-              value={form.basePricePerMeterNet}
+              value={form.panelPriceNet}
               onChange={(e) =>
                 setForm((f) => ({
                   ...f,
-                  basePricePerMeterNet: Number(e.target.value),
+                  panelPriceNet: Number(e.target.value),
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="footingPriceNet">
+              Cena podmurówki za panel (PLN netto / szt.)
+            </Label>
+            <Input
+              id="footingPriceNet"
+              type="number"
+              min={0}
+              step={1}
+              value={form.footingPriceNet}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  footingPriceNet: Number(e.target.value),
                 }))
               }
             />
@@ -152,6 +168,24 @@ export default function AdminPricingPage() {
                 setForm((f) => ({
                   ...f,
                   panelWidthCm: Number(e.target.value),
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="basePricePerMeterNet">
+              Cena referencyjna za metr (migracja / informacyjnie)
+            </Label>
+            <Input
+              id="basePricePerMeterNet"
+              type="number"
+              min={0}
+              step={1}
+              value={form.basePricePerMeterNet}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  basePricePerMeterNet: Number(e.target.value),
                 }))
               }
             />

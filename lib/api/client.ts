@@ -1,4 +1,5 @@
 import type { CatalogCollections, CollectionName, PricingSettings } from "@/lib/types";
+import { normalizeCatalog } from "@/lib/catalog/normalize";
 import { MOCK_CATALOG } from "@/lib/firebase/mock-catalog";
 import { DEFAULT_PRICING_SETTINGS } from "@/lib/pricing/defaults";
 import { normalizePricingSettings } from "@/lib/pricing/normalizePricing";
@@ -109,11 +110,12 @@ export async function applyDefaultPricing(
 
 export async function fetchActiveCatalog(): Promise<CatalogCollections> {
   try {
-    return await request<CatalogCollections>("/api/catalog");
+    const data = await request<CatalogCollections>("/api/catalog");
+    return normalizeCatalog(data);
   } catch (err) {
     if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
       console.warn("[API] Fallback do danych demo:", err.message);
-      return MOCK_CATALOG;
+      return normalizeCatalog(MOCK_CATALOG);
     }
     throw err;
   }

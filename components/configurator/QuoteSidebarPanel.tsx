@@ -105,6 +105,9 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
   const furtkaElementId = useConfiguratorStore((s) => s.furtkaElementId);
   const furtkaPosition = useConfiguratorStore((s) => s.furtkaPosition);
   const previewPanelCount = useConfiguratorStore((s) => s.previewPanelCount);
+  const footingEnabled = useConfiguratorStore((s) => s.footingEnabled);
+  const footingHeightId = useConfiguratorStore((s) => s.footingHeightId);
+  const footingMaterialId = useConfiguratorStore((s) => s.footingMaterialId);
   const pricing = useConfiguratorStore((s) => s.pricing);
 
   const setQuotePlanImage = useConfiguratorStore((s) => s.setQuotePlanImage);
@@ -140,6 +143,9 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
         furtkaEnabled,
         furtkaElementId,
         furtkaPositionLabel: openingPositionLabels[furtkaPosition],
+        footingEnabled,
+        footingHeightId,
+        footingMaterialId,
         fallbackPanelCount: previewPanelCount,
       }),
     [
@@ -154,6 +160,9 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
       furtkaEnabled,
       furtkaElementId,
       furtkaPosition,
+      footingEnabled,
+      footingHeightId,
+      footingMaterialId,
       previewPanelCount,
     ],
   );
@@ -468,11 +477,19 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
             </p>
           )}
           <div className="flex justify-between text-xs">
-            <span className="text-[#888]">Stawka za metr</span>
+            <span className="text-[#888]">Stawka za panel</span>
             <span className="font-semibold text-white">
-              {quote.pricePerMeterNet.toLocaleString("pl-PL")} PLN/m
+              {quote.pricePerPanelNet.toLocaleString("pl-PL")} PLN/panel
             </span>
           </div>
+          {quote.footingPrice > 0 && (
+            <div className="flex justify-between text-xs">
+              <span className="text-[#888]">Podmurówka</span>
+              <span className="font-semibold text-white">
+                {quote.footingPrice.toLocaleString("pl-PL")} PLN
+              </span>
+            </div>
+          )}
           <div className="my-2 border-t border-[#333]" />
           {quote.breakdown.map((row, index) => (
             <div

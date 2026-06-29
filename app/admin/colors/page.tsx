@@ -8,6 +8,7 @@ const emptyItem = {
   name: "",
   hex: "#9ca3af",
   priceSurchargePerMeter: 0,
+  priceSurchargePerPanel: 0,
   sortOrder: 0,
   active: true,
 };
@@ -29,8 +30,13 @@ export default function AdminColorsPage() {
         { name: "name", label: "Nazwa", type: "text" },
         { name: "hex", label: "Kolor", type: "color" },
         {
+          name: "priceSurchargePerPanel",
+          label: "Dopłata za panel (PLN)",
+          type: "number",
+        },
+        {
           name: "priceSurchargePerMeter",
-          label: "Dopłata za m bieżący (PLN)",
+          label: "Dopłata za m bieżący (PLN, legacy)",
           type: "number",
         },
         { name: "sortOrder", label: "Kolejność", type: "number" },

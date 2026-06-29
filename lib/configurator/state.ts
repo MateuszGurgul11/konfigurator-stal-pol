@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { CatalogCollections, ConfiguratorSelection, PricingSettings } from "@/lib/types";
+import type { CatalogCollections, ConfiguratorSelection, FootingHeight, FootingMaterial, PricingSettings } from "@/lib/types";
 import {
   DEFAULT_BACKGROUND_PRESET_ID,
   type BackgroundPresetId,
@@ -24,6 +24,7 @@ export type ProductScope = {
 };
 
 export type GatePosition = "left" | "center" | "right";
+export type WicketHingeSide = "left" | "right";
 export type QuoteDrawMode = "calibrate" | "fence";
 
 export const MIN_PREVIEW_PANELS = 3;
@@ -70,6 +71,20 @@ function pickDefaultHeightId(
   ).id;
 }
 
+function pickDefaultFootingHeightId(
+  heights: FootingHeight[],
+): string | null {
+  const preferred = heights.find((h) => h.heightCm === 20);
+  if (preferred) return preferred.id;
+  return heights[0]?.id ?? null;
+}
+
+function pickDefaultFootingMaterialId(
+  materials: FootingMaterial[],
+): string | null {
+  return materials[0]?.id ?? null;
+}
+
 export function getGatePanelIndex(
   position: GatePosition,
   panelCount: number,
@@ -81,6 +96,21 @@ export function getGatePanelIndex(
       return Math.max(0, panelCount - 1);
     case "center":
       return Math.floor((panelCount - 1) / 2);
+  }
+}
+
+/** Indeks panela, po którym wstawiamy furtkę (-1 = przed pierwszym). */
+export function getWicketInsertAfterIndex(
+  position: GatePosition,
+  panelCount: number,
+): number {
+  switch (position) {
+    case "left":
+      return -1;
+    case "right":
+      return panelCount - 1;
+    case "center":
+      return Math.floor((panelCount - 1) / 2) - 1;
   }
 }
 
@@ -105,6 +135,10 @@ type ConfiguratorState = {
   furtkaElementId: string | null;
   furtkaPosition: GatePosition;
   furtkaArcPosition: number | null;
+  furtkaHingeSide: WicketHingeSide;
+  footingEnabled: boolean;
+  footingHeightId: string | null;
+  footingMaterialId: string | null;
   previewPanelCount: number;
   sidebarOpen: boolean;
   quotePlanImageUrl: string | null;
@@ -139,6 +173,10 @@ type ConfiguratorState = {
   setFurtkaElementId: (elementId: string | null) => void;
   setFurtkaPosition: (position: GatePosition) => void;
   setFurtkaArcPosition: (arcT: number | null) => void;
+  setFurtkaHingeSide: (side: WicketHingeSide) => void;
+  setFootingEnabled: (enabled: boolean) => void;
+  setFootingHeightId: (heightId: string | null) => void;
+  setFootingMaterialId: (materialId: string | null) => void;
   setPreviewPanelCount: (count: number) => void;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebarOpen: () => void;
@@ -204,6 +242,10 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   furtkaElementId: null,
   furtkaPosition: "right",
   furtkaArcPosition: null,
+  furtkaHingeSide: "right",
+  footingEnabled: false,
+  footingHeightId: null,
+  footingMaterialId: null,
   previewPanelCount: DEFAULT_PREVIEW_PANELS,
   sidebarOpen: true,
   quotePlanImageUrl: null,
@@ -409,6 +451,30 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     }),
   setFurtkaPosition: (position) => set({ furtkaPosition: position }),
   setFurtkaArcPosition: (arcT) => set({ furtkaArcPosition: arcT }),
+  setFurtkaHingeSide: (side) => set({ furtkaHingeSide: side }),
+  setFootingEnabled: (enabled) =>
+    set((s) => {
+      if (!enabled) {
+        return {
+          footingEnabled: false,
+          footingHeightId: null,
+          footingMaterialId: null,
+        };
+      }
+      const catalog = s.catalog;
+      const footingHeightId =
+        s.footingHeightId ??
+        (catalog ? pickDefaultFootingHeightId(catalog.footingHeights) : null);
+      const footingMaterialId =
+        s.footingMaterialId ??
+        (catalog ? pickDefaultFootingMaterialId(catalog.footingMaterials) : null);
+      if (!footingHeightId || !footingMaterialId) {
+        return { footingEnabled: false };
+      }
+      return { footingEnabled: true, footingHeightId, footingMaterialId };
+    }),
+  setFootingHeightId: (heightId) => set({ footingHeightId: heightId }),
+  setFootingMaterialId: (materialId) => set({ footingMaterialId: materialId }),
   setPreviewPanelCount: (count) =>
     set({
       previewPanelCount: Math.min(
@@ -546,6 +612,9 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       bramaOccupiedSpanM: state.bramaOccupiedSpanM,
       furtkaEnabled: state.furtkaEnabled,
       furtkaElementId: state.furtkaElementId,
+      footingEnabled: state.footingEnabled,
+      footingHeightId: state.footingHeightId,
+      footingMaterialId: state.footingMaterialId,
       fallbackPanelCount: state.previewPanelCount,
     });
 

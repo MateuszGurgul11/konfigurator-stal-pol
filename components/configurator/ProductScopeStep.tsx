@@ -17,7 +17,7 @@ const OPTIONS: {
   {
     key: "fence",
     title: "Płot ogrodzeniowy",
-    description: "Panele 3D i palisadowe — od 48 zł/mb netto (panel, słupek, podmurówka)",
+    description: "Panele 3D i palisadowe — wycena za panel (panel, słupek); podmurówka opcjonalnie",
     icon: Fence,
   },
   {

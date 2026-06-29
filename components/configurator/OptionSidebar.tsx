@@ -7,6 +7,8 @@ import type {
   CatalogCollections,
   ConfiguratorSelection,
   Color,
+  FootingHeight,
+  FootingMaterial,
   Height,
   Panel,
   Post,
@@ -15,6 +17,7 @@ import type {
 import {
   type ConfiguratorTab,
   type GatePosition,
+  type WicketHingeSide,
   getNextConfiguratorTab,
   MAX_PREVIEW_PANELS,
   MIN_PREVIEW_PANELS,
@@ -24,6 +27,7 @@ import { ConfiguratorTabs } from "./ConfiguratorTabs";
 import { BackgroundPicker } from "./BackgroundPicker";
 import { QuoteSidebarPanel } from "./QuoteSidebarPanel";
 import { calculateQuote } from "@/lib/pricing/calculateQuote";
+import { resolveSurchargePerPanel } from "@/lib/pricing/surcharges";
 import {
   formatElementPriceSubtitle,
   getElementsByType,
@@ -92,9 +96,14 @@ function ModelCard({
   );
 }
 
-function formatSurchargePerMeter(value?: number): string {
-  if (value == null || value === 0) return "w cenie bazowej";
-  return `+${value} PLN/m`;
+function formatSurchargePerPanel(
+  perPanel?: number,
+  perMeter?: number,
+  panelWidthCm = 250,
+): string {
+  const amount = resolveSurchargePerPanel(perPanel, perMeter, panelWidthCm);
+  if (amount === 0) return "w cenie bazowej";
+  return `+${amount} PLN/panel`;
 }
 
 function formatHeightMultiplier(value?: number): string {
@@ -145,6 +154,42 @@ function OpeningPositionPicker({
   );
 }
 
+function WicketHingeSidePicker({
+  value,
+  onChange,
+}: {
+  value: WicketHingeSide;
+  onChange: (side: WicketHingeSide) => void;
+}) {
+  const options: { side: WicketHingeSide; label: string }[] = [
+    { side: "left", label: "Zawiasy po lewej" },
+    { side: "right", label: "Zawiasy po prawej" },
+  ];
+
+  return (
+    <div className="mt-4">
+      <SectionLabel>Strona zawiasów</SectionLabel>
+      <div className="grid grid-cols-1 gap-2">
+        {options.map(({ side, label }) => (
+          <button
+            key={side}
+            type="button"
+            onClick={() => onChange(side)}
+            className={cn(
+              "rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition-all",
+              value === side
+                ? "border-[#e30311] bg-[#2a0e10] text-white"
+                : "border-[#333] bg-[#222] text-[#888] hover:border-[#444]",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function OptionSidebar({
   catalog,
   selection,
@@ -167,8 +212,16 @@ export function OptionSidebar({
   const furtkaEnabled = useConfiguratorStore((s) => s.furtkaEnabled);
   const furtkaElementId = useConfiguratorStore((s) => s.furtkaElementId);
   const furtkaPosition = useConfiguratorStore((s) => s.furtkaPosition);
+  const furtkaHingeSide = useConfiguratorStore((s) => s.furtkaHingeSide);
+  const footingEnabled = useConfiguratorStore((s) => s.footingEnabled);
+  const footingHeightId = useConfiguratorStore((s) => s.footingHeightId);
+  const footingMaterialId = useConfiguratorStore((s) => s.footingMaterialId);
   const setBramaElementId = useConfiguratorStore((s) => s.setBramaElementId);
   const setFurtkaElementId = useConfiguratorStore((s) => s.setFurtkaElementId);
+  const setFurtkaHingeSide = useConfiguratorStore((s) => s.setFurtkaHingeSide);
+  const setFootingEnabled = useConfiguratorStore((s) => s.setFootingEnabled);
+  const setFootingHeightId = useConfiguratorStore((s) => s.setFootingHeightId);
+  const setFootingMaterialId = useConfiguratorStore((s) => s.setFootingMaterialId);
   const previewPanelCount = useConfiguratorStore((s) => s.previewPanelCount);
   const setPreviewPanelCount = useConfiguratorStore((s) => s.setPreviewPanelCount);
   const pricing = useConfiguratorStore((s) => s.pricing);
@@ -177,10 +230,22 @@ export function OptionSidebar({
   const scope = useConfiguratorStore((s) => s.scope);
   const resetScope = useConfiguratorStore((s) => s.resetScope);
 
+  const selectedFootingHeight = catalog.footingHeights.find(
+    (h) => h.id === footingHeightId,
+  );
+  const selectedFootingMaterial = catalog.footingMaterials.find(
+    (m) => m.id === footingMaterialId,
+  );
+
   const openingPositionLabels: Record<GatePosition, string> = {
     left: "Lewa sekcja",
     center: "Środkowa sekcja",
     right: "Prawa sekcja",
+  };
+
+  const wicketHingeSideLabels: Record<WicketHingeSide, string> = {
+    left: "zawiasy lewe",
+    right: "zawiasy prawe",
   };
 
   const bramaOptions = useMemo(
@@ -206,6 +271,12 @@ export function OptionSidebar({
         furtkaEnabled,
         furtkaElementId,
         furtkaPositionLabel: openingPositionLabels[furtkaPosition],
+        furtkaHingeSideLabel: furtkaEnabled
+          ? wicketHingeSideLabels[furtkaHingeSide]
+          : undefined,
+        footingEnabled,
+        footingHeightId,
+        footingMaterialId,
         fallbackPanelCount: previewPanelCount,
       }),
     [
@@ -220,6 +291,10 @@ export function OptionSidebar({
       furtkaEnabled,
       furtkaElementId,
       furtkaPosition,
+      furtkaHingeSide,
+      footingEnabled,
+      footingHeightId,
+      footingMaterialId,
       previewPanelCount,
     ],
   );
@@ -261,7 +336,7 @@ export function OptionSidebar({
                     key={panel.id}
                     selected={selection.panelId === panel.id}
                     title={panel.name}
-                    subtitle={`Wzór: ${panel.patternId.replace("pattern-", "")} · ${formatSurchargePerMeter(panel.priceSurchargePerMeter)}`}
+                    subtitle={`Wzór: ${panel.patternId.replace("pattern-", "")} · ${formatSurchargePerPanel(panel.priceSurchargePerPanel, panel.priceSurchargePerMeter, pricing.panelWidthCm)}`}
                     onClick={() => onSelect({ panelId: panel.id })}
                   />
                 ))}
@@ -276,7 +351,7 @@ export function OptionSidebar({
                     key={color.id}
                     type="button"
                     onClick={() => onSelect({ colorId: color.id })}
-                    title={`${color.name} · ${formatSurchargePerMeter(color.priceSurchargePerMeter)}`}
+                    title={`${color.name} · ${formatSurchargePerPanel(color.priceSurchargePerPanel, color.priceSurchargePerMeter, pricing.panelWidthCm)}`}
                     className={cn(
                       "h-12 w-12 rounded-lg border-2 transition-all",
                       selection.colorId === color.id
@@ -295,7 +370,7 @@ export function OptionSidebar({
                   </span>{" "}
                   <span className="font-mono text-[#666]">{selectedColor.hex}</span>
                   <span className="ml-2 text-[#e30311]">
-                    {formatSurchargePerMeter(selectedColor.priceSurchargePerMeter)}
+                    {formatSurchargePerPanel(selectedColor.priceSurchargePerPanel, selectedColor.priceSurchargePerMeter, pricing.panelWidthCm)}
                   </span>
                 </p>
               )}
@@ -309,11 +384,90 @@ export function OptionSidebar({
                     key={spacer.id}
                     selected={selection.spacerId === spacer.id}
                     title={spacer.name}
-                    subtitle={formatSurchargePerMeter(spacer.priceSurchargePerMeter)}
+                    subtitle={formatSurchargePerPanel(spacer.priceSurchargePerPanel, spacer.priceSurchargePerMeter, pricing.panelWidthCm)}
                     onClick={() => onSelect({ spacerId: spacer.id })}
                   />
                 ))}
               </div>
+            </div>
+
+            <div>
+              <SectionLabel>Podmurówka</SectionLabel>
+              <div className="flex flex-col gap-2">
+                <ModelCard
+                  selected={!footingEnabled}
+                  title="Bez podmurówki"
+                  subtitle="Panele kończą się nad podłożem"
+                  onClick={() => setFootingEnabled(false)}
+                />
+                <ModelCard
+                  selected={footingEnabled}
+                  title="Z podmurówką"
+                  subtitle={`od ${pricing.footingPriceNet.toLocaleString("pl-PL")} PLN/panel`}
+                  onClick={() => setFootingEnabled(true)}
+                />
+              </div>
+              {footingEnabled && (
+                <>
+                  <div className="mt-4">
+                    <SectionLabel>Wysokość podmurówki</SectionLabel>
+                    <div className="grid grid-cols-2 gap-2">
+                      {catalog.footingHeights.map((fh: FootingHeight) => (
+                        <button
+                          key={fh.id}
+                          type="button"
+                          onClick={() => setFootingHeightId(fh.id)}
+                          className={cn(
+                            "rounded-lg border px-3 py-3 text-center transition-all",
+                            footingHeightId === fh.id
+                              ? "border-[#e30311] bg-[#2a0e10] text-white"
+                              : "border-[#333] bg-[#222] text-[#888] hover:border-[#444]",
+                          )}
+                        >
+                          <span className="block font-heading text-lg font-bold">
+                            {fh.label}
+                          </span>
+                          <span className="mt-0.5 block text-[10px] text-[#888]">
+                            {formatSurchargePerPanel(
+                              fh.priceSurchargePerPanel,
+                              undefined,
+                              pricing.panelWidthCm,
+                            )}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <SectionLabel>Materiał / kolor</SectionLabel>
+                    <div className="mb-3 flex flex-wrap gap-3">
+                      {catalog.footingMaterials.map((mat: FootingMaterial) => (
+                        <button
+                          key={mat.id}
+                          type="button"
+                          onClick={() => setFootingMaterialId(mat.id)}
+                          title={`${mat.name} · ${formatSurchargePerPanel(mat.priceSurchargePerPanel, undefined, pricing.panelWidthCm)}`}
+                          className={cn(
+                            "h-12 w-12 rounded-lg border-2 transition-all",
+                            footingMaterialId === mat.id
+                              ? "border-[#e30311] ring-2 ring-[#e30311]/40 ring-offset-2 ring-offset-[#1A1A18] scale-110"
+                              : "border-[#444] hover:border-[#666]",
+                          )}
+                          style={{ backgroundColor: mat.hex }}
+                        />
+                      ))}
+                    </div>
+                    {selectedFootingMaterial && (
+                      <p className="text-sm text-[#888]">
+                        Wybrany:{" "}
+                        <span className="font-semibold text-white">
+                          {selectedFootingMaterial.name}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -437,11 +591,17 @@ export function OptionSidebar({
                   Brak aktywnych furtek w katalogu — dodaj je w panelu admina.
                 </p>
               )}
+              {furtkaEnabled && (
+                <WicketHingeSidePicker
+                  value={furtkaHingeSide}
+                  onChange={setFurtkaHingeSide}
+                />
+              )}
               {furtkaEnabled && scope.fence && (
                 <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
                   Na zakładce <strong className="text-[#ccc]">Wycena</strong> przeciągnij marker{" "}
                   <strong className="text-[#ccc]">F</strong> wzdłuż obrysu, aby wskazać miejsce
-                  furtki (stała szerokość 1 panelu).
+                  furtki (szerokość 150 cm).
                 </p>
               )}
             </div>
@@ -456,7 +616,7 @@ export function OptionSidebar({
                     key={post.id}
                     selected={selection.postId === post.id}
                     title={post.name}
-                    subtitle={`Szerokość ${post.widthCm} cm · ${formatSurchargePerMeter(post.priceSurchargePerMeter)}`}
+                    subtitle={`Szerokość ${post.widthCm} cm · ${formatSurchargePerPanel(post.priceSurchargePerPanel, post.priceSurchargePerMeter, pricing.panelWidthCm)}`}
                     onClick={() => onSelect({ postId: post.id })}
                   />
                 ))}
@@ -491,6 +651,14 @@ export function OptionSidebar({
                       value: `${previewPanelCount} szt.`,
                     },
                     { label: "Słupek", value: selectedPost?.name },
+                    {
+                      label: "Podmurówka",
+                      value: footingEnabled
+                        ? [selectedFootingHeight?.label, selectedFootingMaterial?.name]
+                            .filter(Boolean)
+                            .join(" · ") || "Tak"
+                        : "Nie",
+                    },
                   ]
                 : []),
               ...(scope.gate
@@ -524,8 +692,12 @@ export function OptionSidebar({
                           : "—",
                     },
                     {
-                      label: "Stawka za metr",
-                      value: `${quote.pricePerMeterNet.toLocaleString("pl-PL")} PLN/m`,
+                      label: "Stawka za panel",
+                      value: `${quote.pricePerPanelNet.toLocaleString("pl-PL")} PLN/panel`,
+                    },
+                    {
+                      label: "Liczba paneli",
+                      value: `${quote.panelUnits} szt.`,
                     },
                   ]
                 : []),
@@ -601,8 +773,8 @@ export function OptionSidebar({
             </span>
           </div>
           <p className="mt-1 text-right text-[10px] text-[#666]">
-            {quote.pricePerMeterNet.toLocaleString("pl-PL")} PLN/m ·{" "}
-            {quote.perimeterM.toFixed(1)} m bieżących
+            {quote.pricePerPanelNet.toLocaleString("pl-PL")} PLN/panel ·{" "}
+            {quote.panelUnits} paneli · {quote.perimeterM.toFixed(1)} m bieżących
           </p>
         </div>
         <button

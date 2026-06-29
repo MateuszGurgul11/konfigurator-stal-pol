@@ -38,6 +38,7 @@ export const postSchema = z.object({
   baseTextureUrl: clearableUrl,
   widthCm: z.coerce.number().min(10).max(50),
   priceSurchargePerMeter: z.coerce.number().min(0).default(0),
+  priceSurchargePerPanel: z.coerce.number().min(0).default(0),
   sortOrder: z.coerce.number().int().min(0),
   active: z.boolean(),
 });
@@ -50,6 +51,7 @@ export const panelSchema = z.object({
     "pattern-panel-horizontal",
   ]),
   priceSurchargePerMeter: z.coerce.number().min(0).default(0),
+  priceSurchargePerPanel: z.coerce.number().min(0).default(0),
   description: optionalString,
   previewAsset: optionalString,
   baseTextureUrl: clearableUrl,
@@ -63,6 +65,7 @@ export const spacerSchema = z.object({
   hasSpacer: z.boolean(),
   openness: z.coerce.number().min(0).max(1),
   priceSurchargePerMeter: z.coerce.number().min(0).default(0),
+  priceSurchargePerPanel: z.coerce.number().min(0).default(0),
   sortOrder: z.coerce.number().int().min(0),
   active: z.boolean(),
 });
@@ -80,6 +83,26 @@ export const colorSchema = z.object({
   name: z.string().min(1, "Nazwa jest wymagana"),
   hex: hexColorSchema,
   priceSurchargePerMeter: z.coerce.number().min(0).default(0),
+  priceSurchargePerPanel: z.coerce.number().min(0).default(0),
+  description: optionalString,
+  previewAsset: optionalString,
+  sortOrder: z.coerce.number().int().min(0),
+  active: z.boolean(),
+});
+
+export const footingHeightSchema = z.object({
+  label: z.string().min(1, "Etykieta jest wymagana"),
+  heightCm: z.coerce.number().min(5).max(80),
+  priceSurchargePerPanel: z.coerce.number().min(0).default(0),
+  description: optionalString,
+  sortOrder: z.coerce.number().int().min(0),
+  active: z.boolean(),
+});
+
+export const footingMaterialSchema = z.object({
+  name: z.string().min(1, "Nazwa jest wymagana"),
+  hex: hexColorSchema,
+  priceSurchargePerPanel: z.coerce.number().min(0).default(0),
   description: optionalString,
   previewAsset: optionalString,
   sortOrder: z.coerce.number().int().min(0),

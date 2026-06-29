@@ -10,6 +10,7 @@ const emptyItem = {
   name: "",
   patternId: "pattern-3d",
   priceSurchargePerMeter: 0,
+  priceSurchargePerPanel: 0,
   previewAsset: "",
   baseTextureUrl: "",
   textureTileHeightM: 0.45,
@@ -35,8 +36,13 @@ export default function AdminPanelsPage() {
         fields={[
           { name: "name", label: "Nazwa", type: "text" },
           {
+            name: "priceSurchargePerPanel",
+            label: "Dopłata za panel (PLN)",
+            type: "number",
+          },
+          {
             name: "priceSurchargePerMeter",
-            label: "Dopłata za m bieżący (PLN)",
+            label: "Dopłata za m bieżący (PLN, legacy)",
             type: "number",
           },
           {

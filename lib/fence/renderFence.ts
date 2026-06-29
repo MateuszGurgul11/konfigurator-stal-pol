@@ -1,4 +1,8 @@
 import type { PatternId } from "./patterns";
+import { getWicketWidthCm } from "@/lib/pricing/variant-prices";
+import type { WicketHingeSide } from "@/lib/configurator/state";
+
+export type { WicketHingeSide };
 
 export type FenceRenderParams = {
   heightM: number;
@@ -8,7 +12,14 @@ export type FenceRenderParams = {
   hasSpacer: boolean;
   openness: number;
   panelCount?: number;
-  openingPanelIndices?: number[];
+  panelWidthCm?: number;
+  wicketWidthCm?: number;
+  /** Indeks panela po którym wstawiamy furtkę (-1 = przed pierwszym). */
+  wicketInsertAfter?: number;
+  footingEnabled?: boolean;
+  footingHeightCm?: number;
+  footingColorHex?: string;
+  wicketHingeSide?: WicketHingeSide;
   /** Bez tła nieba/trawy — do podglądu na ciemnym tle sceny */
   transparent?: boolean;
   panelTextureUrl?: string | null;
@@ -47,9 +58,59 @@ export const VIEW_W = 900;
 export const VIEW_H = 440;
 const MARGIN_X = 80;
 const SECTION_WIDTH = 230;
+const DEFAULT_PANEL_WIDTH_CM = 250;
 
-export function getViewWidth(panelCount: number): number {
-  return MARGIN_X * 2 + panelCount * SECTION_WIDTH;
+export type ViewWidthOptions = {
+  hasWicket?: boolean;
+  wicketWidthCm?: number;
+  panelWidthCm?: number;
+};
+
+export function wicketSectionPx(
+  wicketWidthCm: number,
+  panelWidthCm: number,
+): number {
+  return SECTION_WIDTH * (wicketWidthCm / panelWidthCm);
+}
+
+export function getViewWidth(
+  panelCount: number,
+  options?: ViewWidthOptions,
+): number {
+  const base = MARGIN_X * 2 + panelCount * SECTION_WIDTH;
+  if (!options?.hasWicket) return base;
+  const panelCm = options.panelWidthCm ?? DEFAULT_PANEL_WIDTH_CM;
+  const wicketCm = options.wicketWidthCm ?? getWicketWidthCm(panelCm);
+  return base + wicketSectionPx(wicketCm, panelCm);
+}
+
+type FenceSegment = { type: "panel" | "wicket" };
+
+export function buildFenceSegments(
+  panelCount: number,
+  wicketInsertAfter?: number,
+): FenceSegment[] {
+  const hasWicket = wicketInsertAfter !== undefined;
+  const segments: FenceSegment[] = [];
+  if (hasWicket && wicketInsertAfter! < 0) {
+    segments.push({ type: "wicket" });
+  }
+  for (let i = 0; i < panelCount; i++) {
+    segments.push({ type: "panel" });
+    if (hasWicket && wicketInsertAfter === i) {
+      segments.push({ type: "wicket" });
+    }
+  }
+  return segments;
+}
+
+function segmentWidthWeights(
+  segments: FenceSegment[],
+  wicketWidthCm: number,
+  panelWidthCm: number,
+): number[] {
+  const wicketPx = wicketSectionPx(wicketWidthCm, panelWidthCm);
+  return segments.map((s) => (s.type === "panel" ? SECTION_WIDTH : wicketPx));
 }
 
 type FenceGeometry = {
@@ -69,13 +130,14 @@ function computeFenceGeometry(
   heightM: number,
   postWidthCm: number,
   panelCount = 3,
+  viewOptions?: ViewWidthOptions,
 ): FenceGeometry {
   const scale = heightM / BASE_HEIGHT_M;
   const groundY = 330;
   const fenceH = Math.round(240 * scale);
   const fenceY = groundY - fenceH;
   const postW = Math.max(10, Math.round((postWidthCm / 20) * 14));
-  const viewW = getViewWidth(panelCount);
+  const viewW = getViewWidth(panelCount, viewOptions);
   const totalW = viewW - MARGIN_X * 2;
   const leftPost = MARGIN_X;
   const rightPost = MARGIN_X + totalW - postW;
@@ -174,11 +236,22 @@ export function getFenceContentBounds(params: {
   heightM: number;
   postWidthCm: number;
   panelCount?: number;
+  hasWicket?: boolean;
+  wicketWidthCm?: number;
+  panelWidthCm?: number;
 }): FenceContentBounds {
+  const viewOptions: ViewWidthOptions | undefined = params.hasWicket
+    ? {
+        hasWicket: true,
+        wicketWidthCm: params.wicketWidthCm,
+        panelWidthCm: params.panelWidthCm,
+      }
+    : undefined;
   const { groundY, fenceY, postW, leftPost, rightPost } = computeFenceGeometry(
     params.heightM,
     params.postWidthCm,
     params.panelCount ?? 3,
+    viewOptions,
   );
   const capTop = fenceY - 6;
   const footingBottom = groundY + 6;
@@ -326,13 +399,17 @@ function drawFootingPlinth(
   x: number,
   fenceBottomY: number,
   w: number,
+  heightCm: number,
+  colorHex: string,
 ): string {
-  const plinthH = 14;
+  if (w <= 0) return "";
+  const refHeightCm = 20;
+  const plinthH = Math.max(10, 14 * (heightCm / refHeightCm));
   const plinthY = fenceBottomY - plinthH;
-  const base = "#9ca3af";
-  const light = "#b4b8be";
-  const dark = "#6b7280";
-  const inset = 4;
+  const base = colorHex;
+  const light = lighten(colorHex, 0.12);
+  const dark = darken(colorHex, 0.22);
+  const inset = Math.max(3, plinthH * 0.28);
 
   let out = "";
   out += `<rect x="${x.toFixed(1)}" y="${plinthY.toFixed(1)}" width="${w.toFixed(1)}" height="${plinthH.toFixed(1)}" fill="${base}" rx="1"/>`;
@@ -341,18 +418,269 @@ function drawFootingPlinth(
   return out;
 }
 
+function drawFootingPlinthSegments(
+  fenceBottomY: number,
+  segments: { x: number; w: number }[],
+  heightCm: number,
+  colorHex: string,
+): string {
+  return segments
+    .map((s) => drawFootingPlinth(s.x, fenceBottomY, s.w, heightCm, colorHex))
+    .join("\n");
+}
+
+function draw3DMeshInfill(
+  px: number,
+  y: number,
+  w: number,
+  h: number,
+  colorHex: string,
+): string {
+  const vPitch = Math.max(3, Math.min(5, w * 0.028));
+  const hPitch = Math.max(14, Math.min(22, h * 0.11));
+  const stroke = darken(colorHex, 0.28);
+  const highlight = lighten(colorHex, 0.1);
+  const wireW = 1.1;
+  let out = "";
+
+  for (let vx = px + vPitch * 0.5; vx < px + w; vx += vPitch) {
+    out += `<line x1="${vx.toFixed(1)}" y1="${y.toFixed(1)}" x2="${vx.toFixed(1)}" y2="${(y + h).toFixed(1)}" stroke="${stroke}" stroke-width="${wireW}" opacity="0.8"/>`;
+  }
+  for (let hy = y + hPitch * 0.5; hy < y + h; hy += hPitch) {
+    out += `<line x1="${px.toFixed(1)}" y1="${hy.toFixed(1)}" x2="${(px + w).toFixed(1)}" y2="${hy.toFixed(1)}" stroke="${stroke}" stroke-width="${wireW * 0.9}" opacity="0.72"/>`;
+  }
+  const foldDepth = Math.max(3, h * 0.04);
+  const foldBandH = Math.max(2.5, h * 0.025);
+  for (const ratio of [0.22, 0.5, 0.78]) {
+    const bandY = y + h * ratio - foldBandH / 2;
+    const segW = vPitch * 2.2;
+    for (let sx = px; sx < px + w - 1; sx += segW) {
+      const ex = Math.min(px + w, sx + segW);
+      const midX = (sx + ex) / 2;
+      const tipY = bandY + foldBandH / 2 + foldDepth;
+      out += `<polyline points="${sx.toFixed(1)},${bandY.toFixed(1)} ${midX.toFixed(1)},${tipY.toFixed(1)} ${ex.toFixed(1)},${bandY.toFixed(1)}" fill="none" stroke="${highlight}" stroke-width="${wireW}" opacity="0.85"/>`;
+    }
+  }
+  return out;
+}
+
+function drawHorizontalInfill(
+  px: number,
+  y: number,
+  w: number,
+  h: number,
+  openness: number,
+  colorHex: string,
+  shadowEdge: string,
+  shadowBottom: string,
+): string {
+  const slatCount = 7;
+  const gapRatio = Math.min(0.35, 0.22 + openness * 0.18);
+  const pitch = h / slatCount;
+  const slatH = pitch * (1 - gapRatio);
+  const slatGap = pitch - slatH;
+  const highlight = lighten(colorHex, 0.1);
+  let out = "";
+  for (let i = 0; i < slatCount; i++) {
+    const sy = y + i * pitch + slatGap / 2;
+    out += `<rect x="${px.toFixed(1)}" y="${sy.toFixed(1)}" width="${w.toFixed(1)}" height="${slatH.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
+    out += `<rect x="${px.toFixed(1)}" y="${sy.toFixed(1)}" width="${w.toFixed(1)}" height="1.5" fill="${highlight}" opacity="0.55"/>`;
+    out += `<rect x="${px.toFixed(1)}" y="${(sy + slatH - 1.5).toFixed(1)}" width="${w.toFixed(1)}" height="1.5" fill="${shadowBottom}" opacity="0.4"/>`;
+  }
+  out += `<rect x="${(px + w - 1.5).toFixed(1)}" y="${y.toFixed(1)}" width="1.5" height="${h.toFixed(1)}" fill="${shadowEdge}" opacity="0.3"/>`;
+  return out;
+}
+
+function drawMeshInfill(
+  px: number,
+  y: number,
+  w: number,
+  h: number,
+  hasSpacer: boolean,
+  openness: number,
+  colorHex: string,
+  shadowEdge: string,
+  shadowBottom: string,
+  patternId: PatternId,
+): string {
+  if (patternId === "pattern-palisade") {
+    return drawPalisadeSlats(px, y, w, h, openness, colorHex, shadowEdge, shadowBottom);
+  }
+  if (patternId === "pattern-panel-horizontal") {
+    return drawHorizontalInfill(px, y, w, h, openness, colorHex, shadowEdge, shadowBottom);
+  }
+  if (patternId === "pattern-3d") {
+    return draw3DMeshInfill(px, y, w, h, colorHex);
+  }
+  const { useStacked, plankCount, slitGap, plankH } = computePlankLayout(
+    h,
+    hasSpacer,
+    openness,
+  );
+  let out = "";
+  if (useStacked) {
+    for (let j = 0; j < plankCount; j++) {
+      const py = y + j * (plankH + slitGap);
+      out += drawPlank(px, py, w, plankH, shadowEdge, shadowBottom);
+    }
+  } else {
+    out += drawPlank(px, y, w, h, shadowEdge, shadowBottom);
+  }
+  return out;
+}
+
+function drawWicketFrame(
+  gateX: number,
+  y: number,
+  gateW: number,
+  h: number,
+  frameT: number,
+  colorHex: string,
+  shadowBottom: string,
+): string {
+  const frameLight = lighten(colorHex, 0.08);
+  return `<!-- Wicket frame -->
+    <rect x="${gateX.toFixed(1)}" y="${y.toFixed(1)}" width="${gateW.toFixed(1)}" height="${frameT.toFixed(1)}" fill="${colorHex}" rx="0.5"/>
+    <rect x="${gateX.toFixed(1)}" y="${y.toFixed(1)}" width="${gateW.toFixed(1)}" height="1.5" fill="${frameLight}" opacity="0.55"/>
+    <rect x="${gateX.toFixed(1)}" y="${(y + h - frameT).toFixed(1)}" width="${gateW.toFixed(1)}" height="${frameT.toFixed(1)}" fill="${colorHex}" rx="0.5"/>
+    <rect x="${gateX.toFixed(1)}" y="${(y + h - frameT).toFixed(1)}" width="${gateW.toFixed(1)}" height="1.5" fill="${shadowBottom}" opacity="0.45"/>
+    <rect x="${gateX.toFixed(1)}" y="${y.toFixed(1)}" width="${frameT.toFixed(1)}" height="${h.toFixed(1)}" fill="${colorHex}" rx="0.5"/>
+    <rect x="${(gateX + gateW - frameT).toFixed(1)}" y="${y.toFixed(1)}" width="${frameT.toFixed(1)}" height="${h.toFixed(1)}" fill="${colorHex}" rx="0.5"/>`;
+}
+
+function drawWicketHinges(
+  segmentEdgeX: number,
+  postW: number,
+  y: number,
+  h: number,
+  colorHex: string,
+  side: WicketHingeSide,
+): string {
+  const hingeW = Math.max(3, postW * 0.45);
+  const hingeH = Math.max(6, h * 0.085);
+  const hingeX =
+    side === "right"
+      ? segmentEdgeX - hingeW + 0.5
+      : segmentEdgeX - 0.5;
+  const fill = darken(colorHex, 0.35);
+  const topY = y + h * 0.18;
+  const botY = y + h - hingeH - h * 0.18;
+  const pinX =
+    side === "right" ? hingeX + 1.2 : hingeX + hingeW - 1.2;
+  return `<!-- Wicket hinges -->
+    <rect x="${hingeX.toFixed(1)}" y="${topY.toFixed(1)}" width="${hingeW.toFixed(1)}" height="${hingeH.toFixed(1)}" fill="${fill}" rx="0.5" opacity="0.92"/>
+    <rect x="${hingeX.toFixed(1)}" y="${botY.toFixed(1)}" width="${hingeW.toFixed(1)}" height="${hingeH.toFixed(1)}" fill="${fill}" rx="0.5" opacity="0.92"/>
+    <circle cx="${pinX.toFixed(1)}" cy="${(topY + hingeH / 2).toFixed(1)}" r="1" fill="${lighten(colorHex, 0.2)}" opacity="0.8"/>
+    <circle cx="${pinX.toFixed(1)}" cy="${(botY + hingeH / 2).toFixed(1)}" r="1" fill="${lighten(colorHex, 0.2)}" opacity="0.8"/>`;
+}
+
+function drawWicketHandle(
+  gateX: number,
+  gateW: number,
+  y: number,
+  h: number,
+  frameT: number,
+  colorHex: string,
+  side: WicketHingeSide,
+): string {
+  const plateW = Math.max(5, frameT * 1.4);
+  const plateH = Math.max(12, h * 0.13);
+  const plateX =
+    side === "right"
+      ? gateX + frameT + 0.5
+      : gateX + gateW - frameT - plateW - 0.5;
+  const plateY = y + h * 0.4 - plateH / 2;
+  const handleLen = Math.max(6, Math.min(gateW * 0.22, plateH * 0.75));
+  const handleY = plateY + plateH * 0.38;
+  const handleMetal = lighten(colorHex, 0.3);
+  const hardwareDark = darken(colorHex, 0.4);
+  const lockY = plateY + plateH + 4;
+  const handleBarX =
+    side === "right"
+      ? plateX + plateW + 0.5
+      : plateX - handleLen - 0.5;
+  const handleGripX =
+    side === "right"
+      ? plateX + plateW + handleLen - 1
+      : plateX - handleLen;
+  return `<!-- Wicket handle -->
+    <rect x="${plateX.toFixed(1)}" y="${plateY.toFixed(1)}" width="${plateW.toFixed(1)}" height="${plateH.toFixed(1)}" fill="${hardwareDark}" rx="1" opacity="0.9"/>
+    <rect x="${handleBarX.toFixed(1)}" y="${handleY.toFixed(1)}" width="${handleLen.toFixed(1)}" height="2.5" fill="${handleMetal}" rx="1.5"/>
+    <rect x="${handleGripX.toFixed(1)}" y="${(handleY - 1.5).toFixed(1)}" width="2.5" height="5" fill="${handleMetal}" rx="1"/>
+    <circle cx="${(plateX + plateW / 2).toFixed(1)}" cy="${lockY.toFixed(1)}" r="2" fill="#1a1a1a" stroke="${hardwareDark}" stroke-width="0.8"/>`;
+}
+
+function drawWicketStriker(
+  segmentEdgeX: number,
+  segmentW: number,
+  postW: number,
+  y: number,
+  h: number,
+  colorHex: string,
+  side: WicketHingeSide,
+): string {
+  const plateW = Math.max(2.5, postW * 0.3);
+  const plateH = Math.max(12, h * 0.11);
+  const plateX =
+    side === "right"
+      ? segmentEdgeX + segmentW - plateW - 1
+      : segmentEdgeX + 1;
+  const plateY = y + h * 0.44 - plateH / 2;
+  const fill = darken(colorHex, 0.3);
+  return `<!-- Wicket striker -->
+    <rect x="${plateX.toFixed(1)}" y="${plateY.toFixed(1)}" width="${plateW.toFixed(1)}" height="${plateH.toFixed(1)}" fill="${fill}" rx="0.5" opacity="0.85"/>`;
+}
+
 function drawPostClamp(
   postX: number,
   postW: number,
   clampY: number,
   clampH: number,
-  side: "left" | "right",
+  side: "west" | "east",
   colorHex: string,
 ): string {
-  const clampW = Math.max(5, postW * 0.9);
-  const clampX = side === "left" ? postX + postW : postX - clampW;
-  const fill = darken(colorHex, 0.35);
-  return `<rect x="${clampX.toFixed(1)}" y="${clampY.toFixed(1)}" width="${clampW.toFixed(1)}" height="${clampH.toFixed(1)}" fill="${fill}" rx="0.5" opacity="0.9"/>`;
+  const extension = Math.max(3, postW * 0.32);
+  const fill = darken(colorHex, 0.28);
+  const edge = darken(colorHex, 0.42);
+  if (side === "east") {
+    const x = postX + postW;
+    return `<rect x="${x.toFixed(1)}" y="${clampY.toFixed(1)}" width="${extension.toFixed(1)}" height="${clampH.toFixed(1)}" fill="${fill}" opacity="0.72" rx="0.3"/>
+    <line x1="${x.toFixed(1)}" y1="${clampY.toFixed(1)}" x2="${x.toFixed(1)}" y2="${(clampY + clampH).toFixed(1)}" stroke="${edge}" stroke-width="0.8" opacity="0.55"/>`;
+  }
+  const x = postX - extension;
+  return `<rect x="${x.toFixed(1)}" y="${clampY.toFixed(1)}" width="${extension.toFixed(1)}" height="${clampH.toFixed(1)}" fill="${fill}" opacity="0.72" rx="0.3"/>
+    <line x1="${(x + extension).toFixed(1)}" y1="${clampY.toFixed(1)}" x2="${(x + extension).toFixed(1)}" y2="${(clampY + clampH).toFixed(1)}" stroke="${edge}" stroke-width="0.8" opacity="0.55"/>`;
+}
+
+function postClampYPositions(
+  fenceY: number,
+  fenceH: number,
+  clampH: number,
+): number[] {
+  return [
+    fenceY + fenceH * 0.1,
+    fenceY + fenceH * 0.5 - clampH / 2,
+    fenceY + fenceH - clampH - fenceH * 0.1,
+  ];
+}
+
+function drawPostClamps(
+  postX: number,
+  postW: number,
+  fenceY: number,
+  fenceH: number,
+  sides: ("west" | "east")[],
+  colorHex: string,
+): string {
+  const clampH = Math.max(5, fenceH * 0.045);
+  const positions = postClampYPositions(fenceY, fenceH, clampH);
+  let out = "";
+  for (const side of sides) {
+    for (const clampY of positions) {
+      out += drawPostClamp(postX, postW, clampY, clampH, side, colorHex);
+    }
+  }
+  return out;
 }
 
 function panelPatternDefs(patternId: PatternId, colorHex: string): string {
@@ -508,12 +836,14 @@ function drawSectionPanels(
 function drawGateSection(
   px: number,
   y: number,
-  panelW: number,
+  segmentW: number,
   h: number,
+  fencePostW: number,
   hasSpacer: boolean,
   openness: number,
   colorHex: string,
   patternId: PatternId,
+  hingeSide: WicketHingeSide,
   openingTextureUrl?: string | null,
   textureTileCount?: number,
 ): string {
@@ -521,7 +851,7 @@ function drawGateSection(
     return drawTexturedStack(
       px,
       y,
-      panelW,
+      segmentW,
       h,
       openingTextureUrl,
       textureTileCount ?? 1,
@@ -530,87 +860,94 @@ function drawGateSection(
 
   const shadowEdge = darken(colorHex, 0.3);
   const shadowBottom = darken(colorHex, 0.2);
-  const frameW = Math.max(10, panelW * 0.14);
-  const gateW = panelW - frameW * 2;
-  const gateX = px + frameW;
-  const clearance = Math.max(4, h * 0.04);
-  const doorH = h - clearance;
-  const doorOpen = Math.min(10, gateW * 0.06);
-  const handleMetal = lighten(colorHex, 0.25);
+  const hingeGap = 1.5;
+  const latchGap = 1.5;
+  const gateX = hingeSide === "right" ? px + latchGap : px + hingeGap;
+  const gateW =
+    hingeSide === "right"
+      ? segmentW - latchGap - hingeGap
+      : segmentW - hingeGap - latchGap;
+  const frameT = Math.max(3, Math.min(5, gateW * 0.07));
+  const innerX = gateX + frameT;
+  const innerY = y + frameT;
+  const innerW = gateW - frameT * 2;
+  const innerH = h - frameT * 2;
+  const latchSide: WicketHingeSide = hingeSide === "right" ? "left" : "right";
+  const hingeEdgeX = hingeSide === "right" ? px + segmentW : px;
 
   let out = "";
-  out += drawSectionPanels(px, y, frameW, h, hasSpacer, openness, colorHex, shadowEdge, shadowBottom, patternId);
-  out += drawSectionPanels(
-    px + panelW - frameW,
-    y,
-    frameW,
-    h,
-    hasSpacer,
-    openness,
-    colorHex,
-    shadowEdge,
-    shadowBottom,
-    patternId,
-  );
-  out += drawSectionPanels(
-    gateX + doorOpen,
-    y,
-    gateW - doorOpen,
-    doorH,
-    hasSpacer,
-    openness,
-    colorHex,
-    shadowEdge,
-    shadowBottom,
-    patternId,
-  );
-  out += `<line x1="${gateX.toFixed(1)}" y1="${y}" x2="${(gateX + doorOpen).toFixed(1)}" y2="${(y + doorH).toFixed(1)}" stroke="${darken(colorHex, 0.2)}" stroke-width="2" opacity="0.45"/>`;
-  out += `<rect x="${(gateX + gateW - 16).toFixed(1)}" y="${(y + doorH * 0.38).toFixed(1)}" width="3" height="${(doorH * 0.22).toFixed(1)}" fill="${darken(colorHex, 0.35)}" rx="1"/>`;
-  out += `<circle cx="${(gateX + gateW - 14.5).toFixed(1)}" cy="${(y + doorH * 0.52).toFixed(1)}" r="4" fill="${handleMetal}" stroke="${darken(colorHex, 0.3)}" stroke-width="1"/>`;
+  out += drawWicketStriker(px, segmentW, fencePostW, y, h, colorHex, latchSide);
+  out += drawWicketFrame(gateX, y, gateW, h, frameT, colorHex, shadowBottom);
+  if (innerW > 2 && innerH > 2) {
+    out += drawMeshInfill(
+      innerX,
+      innerY,
+      innerW,
+      innerH,
+      hasSpacer,
+      openness,
+      colorHex,
+      shadowEdge,
+      shadowBottom,
+      patternId,
+    );
+  }
+  out += drawWicketHinges(hingeEdgeX, fencePostW, y, h, colorHex, hingeSide);
+  out += drawWicketHandle(gateX, gateW, y, h, frameT, colorHex, latchSide);
   return out;
 }
 
-function panelRects(
+function renderFenceSegments(
   x: number,
   y: number,
-  w: number,
+  totalW: number,
   h: number,
   gap: number,
-  count: number,
+  segments: FenceSegment[],
+  wicketWidthCm: number,
+  panelWidthCm: number,
+  fencePostW: number,
   hasSpacer: boolean,
   openness: number,
   colorHex: string,
   patternId: PatternId,
-  openingPanelIndices: number[] = [],
   panelTextureUrl?: string | null,
   openingTextureUrl?: string | null,
   textureTileCount?: number,
-): string {
-  const panelW = (w - gap * (count - 1)) / count;
+  wicketHingeSide: WicketHingeSide = "right",
+): { svg: string; footingSegments: { x: number; w: number }[] } {
+  const weights = segmentWidthWeights(segments, wicketWidthCm, panelWidthCm);
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+  const innerW = totalW - gap * Math.max(0, segments.length - 1);
   const shadowEdge = darken(colorHex, 0.3);
   const shadowBottom = darken(colorHex, 0.2);
-  const openingSet = new Set(openingPanelIndices);
+  const footingSegments: { x: number; w: number }[] = [];
   let out = "";
-  for (let i = 0; i < count; i++) {
-    const px = x + i * (panelW + gap);
-    if (openingSet.has(i)) {
+  let cursorX = x;
+
+  for (let i = 0; i < segments.length; i++) {
+    const segW = (innerW * weights[i]) / totalWeight;
+    const seg = segments[i];
+    if (seg.type === "wicket") {
       out += drawGateSection(
-        px,
+        cursorX,
         y,
-        panelW,
+        segW,
         h,
+        fencePostW,
         hasSpacer,
         openness,
         colorHex,
         patternId,
+        wicketHingeSide,
         openingTextureUrl,
         textureTileCount,
       );
     } else {
       out += drawSectionPanels(
-        px,
+        cursorX,
         y,
-        panelW,
+        segW,
         h,
         hasSpacer,
         openness,
@@ -621,9 +958,12 @@ function panelRects(
         panelTextureUrl,
         textureTileCount,
       );
+      footingSegments.push({ x: cursorX, w: segW });
     }
+    cursorX += segW + gap;
   }
-  return out;
+
+  return { svg: out, footingSegments };
 }
 
 export function buildFenceSvg(params: FenceRenderParams): string {
@@ -635,13 +975,26 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     hasSpacer,
     openness,
     panelCount = 3,
-    openingPanelIndices = [],
+    panelWidthCm = DEFAULT_PANEL_WIDTH_CM,
+    wicketWidthCm = getWicketWidthCm(DEFAULT_PANEL_WIDTH_CM),
+    wicketInsertAfter,
+    footingEnabled = false,
+    footingHeightCm = 20,
+    footingColorHex = "#9ca3af",
+    wicketHingeSide = "right",
     transparent = false,
     panelTextureUrl,
     postTextureUrl,
     openingTextureUrl,
     textureTileCount = 1,
   } = params;
+
+  const hasWicket = wicketInsertAfter !== undefined;
+  const viewOptions: ViewWidthOptions = {
+    hasWicket,
+    wicketWidthCm,
+    panelWidthCm,
+  };
 
   const {
     viewW,
@@ -653,11 +1006,18 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     rightPost,
     fenceCenterX,
     totalW,
-  } = computeFenceGeometry(heightM, postWidthCm, panelCount);
+  } = computeFenceGeometry(heightM, postWidthCm, panelCount, viewOptions);
   const gap = hasSpacer ? 8 + openness * 12 : 2;
   const panelsX = leftPost + postW + 4;
   const panelsW = rightPost - panelsX - 4;
-  const sectionPanelW = (panelsW - gap * (panelCount - 1)) / panelCount;
+  const segments = buildFenceSegments(panelCount, wicketInsertAfter);
+  const segmentWeights = segmentWidthWeights(
+    segments,
+    wicketWidthCm,
+    panelWidthCm,
+  );
+  const totalWeight = segmentWeights.reduce((sum, w) => sum + w, 0);
+  const innerW = panelsW - gap * Math.max(0, segments.length - 1);
 
   const postBase = colorHex;
   const postLight = lighten(colorHex, 0.15);
@@ -680,15 +1040,13 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     return `<rect x="${capX}" y="${capY}" width="${capW}" height="${capH}" fill="${postCap}" rx="1"/>`;
   }
 
-  function renderPost(px: number, withClamps = false): string {
-    const clampH = Math.max(8, fenceH * 0.12);
-    const topClampY = fenceY + fenceH * 0.12;
-    const botClampY = fenceY + fenceH - clampH - fenceH * 0.15;
+  function renderPost(
+    px: number,
+    clampSides: ("west" | "east")[] = [],
+  ): string {
     let clamps = "";
-    if (withClamps && patternId === "pattern-3d") {
-      clamps = `
-    ${drawPostClamp(px, postW, topClampY, clampH, "right", colorHex)}
-    ${drawPostClamp(px, postW, botClampY, clampH, "right", colorHex)}`;
+    if (clampSides.length > 0 && patternId === "pattern-3d") {
+      clamps = drawPostClamps(px, postW, fenceY, fenceH, clampSides, colorHex);
     }
     if (postTextureUrl) {
       const safeUrl = escapeXmlAttr(postTextureUrl);
@@ -704,11 +1062,34 @@ export function buildFenceSvg(params: FenceRenderParams): string {
   }
 
   let intermediatePosts = "";
-  for (let i = 1; i < panelCount; i++) {
-    const dividerCenter = panelsX + i * sectionPanelW + (i - 0.5) * gap;
-    const px = dividerCenter - postW / 2;
-    intermediatePosts += renderPost(px, true);
+  let cursorX = panelsX;
+  for (let i = 0; i < segments.length - 1; i++) {
+    const segW = (innerW * segmentWeights[i]) / totalWeight;
+    cursorX += segW;
+    const postCenter = cursorX + gap / 2;
+    intermediatePosts += renderPost(postCenter - postW / 2, ["west", "east"]);
+    cursorX += gap;
   }
+
+  const { svg: segmentsSvg, footingSegments } = renderFenceSegments(
+    panelsX,
+    fenceY,
+    panelsW,
+    fenceH,
+    gap,
+    segments,
+    wicketWidthCm,
+    panelWidthCm,
+    postW,
+    hasSpacer,
+    openness,
+    colorHex,
+    patternId,
+    panelTextureUrl,
+    openingTextureUrl,
+    textureTileCount,
+    wicketHingeSide,
+  );
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewW} ${VIEW_H}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Podgląd ogrodzenia">
   <defs>
@@ -748,37 +1129,31 @@ export function buildFenceSvg(params: FenceRenderParams): string {
   <ellipse cx="${fenceCenterX}" cy="${groundY + 4}" rx="${(totalW * 0.5).toFixed(1)}" ry="14" fill="#000000" opacity="0.08"/>`
   }
 
-  <!-- Footing plinth -->
-  <g>
-    ${drawFootingPlinth(leftPost, fenceY + fenceH, rightPost + postW - leftPost)}
-  </g>
-
   <!-- Panels group -->
   <g filter="url(#panelShadow)">
-    ${panelRects(
-      panelsX,
-      fenceY,
-      panelsW,
-      fenceH,
-      gap,
-      panelCount,
-      hasSpacer,
-      openness,
-      colorHex,
-      patternId,
-      openingPanelIndices,
-      panelTextureUrl,
-      openingTextureUrl,
-      textureTileCount,
-    )}
+    ${segmentsSvg}
   </g>
 
   <!-- Posts group -->
   <g filter="url(#postShadow)">
-    ${renderPost(leftPost, true)}
+    ${renderPost(leftPost, ["east"])}
     ${intermediatePosts}
-    ${renderPost(rightPost, true)}
+    ${renderPost(rightPost, ["west"])}
   </g>
+
+  ${
+    footingEnabled
+      ? `<!-- Footing plinth -->
+  <g>
+    ${drawFootingPlinthSegments(
+      fenceY + fenceH,
+      footingSegments,
+      footingHeightCm,
+      footingColorHex,
+    )}
+  </g>`
+      : ""
+  }
 
   ${
     transparent

@@ -1,5 +1,5 @@
 import type { PricingSettings } from "@/lib/types";
-import { DEFAULT_PRICING_SETTINGS } from "@/lib/pricing/defaults";
+import { DEFAULT_FOOTING_PRICE_NET, DEFAULT_PRICING_SETTINGS } from "@/lib/pricing/variant-prices";
 
 type RawPricingSettings = Partial<PricingSettings> & {
   gatePriceNet?: number;
@@ -10,10 +10,20 @@ type RawPricingSettings = Partial<PricingSettings> & {
 export function normalizePricingSettings(
   raw: RawPricingSettings,
 ): PricingSettings {
+  const panelWidthCm =
+    raw.panelWidthCm ?? DEFAULT_PRICING_SETTINGS.panelWidthCm;
+  const basePricePerMeterNet =
+    raw.basePricePerMeterNet ?? DEFAULT_PRICING_SETTINGS.basePricePerMeterNet;
+  const panelPriceNet =
+    raw.panelPriceNet ??
+    basePricePerMeterNet * (panelWidthCm / 100);
+
   return {
-    basePricePerMeterNet:
-      raw.basePricePerMeterNet ?? DEFAULT_PRICING_SETTINGS.basePricePerMeterNet,
-    panelWidthCm: raw.panelWidthCm ?? DEFAULT_PRICING_SETTINGS.panelWidthCm,
+    basePricePerMeterNet,
+    panelPriceNet,
+    footingPriceNet:
+      raw.footingPriceNet ?? DEFAULT_FOOTING_PRICE_NET,
+    panelWidthCm,
     currency: raw.currency ?? DEFAULT_PRICING_SETTINGS.currency,
   };
 }

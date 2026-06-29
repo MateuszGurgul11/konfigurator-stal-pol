@@ -18,11 +18,12 @@ import {
 } from "@/lib/fence/renderFence";
 import type { PatternId } from "@/lib/fence/patterns";
 import {
-  getGatePanelIndex,
+  getWicketInsertAfterIndex,
   MAX_PREVIEW_PANELS,
   MIN_PREVIEW_PANELS,
   useConfiguratorStore,
 } from "@/lib/configurator/state";
+import { getWicketWidthCm } from "@/lib/pricing/variant-prices";
 import type { CatalogCollections, ConfiguratorSelection } from "@/lib/types";
 import { resolveBackgroundUrl } from "@/lib/configurator/backgrounds";
 import {
@@ -65,6 +66,9 @@ type ResizeState = {
   origY: number;
   origPanelCount: number;
   sceneWidth: number;
+  hasWicket: boolean;
+  wicketWidthCm: number;
+  panelWidthCm: number;
 };
 type StretchState = {
   pointerId: number;
@@ -87,9 +91,24 @@ function compensateXForWidthChange(
   newPanelCount: number,
   scale: number,
   sceneWidth: number,
+  hasWicket = false,
+  wicketWidthCm = getWicketWidthCm(250),
+  panelWidthCm = 250,
 ): number {
-  const oldW = getFenceBaseWidthPx(sceneWidth, origPanelCount);
-  const newW = getFenceBaseWidthPx(sceneWidth, newPanelCount);
+  const oldW = getFenceBaseWidthPx(
+    sceneWidth,
+    origPanelCount,
+    hasWicket,
+    wicketWidthCm,
+    panelWidthCm,
+  );
+  const newW = getFenceBaseWidthPx(
+    sceneWidth,
+    newPanelCount,
+    hasWicket,
+    wicketWidthCm,
+    panelWidthCm,
+  );
   const deltaW = newW - oldW;
   if (anchor === "west") return origX - (deltaW * scale) / 2;
   return origX + (deltaW * scale) / 2;
@@ -99,7 +118,13 @@ function clampScale(scale: number) {
   return Math.min(MAX_FENCE_SCALE, Math.max(MIN_FENCE_SCALE, scale));
 }
 
-function getFenceBaseWidthPx(sceneWidth: number, panelCount: number): number {
+function getFenceBaseWidthPx(
+  sceneWidth: number,
+  panelCount: number,
+  hasWicket = false,
+  wicketWidthCm = getWicketWidthCm(250),
+  panelWidthCm = 250,
+): number {
   const remFallback =
     (FENCE_WIDTH_REM_BASE +
       (panelCount - MIN_PREVIEW_PANELS) * FENCE_WIDTH_REM_PER_PANEL) *
@@ -108,12 +133,29 @@ function getFenceBaseWidthPx(sceneWidth: number, panelCount: number): number {
   const ratio =
     FENCE_BASE_WIDTH_RATIO +
     (panelCount - MIN_PREVIEW_PANELS) * FENCE_BASE_WIDTH_PER_PANEL;
-  return sceneWidth * ratio;
+  let width = sceneWidth * ratio;
+  if (hasWicket) {
+    const panelShare = width / panelCount;
+    width += panelShare * (wicketWidthCm / panelWidthCm);
+  }
+  return width;
 }
 
-function getDefaultFenceScale(sceneWidth: number, panelCount: number): number {
+function getDefaultFenceScale(
+  sceneWidth: number,
+  panelCount: number,
+  hasWicket = false,
+  wicketWidthCm = getWicketWidthCm(250),
+  panelWidthCm = 250,
+): number {
   if (sceneWidth <= 0) return DEFAULT_FENCE_SCALE;
-  const baseWidth = getFenceBaseWidthPx(sceneWidth, panelCount);
+  const baseWidth = getFenceBaseWidthPx(
+    sceneWidth,
+    panelCount,
+    hasWicket,
+    wicketWidthCm,
+    panelWidthCm,
+  );
   const targetFraction =
     FENCE_TARGET_WIDTH_RATIO +
     (panelCount - MIN_PREVIEW_PANELS) * FENCE_TARGET_WIDTH_PER_PANEL;
@@ -230,6 +272,11 @@ export function FencePreview({ catalog, selection }: Props) {
   const dragRef = useRef<DragState | null>(null);
   const resizeRef = useRef<ResizeState | null>(null);
   const stretchRef = useRef<StretchState | null>(null);
+  const wicketLayoutRef = useRef({
+    hasWicket: false,
+    wicketWidthCm: getWicketWidthCm(250),
+    panelWidthCm: 250,
+  });
   const initialScaleApplied = useRef(false);
   const [fenceSelected, setFenceSelected] = useState(false);
   const [showFenceHint, setShowFenceHint] = useState(true);
@@ -248,8 +295,13 @@ export function FencePreview({ catalog, selection }: Props) {
   const furtkaEnabled = useConfiguratorStore((s) => s.furtkaEnabled);
   const furtkaElementId = useConfiguratorStore((s) => s.furtkaElementId);
   const furtkaPosition = useConfiguratorStore((s) => s.furtkaPosition);
+  const furtkaHingeSide = useConfiguratorStore((s) => s.furtkaHingeSide);
   const previewPanelCount = useConfiguratorStore((s) => s.previewPanelCount);
   const setPreviewPanelCount = useConfiguratorStore((s) => s.setPreviewPanelCount);
+  const footingEnabled = useConfiguratorStore((s) => s.footingEnabled);
+  const footingHeightId = useConfiguratorStore((s) => s.footingHeightId);
+  const footingMaterialId = useConfiguratorStore((s) => s.footingMaterialId);
+  const pricing = useConfiguratorStore((s) => s.pricing);
   const sidebarOpen = useConfiguratorStore((s) => s.sidebarOpen);
   const toggleSidebarOpen = useConfiguratorStore((s) => s.toggleSidebarOpen);
 
@@ -258,6 +310,14 @@ export function FencePreview({ catalog, selection }: Props) {
   const spacer = catalog.spacerOptions.find((s) => s.id === selection.spacerId);
   const height = catalog.heights.find((h) => h.id === selection.heightId);
   const color = catalog.colors.find((c) => c.id === selection.colorId);
+
+  useEffect(() => {
+    wicketLayoutRef.current = {
+      hasWicket: furtkaEnabled,
+      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
+      panelWidthCm: pricing.panelWidthCm,
+    };
+  }, [furtkaEnabled, pricing.panelWidthCm]);
 
   useEffect(() => {
     return () => {
@@ -292,7 +352,13 @@ export function FencePreview({ catalog, selection }: Props) {
     setFenceTransform({
       x: 0,
       y: 0,
-      scale: getDefaultFenceScale(sceneWidth, previewPanelCount),
+      scale: getDefaultFenceScale(
+        sceneWidth,
+        previewPanelCount,
+        furtkaEnabled,
+        getWicketWidthCm(pricing.panelWidthCm),
+        pricing.panelWidthCm,
+      ),
     });
   }, [
     post,
@@ -302,6 +368,8 @@ export function FencePreview({ catalog, selection }: Props) {
     color,
     sceneWidth,
     previewPanelCount,
+    furtkaEnabled,
+    pricing.panelWidthCm,
   ]);
 
   useEffect(() => {
@@ -321,6 +389,9 @@ export function FencePreview({ catalog, selection }: Props) {
         const widthPx = getFenceBaseWidthPx(
           resize.sceneWidth,
           resize.origPanelCount,
+          resize.hasWicket,
+          resize.wicketWidthCm,
+          resize.panelWidthCm,
         );
         // Chwytany bok ma śledzić kursor 1:1. Prawe rogi (ne/se) rozciągają
         // prawą krawędź, lewe (nw/sw) — lewą. Przesunięcie krawędzi przy skali
@@ -358,6 +429,9 @@ export function FencePreview({ catalog, selection }: Props) {
             newCount,
             stretch.origScale,
             stretch.sceneWidth,
+            wicketLayoutRef.current.hasWicket,
+            wicketLayoutRef.current.wicketWidthCm,
+            wicketLayoutRef.current.panelWidthCm,
           ),
         }));
       }
@@ -404,7 +478,13 @@ export function FencePreview({ catalog, selection }: Props) {
   function resetFenceTransform() {
     const scale =
       sceneWidth > 0
-        ? getDefaultFenceScale(sceneWidth, previewPanelCount)
+        ? getDefaultFenceScale(
+            sceneWidth,
+            previewPanelCount,
+            furtkaEnabled,
+            getWicketWidthCm(pricing.panelWidthCm),
+            pricing.panelWidthCm,
+          )
         : DEFAULT_FENCE_SCALE;
     setFenceTransform({ x: 0, y: 0, scale });
     setFenceSelected(false);
@@ -457,6 +537,9 @@ export function FencePreview({ catalog, selection }: Props) {
       origY: fenceTransform.y,
       origPanelCount: previewPanelCount,
       sceneWidth,
+      hasWicket: furtkaEnabled,
+      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
+      panelWidthCm: pricing.panelWidthCm,
     };
   }
 
@@ -471,17 +554,10 @@ export function FencePreview({ catalog, selection }: Props) {
     }));
   }
 
-  const openingPanelIndices = useMemo(() => {
-    const indices = new Set<number>();
-    if (furtkaEnabled) {
-      indices.add(getGatePanelIndex(furtkaPosition, previewPanelCount));
-    }
-    return [...indices];
-  }, [
-    furtkaEnabled,
-    furtkaPosition,
-    previewPanelCount,
-  ]);
+  const wicketInsertAfter = useMemo(() => {
+    if (!furtkaEnabled) return undefined;
+    return getWicketInsertAfterIndex(furtkaPosition, previewPanelCount);
+  }, [furtkaEnabled, furtkaPosition, previewPanelCount]);
 
   const svgMarkup = useMemo(() => {
     if (!post || !panel || !spacer || !height || !color) return null;
@@ -504,6 +580,13 @@ export function FencePreview({ catalog, selection }: Props) {
       resolvePanelTileHeightM(catalog, selection.panelId),
     );
 
+    const footingHeight = catalog.footingHeights.find(
+      (h) => h.id === footingHeightId,
+    );
+    const footingMaterial = catalog.footingMaterials.find(
+      (m) => m.id === footingMaterialId,
+    );
+
     return buildFenceSvg({
       heightM: height.valueM,
       patternId: panel.patternId as PatternId,
@@ -511,8 +594,14 @@ export function FencePreview({ catalog, selection }: Props) {
       postWidthCm: post.widthCm,
       hasSpacer: spacer.hasSpacer,
       openness: spacer.openness,
-      openingPanelIndices,
       panelCount: previewPanelCount,
+      panelWidthCm: pricing.panelWidthCm,
+      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
+      wicketInsertAfter,
+      footingEnabled,
+      footingHeightCm: footingHeight?.heightCm ?? 20,
+      footingColorHex: footingMaterial?.hex ?? "#9ca3af",
+      wicketHingeSide: furtkaHingeSide,
       transparent: true,
       panelTextureUrl,
       postTextureUrl,
@@ -529,13 +618,22 @@ export function FencePreview({ catalog, selection }: Props) {
     selection.panelId,
     selection.postId,
     selection.colorId,
-    openingPanelIndices,
+    wicketInsertAfter,
     previewPanelCount,
     furtkaEnabled,
     furtkaElementId,
+    furtkaHingeSide,
+    footingEnabled,
+    footingHeightId,
+    footingMaterialId,
+    pricing.panelWidthCm,
   ]);
 
-  const viewWidth = getViewWidth(previewPanelCount);
+  const viewWidth = getViewWidth(previewPanelCount, {
+    hasWicket: furtkaEnabled,
+    wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
+    panelWidthCm: pricing.panelWidthCm,
+  });
 
   const contentBounds = useMemo(() => {
     if (!post || !height) return null;
@@ -543,12 +641,21 @@ export function FencePreview({ catalog, selection }: Props) {
       heightM: height.valueM,
       postWidthCm: post.widthCm,
       panelCount: previewPanelCount,
+      hasWicket: furtkaEnabled,
+      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
+      panelWidthCm: pricing.panelWidthCm,
     });
-  }, [post, height, previewPanelCount]);
+  }, [post, height, previewPanelCount, furtkaEnabled, pricing.panelWidthCm]);
 
   const fenceDisplayWidth =
     sceneWidth > 0
-      ? `${getFenceBaseWidthPx(sceneWidth, previewPanelCount)}px`
+      ? `${getFenceBaseWidthPx(
+          sceneWidth,
+          previewPanelCount,
+          furtkaEnabled,
+          getWicketWidthCm(pricing.panelWidthCm),
+          pricing.panelWidthCm,
+        )}px`
       : `${FENCE_WIDTH_REM_BASE + (previewPanelCount - MIN_PREVIEW_PANELS) * FENCE_WIDTH_REM_PER_PANEL}rem`;
 
   const allSelected = post && panel && spacer && height && color;
@@ -564,11 +671,16 @@ export function FencePreview({ catalog, selection }: Props) {
     right: "prawa sekcja",
   };
 
+  const hingeSideLabels = {
+    left: "zawiasy lewe",
+    right: "zawiasy prawe",
+  };
+
   const openingLabels: string[] = [];
   if (furtkaEnabled && furtkaElementId) {
     const furtkaElement = catalog.elements.find((e) => e.id === furtkaElementId);
     openingLabels.push(
-      `${furtkaElement?.name ?? "Furtka"} · ${positionLabels[furtkaPosition]}`,
+      `${furtkaElement?.name ?? "Furtka"} · ${positionLabels[furtkaPosition]} · ${hingeSideLabels[furtkaHingeSide]}`,
     );
   }
 
