@@ -9,6 +9,8 @@ COLLECTION_NAMES = (
     "spacerOptions",
     "heights",
     "colors",
+    "footingHeights",
+    "footingMaterials",
     "elements",
     "panelTextures",
     "postTextures",
@@ -19,6 +21,8 @@ CollectionName = Literal[
     "spacerOptions",
     "heights",
     "colors",
+    "footingHeights",
+    "footingMaterials",
     "elements",
     "panelTextures",
     "postTextures",
@@ -40,6 +44,7 @@ class PostCreate(BaseEntity):
     slug: str = Field(min_length=1, pattern=r"^[a-z0-9-]+$")
     widthCm: float = Field(ge=10, le=50)
     priceSurchargePerMeter: float = Field(ge=0, default=0)
+    priceSurchargePerPanel: float = Field(ge=0, default=0)
     baseTextureUrl: str | None = None
 
 
@@ -52,6 +57,7 @@ class PanelCreate(BaseEntity):
         "pattern-3d", "pattern-palisade", "pattern-panel-horizontal"
     ]
     priceSurchargePerMeter: float = Field(ge=0, default=0)
+    priceSurchargePerPanel: float = Field(ge=0, default=0)
     baseTextureUrl: str | None = None
     textureTileHeightM: float | None = Field(default=None, ge=0.1, le=2.25)
 
@@ -64,6 +70,7 @@ class SpacerCreate(BaseEntity):
     hasSpacer: bool
     openness: float = Field(ge=0, le=1)
     priceSurchargePerMeter: float = Field(ge=0, default=0)
+    priceSurchargePerPanel: float = Field(ge=0, default=0)
 
 
 class SpacerOut(SpacerCreate):
@@ -86,6 +93,7 @@ class HeightOut(HeightCreate):
 class ColorCreate(BaseEntity):
     hex: str
     priceSurchargePerMeter: float = Field(ge=0, default=0)
+    priceSurchargePerPanel: float = Field(ge=0, default=0)
 
     @field_validator("hex")
     @classmethod
@@ -96,6 +104,35 @@ class ColorCreate(BaseEntity):
 
 
 class ColorOut(ColorCreate):
+    id: str
+
+
+class FootingHeightCreate(BaseModel):
+    label: str = Field(min_length=1)
+    heightCm: float = Field(ge=5, le=80)
+    sortOrder: int = Field(ge=0, default=0)
+    active: bool = True
+    description: str | None = None
+    priceSurchargePerPanel: float = Field(ge=0, default=0)
+
+
+class FootingHeightOut(FootingHeightCreate):
+    id: str
+
+
+class FootingMaterialCreate(BaseEntity):
+    hex: str
+    priceSurchargePerPanel: float = Field(ge=0, default=0)
+
+    @field_validator("hex")
+    @classmethod
+    def validate_hex(cls, v: str) -> str:
+        if not HEX_RE.match(v):
+            raise ValueError("Kolor musi być w formacie #RRGGBB")
+        return v
+
+
+class FootingMaterialOut(FootingMaterialCreate):
     id: str
 
 
@@ -141,6 +178,8 @@ class CatalogCollections(BaseModel):
     spacerOptions: list[SpacerOut]
     heights: list[HeightOut]
     colors: list[ColorOut]
+    footingHeights: list[FootingHeightOut] = []
+    footingMaterials: list[FootingMaterialOut] = []
     elements: list[ElementOut]
     panelTextures: list[PanelTextureOut]
     postTextures: list[PostTextureOut]
@@ -152,6 +191,8 @@ CREATE_MODELS = {
     "spacerOptions": SpacerCreate,
     "heights": HeightCreate,
     "colors": ColorCreate,
+    "footingHeights": FootingHeightCreate,
+    "footingMaterials": FootingMaterialCreate,
     "elements": ElementCreate,
     "panelTextures": PanelTextureCreate,
     "postTextures": PostTextureCreate,
@@ -163,6 +204,8 @@ OUT_MODELS = {
     "spacerOptions": SpacerOut,
     "heights": HeightOut,
     "colors": ColorOut,
+    "footingHeights": FootingHeightOut,
+    "footingMaterials": FootingMaterialOut,
     "elements": ElementOut,
     "panelTextures": PanelTextureOut,
     "postTextures": PostTextureOut,

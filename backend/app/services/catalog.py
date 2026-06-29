@@ -11,6 +11,8 @@ from app.models.catalog import (
     CollectionName,
     ColorOut,
     ElementOut,
+    FootingHeightOut,
+    FootingMaterialOut,
     HeightOut,
     PanelOut,
     PanelTextureOut,
@@ -54,6 +56,14 @@ def fetch_active_catalog() -> CatalogCollections:
         ],
         heights=[HeightOut(**i) for i in fetch_collection("heights", active_only=True)],
         colors=[ColorOut(**i) for i in fetch_collection("colors", active_only=True)],
+        footingHeights=[
+            FootingHeightOut(**i)
+            for i in fetch_collection("footingHeights", active_only=True)
+        ],
+        footingMaterials=[
+            FootingMaterialOut(**i)
+            for i in fetch_collection("footingMaterials", active_only=True)
+        ],
         elements=[
             ElementOut(**i) for i in fetch_collection("elements", active_only=True)
         ],

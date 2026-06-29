@@ -169,28 +169,76 @@ SEED_DATA = {
             "active": True,
         },
     ],
+    "footingHeights": [
+        {
+            "label": "20 cm",
+            "heightCm": 20,
+            "priceSurchargePerPanel": 0,
+            "sortOrder": 0,
+            "active": True,
+        },
+        {
+            "label": "30 cm",
+            "heightCm": 30,
+            "priceSurchargePerPanel": 15,
+            "sortOrder": 1,
+            "active": True,
+        },
+        {
+            "label": "40 cm",
+            "heightCm": 40,
+            "priceSurchargePerPanel": 30,
+            "sortOrder": 2,
+            "active": True,
+        },
+    ],
+    "footingMaterials": [
+        {
+            "name": "Beton szary",
+            "hex": "#9ca3af",
+            "priceSurchargePerPanel": 0,
+            "sortOrder": 0,
+            "active": True,
+        },
+        {
+            "name": "Klinkier czerwony",
+            "hex": "#8b3a2a",
+            "priceSurchargePerPanel": 25,
+            "sortOrder": 1,
+            "active": True,
+        },
+        {
+            "name": "Stal malowana RAL",
+            "hex": "#383e42",
+            "priceSurchargePerPanel": 18,
+            "sortOrder": 2,
+            "active": True,
+        },
+    ],
     "panelTextures": [],
     "postTextures": [],
 }
 
 DEFAULT_PRICING_SETTINGS = {
     "basePricePerMeterNet": 48,
+    "panelPriceNet": 120,
+    "footingPriceNet": 50,
     "panelWidthCm": 250,
     "currency": "PLN",
 }
 
 PANEL_PRICE_BY_PATTERN = {
     "pattern-3d": 0,
-    "pattern-palisade": 20,
-    "pattern-panel-horizontal": 15,
+    "pattern-palisade": 50,
+    "pattern-panel-horizontal": 38,
 }
 
 COLOR_PRICE_BY_NAME = {
     "Ocynk naturalny": 0,
-    "RAL 6005 zielony": 8,
-    "RAL 7016 grafit": 8,
-    "RAL 9005 czarny": 8,
-    "RAL 9002 biały": 10,
+    "RAL 6005 zielony": 20,
+    "RAL 7016 grafit": 20,
+    "RAL 9005 czarny": 20,
+    "RAL 9002 biały": 25,
 }
 
 HEIGHT_MULTIPLIER_BY_VALUE_M = {
@@ -201,10 +249,22 @@ HEIGHT_MULTIPLIER_BY_VALUE_M = {
 
 POST_PRICE_BY_SLUG = {
     "standard": 0,
-    "reinforced": 12,
+    "reinforced": 30,
 }
 
 SPACER_PRICE_BY_NAME = {
     "Ocynk": 0,
-    "Malowanie proszkowe RAL": 15,
+    "Malowanie proszkowe RAL": 38,
+}
+
+FOOTING_HEIGHT_SURCHARGE_BY_CM = {
+    20: 0,
+    30: 15,
+    40: 30,
+}
+
+FOOTING_MATERIAL_SURCHARGE_BY_NAME = {
+    "Beton szary": 0,
+    "Klinkier czerwony": 25,
+    "Stal malowana RAL": 18,
 }
