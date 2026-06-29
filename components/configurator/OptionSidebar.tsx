@@ -15,6 +15,7 @@ import type {
 import {
   type ConfiguratorTab,
   type GatePosition,
+  getNextConfiguratorTab,
   MAX_PREVIEW_PANELS,
   MIN_PREVIEW_PANELS,
   useConfiguratorStore,
@@ -222,6 +223,8 @@ export function OptionSidebar({
       previewPanelCount,
     ],
   );
+
+  const nextTab = getNextConfiguratorTab(activeTab, scope);
 
   return (
     <div className="flex h-full flex-col">
@@ -604,9 +607,14 @@ export function OptionSidebar({
         </div>
         <button
           type="button"
-          className="w-full rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#c9020f]"
+          disabled={!nextTab}
+          onClick={() => nextTab && onTabChange(nextTab)}
+          className={cn(
+            "w-full rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors",
+            nextTab ? "hover:bg-[#c9020f]" : "cursor-not-allowed opacity-50",
+          )}
         >
-          Zapisz konfigurację
+          Przejdź dalej
         </button>
       </div>
     </div>

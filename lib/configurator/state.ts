@@ -37,6 +37,25 @@ function firstTabForScope(scope: ProductScope): ConfiguratorTab {
   return "quote";
 }
 
+export function getVisibleConfiguratorTabs(scope: ProductScope): ConfiguratorTab[] {
+  const all: ConfiguratorTab[] = ["model", "dimensions", "gates", "quote", "review"];
+  return all.filter((tab) => {
+    if (tab === "model" || tab === "dimensions") return scope.fence;
+    if (tab === "gates") return scope.gate || scope.wicket;
+    return true;
+  });
+}
+
+export function getNextConfiguratorTab(
+  current: ConfiguratorTab,
+  scope: ProductScope,
+): ConfiguratorTab | null {
+  const tabs = getVisibleConfiguratorTabs(scope);
+  const i = tabs.indexOf(current);
+  if (i < 0 || i >= tabs.length - 1) return null;
+  return tabs[i + 1];
+}
+
 function pickDefaultHeightId(
   heights: CatalogCollections["heights"],
 ): string | null {

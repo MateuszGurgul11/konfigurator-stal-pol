@@ -180,7 +180,7 @@ export function getFenceContentBounds(params: {
     params.postWidthCm,
     params.panelCount ?? 3,
   );
-  const capTop = fenceY - 22;
+  const capTop = fenceY - 6;
   const footingBottom = groundY + 6;
 
   return {
@@ -675,7 +675,7 @@ export function buildFenceSvg(params: FenceRenderParams): string {
   function postCapRect(px: number): string {
     const capW = postW + 4;
     const capX = px - 2;
-    const capY = fenceY - 14;
+    const capY = fenceY - 4;
     const capH = 4;
     return `<rect x="${capX}" y="${capY}" width="${capW}" height="${capH}" fill="${postCap}" rx="1"/>`;
   }
@@ -693,13 +693,13 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     if (postTextureUrl) {
       const safeUrl = escapeXmlAttr(postTextureUrl);
       return `<!-- Post at ${px.toFixed(0)} -->
-    <image href="${safeUrl}" x="${px}" y="${fenceY - 8}" width="${postW}" height="${fenceH + 8}" preserveAspectRatio="none"/>
+    <image href="${safeUrl}" x="${px}" y="${fenceY}" width="${postW}" height="${fenceH}" preserveAspectRatio="none"/>
     ${postCapRect(px)}${clamps}`;
     }
     return `<!-- Post at ${px.toFixed(0)} -->
-    <rect x="${px}" y="${fenceY - 8}" width="${postW}" height="${fenceH + 8}" fill="${postBase}" rx="1"/>
-    <rect x="${px}" y="${fenceY - 8}" width="2" height="${fenceH + 8}" fill="${postLight}" opacity="0.75" rx="1"/>
-    <rect x="${px + postW - 3}" y="${fenceY - 8}" width="3" height="${fenceH + 8}" fill="${postDark}" opacity="0.5"/>
+    <rect x="${px}" y="${fenceY}" width="${postW}" height="${fenceH}" fill="${postBase}" rx="1"/>
+    <rect x="${px}" y="${fenceY}" width="2" height="${fenceH}" fill="${postLight}" opacity="0.75" rx="1"/>
+    <rect x="${px + postW - 3}" y="${fenceY}" width="3" height="${fenceH}" fill="${postDark}" opacity="0.5"/>
     ${postCapRect(px)}${clamps}`;
   }
 
