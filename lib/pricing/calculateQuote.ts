@@ -8,6 +8,7 @@ import type {
 } from "@/lib/types";
 import { DEFAULT_PRICING_SETTINGS } from "@/lib/pricing/defaults";
 import {
+  getDrivewayGateSpanM,
   getWicketWidthCm,
 } from "@/lib/pricing/variant-prices";
 import { resolveElement, resolveElementPriceNet } from "@/lib/pricing/element-prices";
@@ -134,7 +135,7 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
   const pricePerPanelNet =
     (settings.panelPriceNet + surchargesPerPanel) * heightMultiplier;
 
-  const bramaEnabled = input.bramaEnabled ?? Boolean(input.bramaElementId);
+  const bramaEnabled = Boolean(input.bramaElementId);
   const furtkaEnabled = input.furtkaEnabled ?? Boolean(input.furtkaElementId);
   const footingEnabled = input.footingEnabled ?? false;
   const bramaElement = bramaEnabled
@@ -144,12 +145,13 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
     ? resolveElement(catalog, "furtka", input.furtkaElementId)
     : undefined;
 
-  const bramaSpanRawM =
-    bramaEnabled && input.bramaOccupiedSpanM != null
+  const bramaSpanRawM = bramaEnabled
+    ? input.bramaOccupiedSpanM != null && input.bramaOccupiedSpanM > 0
       ? Math.max(0, input.bramaOccupiedSpanM)
-      : null;
+      : getDrivewayGateSpanM(panelWidthCm)
+    : null;
   const bramaPanels =
-    bramaEnabled && bramaSpanRawM && bramaSpanRawM > 0
+    bramaEnabled && bramaSpanRawM != null && bramaSpanRawM > 0
       ? Math.max(1, Math.ceil(bramaSpanRawM / panelWidthM))
       : 0;
   const bramaSpanUsedM = bramaPanels * panelWidthM;

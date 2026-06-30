@@ -1,6 +1,7 @@
 import type { PatternId } from "./patterns";
 import { getWicketWidthCm } from "@/lib/pricing/variant-prices";
 import type { WicketHingeSide } from "@/lib/configurator/state";
+import type { DrivewayGateKind } from "@/lib/types";
 
 export type { WicketHingeSide };
 
@@ -16,6 +17,11 @@ export type FenceRenderParams = {
   wicketWidthCm?: number;
   /** Indeks panela po którym wstawiamy furtkę (-1 = przed pierwszym). */
   wicketInsertAfter?: number;
+  drivewayGateEnabled?: boolean;
+  drivewayGateKind?: DrivewayGateKind;
+  drivewayGateTextureUrl?: string | null;
+  /** Wzór wypełnienia bramy (z elementu katalogu). */
+  drivewayGateInfillPatternId?: PatternId;
   footingEnabled?: boolean;
   footingHeightCm?: number;
   footingColorHex?: string;
@@ -84,18 +90,36 @@ export function getViewWidth(
   return base + wicketSectionPx(wicketCm, panelCm);
 }
 
-type FenceSegment = { type: "panel" | "wicket" };
+type FenceSegment =
+  | { type: "panel" }
+  | { type: "wicket" }
+  | { type: "driveway-gate"; gateKind: DrivewayGateKind };
+
+export type BuildFenceSegmentsOptions = {
+  wicketInsertAfter?: number;
+  drivewayGateKind?: DrivewayGateKind;
+};
 
 export function buildFenceSegments(
   panelCount: number,
-  wicketInsertAfter?: number,
+  options?: number | BuildFenceSegmentsOptions,
 ): FenceSegment[] {
+  const opts: BuildFenceSegmentsOptions =
+    typeof options === "number" ? { wicketInsertAfter: options } : (options ?? {});
+  const { wicketInsertAfter, drivewayGateKind } = opts;
   const hasWicket = wicketInsertAfter !== undefined;
+  const effectivePanelCount = drivewayGateKind
+    ? Math.max(0, panelCount - 2)
+    : panelCount;
   const segments: FenceSegment[] = [];
+
+  if (drivewayGateKind) {
+    segments.push({ type: "driveway-gate", gateKind: drivewayGateKind });
+  }
   if (hasWicket && wicketInsertAfter! < 0) {
     segments.push({ type: "wicket" });
   }
-  for (let i = 0; i < panelCount; i++) {
+  for (let i = 0; i < effectivePanelCount; i++) {
     segments.push({ type: "panel" });
     if (hasWicket && wicketInsertAfter === i) {
       segments.push({ type: "wicket" });
@@ -110,7 +134,11 @@ function segmentWidthWeights(
   panelWidthCm: number,
 ): number[] {
   const wicketPx = wicketSectionPx(wicketWidthCm, panelWidthCm);
-  return segments.map((s) => (s.type === "panel" ? SECTION_WIDTH : wicketPx));
+  return segments.map((s) => {
+    if (s.type === "panel") return SECTION_WIDTH;
+    if (s.type === "driveway-gate") return SECTION_WIDTH * 2;
+    return wicketPx;
+  });
 }
 
 type FenceGeometry = {
@@ -853,6 +881,232 @@ function drawSectionPanels(
   return out;
 }
 
+function resolvePostClampSides(
+  leftSeg: FenceSegment,
+  rightSeg: FenceSegment,
+): ("west" | "east")[] {
+  const sides: ("west" | "east")[] = ["west", "east"];
+  if (leftSeg.type === "wicket" || leftSeg.type === "driveway-gate") {
+    sides.splice(sides.indexOf("west"), 1);
+  }
+  if (rightSeg.type === "wicket" || rightSeg.type === "driveway-gate") {
+    sides.splice(sides.indexOf("east"), 1);
+  }
+  return sides;
+}
+
+function drawDrivewayGateDoubleLeaf(
+  px: number,
+  y: number,
+  segW: number,
+  h: number,
+  hasSpacer: boolean,
+  openness: number,
+  colorHex: string,
+  fencePostW: number,
+  infillPatternId: PatternId,
+  textureUrl?: string | null,
+  textureTileCount?: number,
+): { body: string; hardware: string } {
+  const shadowEdge = darken(colorHex, 0.3);
+  const shadowBottom = darken(colorHex, 0.2);
+  const centerGap = 2;
+  const leafW = (segW - centerGap) / 2;
+  const leftX = px;
+  const rightX = px + leafW + centerGap;
+  const stopW = 3;
+  const stopH = Math.max(8, h * 0.08);
+
+  let body = "";
+  body += drawSectionPanels(
+    leftX,
+    y,
+    leafW,
+    h,
+    hasSpacer,
+    openness,
+    colorHex,
+    shadowEdge,
+    shadowBottom,
+    infillPatternId,
+    textureUrl,
+    textureTileCount,
+  );
+  body += drawSectionPanels(
+    rightX,
+    y,
+    leafW,
+    h,
+    hasSpacer,
+    openness,
+    colorHex,
+    shadowEdge,
+    shadowBottom,
+    infillPatternId,
+    textureUrl,
+    textureTileCount,
+  );
+  body += `<rect x="${(px + leafW).toFixed(1)}" y="${(y + h - stopH).toFixed(1)}" width="${stopW.toFixed(1)}" height="${stopH.toFixed(1)}" fill="${darken(colorHex, 0.25)}" rx="0.5"/>`;
+
+  const frameT = Math.max(3, Math.min(5, leafW * 0.07));
+  let hardware = "";
+  hardware += drawWicketHinges(px, fencePostW, y, h, colorHex, "left");
+  hardware += drawWicketHinges(px + segW, fencePostW, y, h, colorHex, "right");
+  hardware += drawWicketHandle(rightX, leafW, y, h, frameT, colorHex, "left");
+
+  return { body, hardware };
+}
+
+function drawDrivewayGateSliding(
+  px: number,
+  y: number,
+  segW: number,
+  h: number,
+  hasSpacer: boolean,
+  openness: number,
+  colorHex: string,
+  fencePostW: number,
+  infillPatternId: PatternId,
+  textureUrl?: string | null,
+  textureTileCount?: number,
+): { body: string; hardware: string } {
+  // Brama przesuwna w pozycji ZAMKNIĘTEJ: prosty prostokątny panel z ramą,
+  // pionowymi podziałami i dolną szyną jezdną z rolkami.
+  void fencePostW;
+  const edge = darken(colorHex, 0.32);
+  const shadowBottom = darken(colorHex, 0.2);
+  const hi = lighten(colorHex, 0.14);
+  const trackColor = darken(colorHex, 0.42);
+  const rollerColor = darken(colorHex, 0.55);
+
+  const frameT = Math.max(3, Math.min(6, h * 0.05));
+  const bottom = y + h;
+
+  // Wypełnienie panela (z marginesem na ramę).
+  const inX = px + frameT;
+  const inY = y + frameT;
+  const inW = segW - frameT * 2;
+  const inH = h - frameT * 2;
+
+  let body = "";
+  if (inW > 0 && inH > 0) {
+    body += drawSectionPanels(
+      inX,
+      inY,
+      inW,
+      inH,
+      hasSpacer,
+      openness,
+      colorHex,
+      edge,
+      shadowBottom,
+      infillPatternId,
+      textureUrl,
+      textureTileCount,
+    );
+  }
+
+  // Pionowe podziały ramy (3 pola), na wypełnieniu.
+  const mullionT = frameT * 0.7;
+  for (let i = 1; i <= 2; i++) {
+    const mx = px + segW * (i / 3);
+    body += `<rect x="${(mx - mullionT / 2).toFixed(1)}" y="${(y + frameT).toFixed(1)}" width="${mullionT.toFixed(1)}" height="${(h - frameT * 2).toFixed(1)}" fill="${colorHex}" rx="0.5"/>`;
+  }
+
+  // Rama zewnętrzna: lewy/prawy słupek, górna i dolna belka.
+  body += `<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${frameT.toFixed(1)}" height="${h.toFixed(1)}" fill="${colorHex}" rx="0.5"/>`;
+  body += `<rect x="${(px + segW - frameT).toFixed(1)}" y="${y.toFixed(1)}" width="${frameT.toFixed(1)}" height="${h.toFixed(1)}" fill="${colorHex}" rx="0.5"/>`;
+  body += `<rect x="${px.toFixed(1)}" y="${(bottom - frameT).toFixed(1)}" width="${segW.toFixed(1)}" height="${frameT.toFixed(1)}" fill="${colorHex}" rx="0.5"/>`;
+  body += `<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${segW.toFixed(1)}" height="${frameT.toFixed(1)}" fill="${colorHex}" rx="0.5"/>`;
+  body += `<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${segW.toFixed(1)}" height="${(frameT * 0.35).toFixed(1)}" fill="${hi}" opacity="0.5"/>`;
+
+  // Dolna szyna jezdna.
+  body += `<rect x="${(px - 2).toFixed(1)}" y="${(bottom + 1).toFixed(1)}" width="${(segW + 4).toFixed(1)}" height="${(frameT * 0.5).toFixed(1)}" fill="${trackColor}" rx="0.5"/>`;
+
+  // Wózki jezdne (rolki) pod panelem.
+  let hardware = "";
+  const wheelR = Math.max(3, h * 0.03);
+  const wheelY = bottom - wheelR * 0.6;
+  for (const wx of [px + segW * 0.25, px + segW * 0.6]) {
+    hardware += `<circle cx="${wx.toFixed(1)}" cy="${wheelY.toFixed(1)}" r="${wheelR.toFixed(1)}" fill="${rollerColor}"/>`;
+    hardware += `<circle cx="${wx.toFixed(1)}" cy="${wheelY.toFixed(1)}" r="${(wheelR * 0.4).toFixed(1)}" fill="${darken(colorHex, 0.2)}"/>`;
+  }
+
+  return { body, hardware };
+}
+
+function drawDrivewayGateSection(
+  px: number,
+  y: number,
+  segmentW: number,
+  h: number,
+  fencePostW: number,
+  hasSpacer: boolean,
+  openness: number,
+  colorHex: string,
+  gateKind: DrivewayGateKind,
+  infillPatternId: PatternId,
+  textureUrl?: string | null,
+  textureTileCount?: number,
+): { body: string; hardware: string } {
+  if (textureUrl) {
+    const drawFn =
+      gateKind === "sliding" ? drawDrivewayGateSliding : drawDrivewayGateDoubleLeaf;
+    const procedural = drawFn(
+      px,
+      y,
+      segmentW,
+      h,
+      hasSpacer,
+      openness,
+      colorHex,
+      fencePostW,
+      infillPatternId,
+      textureUrl,
+      textureTileCount,
+    );
+    return {
+      body: drawTexturedStack(
+        px,
+        y,
+        segmentW,
+        h,
+        textureUrl,
+        textureTileCount ?? 1,
+      ),
+      hardware: procedural.hardware,
+    };
+  }
+  if (gateKind === "sliding") {
+    return drawDrivewayGateSliding(
+      px,
+      y,
+      segmentW,
+      h,
+      hasSpacer,
+      openness,
+      colorHex,
+      fencePostW,
+      infillPatternId,
+      textureUrl,
+      textureTileCount,
+    );
+  }
+  return drawDrivewayGateDoubleLeaf(
+    px,
+    y,
+    segmentW,
+    h,
+    hasSpacer,
+    openness,
+    colorHex,
+    fencePostW,
+    infillPatternId,
+    textureUrl,
+    textureTileCount,
+  );
+}
+
 /** Który bok segmentu furtki przylega do słupka skrajnego (ma margines +4px). */
 type GateEndSide = "left" | "right" | "none";
 
@@ -976,6 +1230,8 @@ function renderFenceSegments(
   openingTextureUrl?: string | null,
   textureTileCount?: number,
   wicketHingeSide: WicketHingeSide = "right",
+  drivewayGateTextureUrl?: string | null,
+  drivewayGateInfillPatternId?: PatternId,
 ): { svg: string; footingSegments: { x: number; w: number }[]; wicketHardware: string } {
   const weights = segmentWidthWeights(segments, wicketWidthCm, panelWidthCm);
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
@@ -1009,6 +1265,23 @@ function renderFenceSegments(
         wicketHingeSide,
         endSide,
         openingTextureUrl,
+        textureTileCount,
+      );
+      out += gate.body;
+      wicketHardware += gate.hardware;
+    } else if (seg.type === "driveway-gate") {
+      const gate = drawDrivewayGateSection(
+        cursorX,
+        y,
+        segW,
+        h,
+        fencePostW,
+        hasSpacer,
+        openness,
+        colorHex,
+        seg.gateKind,
+        drivewayGateInfillPatternId ?? patternId,
+        drivewayGateTextureUrl,
         textureTileCount,
       );
       out += gate.body;
@@ -1048,6 +1321,10 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     panelWidthCm = DEFAULT_PANEL_WIDTH_CM,
     wicketWidthCm = getWicketWidthCm(DEFAULT_PANEL_WIDTH_CM),
     wicketInsertAfter,
+    drivewayGateEnabled = false,
+    drivewayGateKind = "double-leaf",
+    drivewayGateTextureUrl = null,
+    drivewayGateInfillPatternId,
     footingEnabled = false,
     footingHeightCm = 20,
     footingColorHex = "#9ca3af",
@@ -1080,7 +1357,10 @@ export function buildFenceSvg(params: FenceRenderParams): string {
   const gap = hasSpacer ? 8 + openness * 12 : 2;
   const panelsX = leftPost + postW + 4;
   const panelsW = rightPost - panelsX - 4;
-  const segments = buildFenceSegments(panelCount, wicketInsertAfter);
+  const segments = buildFenceSegments(panelCount, {
+    wicketInsertAfter,
+    drivewayGateKind: drivewayGateEnabled ? drivewayGateKind : undefined,
+  });
   const segmentWeights = segmentWidthWeights(
     segments,
     wicketWidthCm,
@@ -1137,9 +1417,17 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     const segW = (innerW * segmentWeights[i]) / totalWeight;
     cursorX += segW;
     const postCenter = cursorX + gap / 2;
-    intermediatePosts += renderPost(postCenter - postW / 2, ["west", "east"]);
+    const clampSides = resolvePostClampSides(segments[i], segments[i + 1]);
+    intermediatePosts += renderPost(postCenter - postW / 2, clampSides);
     cursorX += gap;
   }
+
+  const leftEndClampSides =
+    segments[0]?.type === "panel" ? (["east"] as const) : [];
+  const rightEndClampSides =
+    segments[segments.length - 1]?.type === "panel"
+      ? (["west"] as const)
+      : [];
 
   const { svg: segmentsSvg, footingSegments, wicketHardware } = renderFenceSegments(
     panelsX,
@@ -1159,6 +1447,8 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     openingTextureUrl,
     textureTileCount,
     wicketHingeSide,
+    drivewayGateTextureUrl,
+    drivewayGateInfillPatternId ?? patternId,
   );
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewW} ${VIEW_H}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Podgląd ogrodzenia">
@@ -1206,9 +1496,9 @@ export function buildFenceSvg(params: FenceRenderParams): string {
 
   <!-- Posts group -->
   <g filter="url(#postShadow)">
-    ${renderPost(leftPost, ["east"])}
+    ${renderPost(leftPost, [...leftEndClampSides])}
     ${intermediatePosts}
-    ${renderPost(rightPost, ["west"])}
+    ${renderPost(rightPost, [...rightEndClampSides])}
   </g>
 
   ${

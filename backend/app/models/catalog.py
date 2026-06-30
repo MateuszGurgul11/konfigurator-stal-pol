@@ -143,6 +143,10 @@ class ElementCreate(BaseModel):
     active: bool = True
     description: str | None = None
     textureUrl: str | None = None
+    gateKind: Literal["sliding", "double-leaf"] | None = None
+    infillPatternId: Literal[
+        "pattern-3d", "pattern-palisade", "pattern-panel-horizontal"
+    ] | None = None
     priceNet: float = Field(ge=0, default=0)
 
 

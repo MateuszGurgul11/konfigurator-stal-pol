@@ -42,6 +42,25 @@ export default function AdminElementsPage() {
           },
           { name: "name", label: "Nazwa", type: "text" },
           {
+            name: "gateKind",
+            label: "Typ bramy",
+            type: "select",
+            options: [
+              { value: "sliding", label: "Przesuwna" },
+              { value: "double-leaf", label: "Dwuskrzydłowa" },
+            ],
+          },
+          {
+            name: "infillPatternId",
+            label: "Wzór wypełnienia",
+            type: "select",
+            options: [
+              { value: "pattern-3d", label: "Panel 3D" },
+              { value: "pattern-palisade", label: "Palisada" },
+              { value: "pattern-panel-horizontal", label: "Panel poziomy" },
+            ],
+          },
+          {
             name: "priceNet",
             label: "Cena (PLN netto)",
             type: "number",

@@ -30,8 +30,13 @@ import { calculateQuote } from "@/lib/pricing/calculateQuote";
 import { resolveSurchargePerPanel } from "@/lib/pricing/surcharges";
 import {
   formatElementPriceSubtitle,
-  getElementsByType,
+  pickBramaElementForPattern,
+  pickFurtkaElementForPattern,
+  resolveDrivewayGateKind,
+  resolveElement,
+  resolveFencePatternId,
 } from "@/lib/pricing/element-prices";
+import type { DrivewayGateKind, OpeningInfillPatternId } from "@/lib/types";
 
 type Props = {
   catalog: CatalogCollections;
@@ -190,6 +195,63 @@ function WicketHingeSidePicker({
   );
 }
 
+function DrivewayGateKindPicker({
+  catalog,
+  selectedElementId,
+  patternId,
+  onSelectKind,
+}: {
+  catalog: CatalogCollections;
+  selectedElementId: string | null;
+  patternId: OpeningInfillPatternId;
+  onSelectKind: (kind: DrivewayGateKind) => void;
+}) {
+  const selectedKind = selectedElementId
+    ? resolveDrivewayGateKind(resolveElement(catalog, "brama", selectedElementId))
+    : null;
+  const options: { kind: DrivewayGateKind; label: string }[] = [
+    { kind: "double-leaf", label: "Brama dwuskrzydłowa" },
+    { kind: "sliding", label: "Brama przesuwna" },
+  ];
+
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-2">
+      {options.map(({ kind, label }) => {
+        const elementId = pickBramaElementForPattern(catalog, kind, patternId);
+        const element = elementId
+          ? catalog.elements.find((e) => e.id === elementId)
+          : undefined;
+        return (
+          <button
+            key={kind}
+            type="button"
+            disabled={!elementId}
+            onClick={() => elementId && onSelectKind(kind)}
+            className={cn(
+              "rounded-lg border px-3 py-2.5 text-left transition-all",
+              selectedKind === kind
+                ? "border-[#e30311] bg-[#2a0e10] text-white"
+                : "border-[#333] bg-[#222] text-[#888] hover:border-[#444]",
+            )}
+          >
+            <span className="text-sm font-semibold">{label}</span>
+            {element && (
+              <span
+                className={cn(
+                  "mt-0.5 block text-[11px]",
+                  selectedKind === kind ? "text-[#f0c0c3]" : "text-[#666]",
+                )}
+              >
+                {formatElementPriceSubtitle(element)}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function OptionSidebar({
   catalog,
   selection,
@@ -248,13 +310,10 @@ export function OptionSidebar({
     right: "zawiasy prawe",
   };
 
-  const bramaOptions = useMemo(
-    () => getElementsByType(catalog, "brama"),
-    [catalog],
-  );
-  const furtkaOptions = useMemo(
-    () => getElementsByType(catalog, "furtka"),
-    [catalog],
+  // Wzór wypełnienia bramy/furtki dziedziczony z modelu płotu.
+  const fencePatternId = useMemo(
+    () => resolveFencePatternId(catalog, selection.panelId),
+    [catalog, selection.panelId],
   );
 
   const quote = useMemo(
@@ -536,29 +595,33 @@ export function OptionSidebar({
                   subtitle="Ciągłe ogrodzenie panelowe"
                   onClick={() => setBramaElementId(null)}
                 />
-                {bramaOptions.map((element) => (
-                  <ModelCard
-                    key={element.id}
-                    selected={bramaElementId === element.id}
-                    title={element.name}
-                    subtitle={formatElementPriceSubtitle(element)}
-                    onClick={() => setBramaElementId(element.id)}
-                  />
-                ))}
               </div>
-              {bramaOptions.length === 0 && (
-                <p className="mt-2 text-[11px] text-[#888]">
-                  Brak aktywnych bram w katalogu — dodaj je w panelu admina.
+              <DrivewayGateKindPicker
+                catalog={catalog}
+                selectedElementId={bramaElementId}
+                patternId={fencePatternId}
+                onSelectKind={(kind) => {
+                  const id = pickBramaElementForPattern(
+                    catalog,
+                    kind,
+                    fencePatternId,
+                  );
+                  if (id) setBramaElementId(id);
+                }}
+              />
+              <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
+                Wypełnienie bramy odpowiada wybranemu{" "}
+                <strong className="text-[#ccc]">modelowi ogrodzenia</strong>.
+              </p>
+              {bramaElementId && scope.fence && (
+                <p className="mt-2 text-[11px] leading-relaxed text-[#888]">
+                  W podglądzie brama zajmuje <strong className="text-[#ccc]">2 panele od lewej</strong>{" "}
+                  (pozycja zamknięta). Na zakładce{" "}
+                  <strong className="text-[#ccc]">Wycena</strong> możesz doprecyzować szerokość na
+                  rzucie uchwytami <strong className="text-[#ccc]">B1/B2</strong>.
                 </p>
               )}
-              {bramaEnabled && scope.fence && (
-                <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
-                  Przejdź do zakładki <strong className="text-[#ccc]">Wycena</strong>,
-                  zamknij obrys i przeciągnij uchwyty <strong className="text-[#ccc]">B1/B2</strong>{" "}
-                  wzdłuż linii ogrodzenia, aby ustawić szerokość bramy na rzucie.
-                </p>
-              )}
-              {bramaEnabled && !scope.fence && (
+              {bramaElementId && !scope.fence && (
                 <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
                   Cena bramy jest stała netto — nie zależy od liczby paneli.
                 </p>
@@ -569,28 +632,41 @@ export function OptionSidebar({
             {scope.wicket && (
             <div>
               <SectionLabel>Furtka</SectionLabel>
-              <div className="flex flex-col gap-2">
-                <ModelCard
-                  selected={!furtkaElementId}
-                  title="Bez furtki"
-                  subtitle="Ciągłe ogrodzenie panelowe"
-                  onClick={() => setFurtkaElementId(null)}
-                />
-                {furtkaOptions.map((element) => (
-                  <ModelCard
-                    key={element.id}
-                    selected={furtkaElementId === element.id}
-                    title={element.name}
-                    subtitle={formatElementPriceSubtitle(element)}
-                    onClick={() => setFurtkaElementId(element.id)}
-                  />
-                ))}
-              </div>
-              {furtkaOptions.length === 0 && (
-                <p className="mt-2 text-[11px] text-[#888]">
-                  Brak aktywnych furtek w katalogu — dodaj je w panelu admina.
-                </p>
-              )}
+              {(() => {
+                const matchedFurtkaId = pickFurtkaElementForPattern(
+                  catalog,
+                  fencePatternId,
+                );
+                const matchedFurtka = matchedFurtkaId
+                  ? resolveElement(catalog, "furtka", matchedFurtkaId)
+                  : undefined;
+                return (
+                  <div className="flex flex-col gap-2">
+                    <ModelCard
+                      selected={!furtkaElementId}
+                      title="Bez furtki"
+                      subtitle="Ciągłe ogrodzenie panelowe"
+                      onClick={() => setFurtkaElementId(null)}
+                    />
+                    {matchedFurtka ? (
+                      <ModelCard
+                        selected={Boolean(furtkaElementId)}
+                        title="Furtka"
+                        subtitle={formatElementPriceSubtitle(matchedFurtka)}
+                        onClick={() => setFurtkaElementId(matchedFurtka.id)}
+                      />
+                    ) : (
+                      <p className="mt-2 text-[11px] text-[#888]">
+                        Brak aktywnych furtek w katalogu — dodaj je w panelu admina.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+              <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
+                Wypełnienie furtki odpowiada wybranemu{" "}
+                <strong className="text-[#ccc]">modelowi ogrodzenia</strong>.
+              </p>
               {furtkaEnabled && (
                 <WicketHingeSidePicker
                   value={furtkaHingeSide}

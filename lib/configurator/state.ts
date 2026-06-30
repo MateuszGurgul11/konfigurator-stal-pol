@@ -7,8 +7,16 @@ import {
 import { DEFAULT_PRICING_SETTINGS } from "@/lib/pricing/defaults";
 import { calculateQuote } from "@/lib/pricing/calculateQuote";
 import type { Line2D, Point2D } from "@/lib/pricing/geometry";
-import { pickDefaultElementId } from "@/lib/pricing/element-prices";
+import {
+  pickBramaElementForPattern,
+  pickDefaultElementId,
+  pickFurtkaElementForPattern,
+  resolveDrivewayGateKind,
+  resolveElement,
+  resolveFencePatternId,
+} from "@/lib/pricing/element-prices";
 import { arcSpanM } from "@/lib/pricing/perimeter-path";
+import { getDrivewayGateSpanM } from "@/lib/pricing/variant-prices";
 
 export type ConfiguratorTab =
   | "model"
@@ -99,18 +107,24 @@ export function getGatePanelIndex(
   }
 }
 
-/** Indeks panela, po którym wstawiamy furtkę (-1 = przed pierwszym). */
+/** Indeks panela, po którym wstawiamy furtkę (-1 = przed pierwszym panelem w pętli). */
 export function getWicketInsertAfterIndex(
   position: GatePosition,
   panelCount: number,
+  options?: { drivewayGateEnabled?: boolean },
 ): number {
+  const layoutPanelCount = options?.drivewayGateEnabled
+    ? Math.max(0, panelCount - 2)
+    : panelCount;
   switch (position) {
     case "left":
       return -1;
     case "right":
-      return panelCount - 1;
+      return Math.max(-1, layoutPanelCount - 1);
     case "center":
-      return Math.floor((panelCount - 1) / 2) - 1;
+      return layoutPanelCount > 0
+        ? Math.floor((layoutPanelCount - 1) / 2) - 1
+        : -1;
   }
 }
 
@@ -270,7 +284,6 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     const next: Partial<ConfiguratorState> = {
       scopeConfirmed: true,
       activeTab: firstTabForScope(scope),
-      bramaEnabled: scope.gate,
       furtkaEnabled: scope.wicket,
     };
 
@@ -282,6 +295,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       next.bramaArcEnd = null;
       next.bramaOccupiedSpanM = null;
     }
+    next.bramaEnabled = Boolean(next.bramaElementId);
 
     if (scope.wicket && catalog) {
       next.furtkaElementId = pickDefaultElementId(catalog, "furtka");
@@ -316,7 +330,30 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     });
   },
   setSelection: (partial) =>
-    set((s) => ({ selection: { ...s.selection, ...partial } })),
+    set((s) => {
+      const selection = { ...s.selection, ...partial };
+      const next: Partial<ConfiguratorState> = { selection };
+      // Zmiana modelu płotu pociąga za sobą wzór wypełnienia bramy i furtki.
+      if (
+        partial.panelId !== undefined &&
+        partial.panelId !== s.selection.panelId &&
+        s.catalog
+      ) {
+        const pattern = resolveFencePatternId(s.catalog, selection.panelId);
+        if (s.bramaEnabled && s.bramaElementId) {
+          const kind = resolveDrivewayGateKind(
+            resolveElement(s.catalog, "brama", s.bramaElementId),
+          );
+          const id = pickBramaElementForPattern(s.catalog, kind, pattern);
+          if (id) next.bramaElementId = id;
+        }
+        if (s.furtkaEnabled && s.furtkaElementId) {
+          const id = pickFurtkaElementForPattern(s.catalog, pattern);
+          if (id) next.furtkaElementId = id;
+        }
+      }
+      return next;
+    }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setBackgroundImage: (url) => {
     const prev = get().backgroundImageUrl;
@@ -379,16 +416,18 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       const bramaArcStart =
         s.bramaArcStart ?? (s.quoteFenceClosed ? 0.2 : null);
       const bramaArcEnd = s.bramaArcEnd ?? (s.quoteFenceClosed ? 0.3 : null);
+      const spanFromArc = recomputeBramaSpan(
+        bramaArcStart,
+        bramaArcEnd,
+        s.quotePerimeterM,
+      );
       return {
         bramaEnabled: true,
         bramaElementId: elementId,
         bramaArcStart,
         bramaArcEnd,
-        bramaOccupiedSpanM: recomputeBramaSpan(
-          bramaArcStart,
-          bramaArcEnd,
-          s.quotePerimeterM,
-        ),
+        bramaOccupiedSpanM:
+          spanFromArc ?? getDrivewayGateSpanM(s.pricing.panelWidthCm),
       };
     }),
   setBramaPosition: (position) => set({ bramaPosition: position }),

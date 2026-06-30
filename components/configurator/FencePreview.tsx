@@ -24,6 +24,11 @@ import {
   useConfiguratorStore,
 } from "@/lib/configurator/state";
 import { getWicketWidthCm } from "@/lib/pricing/variant-prices";
+import {
+  isDrivewayGateConfigured,
+  resolveDrivewayGateKind,
+  resolveElement,
+} from "@/lib/pricing/element-prices";
 import type { CatalogCollections, ConfiguratorSelection } from "@/lib/types";
 import { resolveBackgroundUrl } from "@/lib/configurator/backgrounds";
 import {
@@ -296,6 +301,8 @@ export function FencePreview({ catalog, selection }: Props) {
   const furtkaElementId = useConfiguratorStore((s) => s.furtkaElementId);
   const furtkaPosition = useConfiguratorStore((s) => s.furtkaPosition);
   const furtkaHingeSide = useConfiguratorStore((s) => s.furtkaHingeSide);
+  const bramaElementId = useConfiguratorStore((s) => s.bramaElementId);
+  const hasDrivewayGate = isDrivewayGateConfigured(bramaElementId);
   const previewPanelCount = useConfiguratorStore((s) => s.previewPanelCount);
   const setPreviewPanelCount = useConfiguratorStore((s) => s.setPreviewPanelCount);
   const footingEnabled = useConfiguratorStore((s) => s.footingEnabled);
@@ -556,8 +563,10 @@ export function FencePreview({ catalog, selection }: Props) {
 
   const wicketInsertAfter = useMemo(() => {
     if (!furtkaEnabled) return undefined;
-    return getWicketInsertAfterIndex(furtkaPosition, previewPanelCount);
-  }, [furtkaEnabled, furtkaPosition, previewPanelCount]);
+    return getWicketInsertAfterIndex(furtkaPosition, previewPanelCount, {
+      drivewayGateEnabled: hasDrivewayGate,
+    });
+  }, [furtkaEnabled, furtkaPosition, previewPanelCount, hasDrivewayGate]);
 
   const svgMarkup = useMemo(() => {
     if (!post || !panel || !spacer || !height || !color) return null;
@@ -574,6 +583,17 @@ export function FencePreview({ catalog, selection }: Props) {
     );
     const openingTextureUrl = furtkaEnabled
       ? resolveOpeningTextureUrl(catalog, "furtka", furtkaElementId)
+      : null;
+    const bramaElement = hasDrivewayGate
+      ? resolveElement(catalog, "brama", bramaElementId)
+      : undefined;
+    const drivewayGateKind = bramaElement
+      ? resolveDrivewayGateKind(bramaElement)
+      : undefined;
+    // Wypełnienie bramy dziedziczy wzór z modelu płotu.
+    const drivewayGateInfillPatternId = panel.patternId as PatternId;
+    const drivewayGateTextureUrl = hasDrivewayGate
+      ? resolveOpeningTextureUrl(catalog, "brama", bramaElementId)
       : null;
     const textureTileCount = computeTextureTileCount(
       height.valueM,
@@ -598,6 +618,10 @@ export function FencePreview({ catalog, selection }: Props) {
       panelWidthCm: pricing.panelWidthCm,
       wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
       wicketInsertAfter,
+      drivewayGateEnabled: hasDrivewayGate,
+      drivewayGateKind,
+      drivewayGateTextureUrl,
+      drivewayGateInfillPatternId,
       footingEnabled,
       footingHeightCm: footingHeight?.heightCm ?? 20,
       footingColorHex: footingMaterial?.hex ?? "#9ca3af",
@@ -623,6 +647,8 @@ export function FencePreview({ catalog, selection }: Props) {
     furtkaEnabled,
     furtkaElementId,
     furtkaHingeSide,
+    bramaElementId,
+    hasDrivewayGate,
     footingEnabled,
     footingHeightId,
     footingMaterialId,
@@ -677,6 +703,10 @@ export function FencePreview({ catalog, selection }: Props) {
   };
 
   const openingLabels: string[] = [];
+  if (bramaElementId) {
+    const bramaElement = catalog.elements.find((e) => e.id === bramaElementId);
+    openingLabels.push(bramaElement?.name ?? "Brama");
+  }
   if (furtkaEnabled && furtkaElementId) {
     const furtkaElement = catalog.elements.find((e) => e.id === furtkaElementId);
     openingLabels.push(

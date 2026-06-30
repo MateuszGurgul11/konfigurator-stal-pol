@@ -62,6 +62,13 @@ export type FootingMaterial = CatalogEntity & {
 
 export type OpeningElementType = "brama" | "furtka";
 
+export type DrivewayGateKind = "sliding" | "double-leaf";
+
+export type OpeningInfillPatternId =
+  | "pattern-3d"
+  | "pattern-palisade"
+  | "pattern-panel-horizontal";
+
 export type OpeningElement = {
   id: string;
   type: OpeningElementType;
@@ -70,6 +77,10 @@ export type OpeningElement = {
   active: boolean;
   textureUrl?: string;
   description?: string;
+  /** Brama wjazdowa: dwuskrzydłowa lub przesuwna. */
+  gateKind?: DrivewayGateKind;
+  /** Wzór wypełnienia bramy / furtki w podglądzie SVG. */
+  infillPatternId?: OpeningInfillPatternId;
   /** Brama i furtka: cena stała netto (PLN). */
   priceNet?: number;
 };

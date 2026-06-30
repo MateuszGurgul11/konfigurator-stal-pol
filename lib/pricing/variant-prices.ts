@@ -21,6 +21,13 @@ export function getWicketWidthCm(_panelWidthCm?: number): number {
   return WICKET_WIDTH_CM;
 }
 
+/** Brama wjazdowa zajmuje dwa pełne panele. */
+export const DRIVEWAY_GATE_PANEL_COUNT = 2;
+
+export function getDrivewayGateSpanM(panelWidthCm: number): number {
+  return (DRIVEWAY_GATE_PANEL_COUNT * panelWidthCm) / 100;
+}
+
 export const PANEL_PRICE_BY_PATTERN: Record<string, number> = {
   "pattern-3d": 0,
   "pattern-palisade": 50,

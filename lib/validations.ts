@@ -114,6 +114,10 @@ export const elementSchema = z.object({
   name: z.string().min(1, "Nazwa jest wymagana"),
   description: optionalString,
   textureUrl: clearableUrl,
+  gateKind: z.enum(["sliding", "double-leaf"]).optional(),
+  infillPatternId: z
+    .enum(["pattern-3d", "pattern-palisade", "pattern-panel-horizontal"])
+    .optional(),
   priceNet: z.coerce.number().min(0).default(0),
   sortOrder: z.coerce.number().int().min(0),
   active: z.boolean(),
