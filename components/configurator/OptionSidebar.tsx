@@ -21,6 +21,7 @@ import {
   getNextConfiguratorTab,
   MAX_PREVIEW_PANELS,
   MIN_PREVIEW_PANELS,
+  resolveQuotePerimeterM,
   useConfiguratorStore,
 } from "@/lib/configurator/state";
 import { ConfiguratorTabs } from "./ConfiguratorTabs";
@@ -288,6 +289,11 @@ export function OptionSidebar({
   const setPreviewPanelCount = useConfiguratorStore((s) => s.setPreviewPanelCount);
   const pricing = useConfiguratorStore((s) => s.pricing);
   const quotePerimeterM = useConfiguratorStore((s) => s.quotePerimeterM);
+  const manualQuotePerimeterM = useConfiguratorStore((s) => s.manualQuotePerimeterM);
+  const quoteFenceScope = useConfiguratorStore((s) => s.quoteFenceScope);
+  const manualQuoteFrontLengthM = useConfiguratorStore(
+    (s) => s.manualQuoteFrontLengthM,
+  );
   const quoteFenceClosed = useConfiguratorStore((s) => s.quoteFenceClosed);
   const scope = useConfiguratorStore((s) => s.scope);
   const resetScope = useConfiguratorStore((s) => s.resetScope);
@@ -316,13 +322,31 @@ export function OptionSidebar({
     [catalog, selection.panelId],
   );
 
+  const effectiveQuotePerimeterM = useMemo(
+    () =>
+      resolveQuotePerimeterM({
+        quoteFenceClosed,
+        quotePerimeterM,
+        quoteFenceScope,
+        manualQuotePerimeterM,
+        manualQuoteFrontLengthM,
+      }),
+    [
+      quoteFenceClosed,
+      quotePerimeterM,
+      quoteFenceScope,
+      manualQuotePerimeterM,
+      manualQuoteFrontLengthM,
+    ],
+  );
+
   const quote = useMemo(
     () =>
       calculateQuote({
         catalog,
         selection,
         pricing,
-        perimeterM: quotePerimeterM,
+        perimeterM: effectiveQuotePerimeterM,
         fenceEnabled: scope.fence,
         bramaEnabled,
         bramaElementId,
@@ -342,7 +366,7 @@ export function OptionSidebar({
       catalog,
       selection,
       pricing,
-      quotePerimeterM,
+      effectiveQuotePerimeterM,
       scope.fence,
       bramaEnabled,
       bramaElementId,
@@ -763,8 +787,8 @@ export function OptionSidebar({
                     {
                       label: "Długość z rzutu",
                       value:
-                        quoteFenceClosed && quotePerimeterM
-                          ? `${quotePerimeterM.toFixed(1)} m bieżących`
+                        effectiveQuotePerimeterM != null
+                          ? `${effectiveQuotePerimeterM.toFixed(1)} m bieżących`
                           : "—",
                     },
                     {

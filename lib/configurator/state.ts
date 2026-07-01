@@ -16,7 +16,14 @@ import {
   resolveFencePatternId,
 } from "@/lib/pricing/element-prices";
 import { arcSpanM } from "@/lib/pricing/perimeter-path";
+import {
+  defaultManualQuotePerimeterM,
+  resolveQuotePerimeterM,
+  type QuoteFenceScope,
+} from "@/lib/pricing/quote-perimeter";
 import { getDrivewayGateSpanM } from "@/lib/pricing/variant-prices";
+
+export { resolveQuotePerimeterM, type QuoteFenceScope } from "@/lib/pricing/quote-perimeter";
 
 export type ConfiguratorTab =
   | "model"
@@ -164,6 +171,10 @@ type ConfiguratorState = {
   quoteFenceClosed: boolean;
   quotePxPerMeter: number | null;
   quotePerimeterM: number | null;
+  manualQuotePerimeterM: number;
+  quoteFenceScope: QuoteFenceScope;
+  manualQuoteFrontLengthM: number;
+  quoteAdvancedView: boolean;
   setCatalog: (catalog: CatalogCollections) => void;
   setPricing: (pricing: PricingSettings) => void;
   setLoading: (loading: boolean) => void;
@@ -207,6 +218,10 @@ type ConfiguratorState = {
   clearQuoteFence: () => void;
   closeQuoteFence: () => void;
   setQuotePerimeterM: (perimeterM: number | null) => void;
+  setManualQuotePerimeterM: (perimeterM: number) => void;
+  setQuoteFenceScope: (scope: QuoteFenceScope) => void;
+  setManualQuoteFrontLengthM: (lengthM: number) => void;
+  setQuoteAdvancedView: (open: boolean) => void;
   resetQuoteDrawing: () => void;
   applyQuoteToPreview: () => void;
 };
@@ -271,8 +286,27 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   quoteFenceClosed: false,
   quotePxPerMeter: null,
   quotePerimeterM: null,
+  manualQuotePerimeterM: defaultManualQuotePerimeterM(
+    DEFAULT_PRICING_SETTINGS.panelWidthCm,
+  ),
+  quoteFenceScope: "full-perimeter",
+  manualQuoteFrontLengthM: defaultManualQuotePerimeterM(
+    DEFAULT_PRICING_SETTINGS.panelWidthCm,
+  ),
+  quoteAdvancedView: false,
   setCatalog: (catalog) => set({ catalog }),
-  setPricing: (pricing) => set({ pricing }),
+  setPricing: (pricing) =>
+    set((s) => ({
+      pricing,
+      manualQuotePerimeterM:
+        s.manualQuotePerimeterM > 0
+          ? s.manualQuotePerimeterM
+          : defaultManualQuotePerimeterM(pricing.panelWidthCm),
+      manualQuoteFrontLengthM:
+        s.manualQuoteFrontLengthM > 0
+          ? s.manualQuoteFrontLengthM
+          : defaultManualQuotePerimeterM(pricing.panelWidthCm),
+    })),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setScope: (partial) =>
@@ -303,6 +337,14 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       next.furtkaElementId = null;
       next.furtkaArcPosition = null;
     }
+
+    const defaultManualPerimeter = defaultManualQuotePerimeterM(
+      get().pricing.panelWidthCm,
+    );
+    next.manualQuotePerimeterM = defaultManualPerimeter;
+    next.quoteFenceScope = "full-perimeter";
+    next.manualQuoteFrontLengthM = defaultManualPerimeter;
+    next.quoteAdvancedView = false;
 
     set(next);
   },
@@ -624,6 +666,12 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
         perimeterM,
       ),
     })),
+  setManualQuotePerimeterM: (perimeterM) =>
+    set({ manualQuotePerimeterM: Math.max(0.1, perimeterM) }),
+  setQuoteFenceScope: (scope) => set({ quoteFenceScope: scope }),
+  setManualQuoteFrontLengthM: (lengthM) =>
+    set({ manualQuoteFrontLengthM: Math.max(0.1, lengthM) }),
+  setQuoteAdvancedView: (open) => set({ quoteAdvancedView: open }),
   resetQuoteDrawing: () =>
     set({
       quoteCalibrationLine: null,
@@ -637,14 +685,15 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     }),
   applyQuoteToPreview: () => {
     const state = get();
-    const { quotePerimeterM, pricing, catalog, selection } = state;
-    if (!quotePerimeterM || quotePerimeterM <= 0 || !catalog) return;
+    const effectivePerimeterM = resolveQuotePerimeterM(state);
+    const { pricing, catalog, selection } = state;
+    if (!effectivePerimeterM || effectivePerimeterM <= 0 || !catalog) return;
 
     const quote = calculateQuote({
       catalog,
       selection,
       pricing,
-      perimeterM: quotePerimeterM,
+      perimeterM: effectivePerimeterM,
       fenceEnabled: state.scope.fence,
       bramaEnabled: state.bramaEnabled,
       bramaElementId: state.bramaElementId,

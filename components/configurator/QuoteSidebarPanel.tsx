@@ -11,6 +11,8 @@ import {
   PencilLine,
   Gauge,
   Spline,
+  ArrowLeft,
+  Map,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateQuote } from "@/lib/pricing/calculateQuote";
@@ -19,8 +21,13 @@ import {
   MAX_BG_SIZE,
   validateBackgroundFile,
 } from "@/lib/configurator/backgrounds";
-import { MAX_PREVIEW_PANELS, useConfiguratorStore } from "@/lib/configurator/state";
-import type { CatalogCollections, ConfiguratorSelection } from "@/lib/types";
+import {
+  MAX_PREVIEW_PANELS,
+  resolveQuotePerimeterM,
+  useConfiguratorStore,
+  type QuoteFenceScope,
+} from "@/lib/configurator/state";
+import type { CatalogCollections, ConfiguratorSelection, QuoteResult } from "@/lib/types";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -79,365 +86,78 @@ function StepHeader({
 
 const CARD_CLASS = "rounded-xl border border-[#333] bg-[#222] p-4";
 
-type Props = {
-  catalog: CatalogCollections;
-  selection: ConfiguratorSelection;
+const QUOTE_SCOPE_LABELS: Record<QuoteFenceScope, string> = {
+  "full-perimeter": "Całe ogrodzenie",
+  "front-only": "Tylko front",
 };
 
-export function QuoteSidebarPanel({ catalog, selection }: Props) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+const QUOTE_LENGTH_LABELS: Record<QuoteFenceScope, string> = {
+  "full-perimeter": "Długość bieżąca",
+  "front-only": "Długość frontu",
+};
 
-  const quotePlanImageUrl = useConfiguratorStore((s) => s.quotePlanImageUrl);
-  const quoteDrawMode = useConfiguratorStore((s) => s.quoteDrawMode);
-  const quoteCalibrationLine = useConfiguratorStore((s) => s.quoteCalibrationLine);
-  const quoteCalibrationLengthM = useConfiguratorStore(
-    (s) => s.quoteCalibrationLengthM,
-  );
-  const quoteFencePoints = useConfiguratorStore((s) => s.quoteFencePoints);
-  const quoteFenceClosed = useConfiguratorStore((s) => s.quoteFenceClosed);
-  const quotePxPerMeter = useConfiguratorStore((s) => s.quotePxPerMeter);
-  const quotePerimeterM = useConfiguratorStore((s) => s.quotePerimeterM);
-  const scope = useConfiguratorStore((s) => s.scope);
-  const bramaEnabled = useConfiguratorStore((s) => s.bramaEnabled);
-  const bramaElementId = useConfiguratorStore((s) => s.bramaElementId);
-  const bramaOccupiedSpanM = useConfiguratorStore((s) => s.bramaOccupiedSpanM);
-  const furtkaEnabled = useConfiguratorStore((s) => s.furtkaEnabled);
-  const furtkaElementId = useConfiguratorStore((s) => s.furtkaElementId);
-  const furtkaPosition = useConfiguratorStore((s) => s.furtkaPosition);
-  const previewPanelCount = useConfiguratorStore((s) => s.previewPanelCount);
-  const footingEnabled = useConfiguratorStore((s) => s.footingEnabled);
-  const footingHeightId = useConfiguratorStore((s) => s.footingHeightId);
-  const footingMaterialId = useConfiguratorStore((s) => s.footingMaterialId);
-  const pricing = useConfiguratorStore((s) => s.pricing);
-
-  const setQuotePlanImage = useConfiguratorStore((s) => s.setQuotePlanImage);
-  const setQuoteCalibrationLengthM = useConfiguratorStore(
-    (s) => s.setQuoteCalibrationLengthM,
-  );
-  const setQuoteDrawMode = useConfiguratorStore((s) => s.setQuoteDrawMode);
-  const undoQuoteFencePoint = useConfiguratorStore((s) => s.undoQuoteFencePoint);
-  const removeQuoteFencePointAt = useConfiguratorStore(
-    (s) => s.removeQuoteFencePointAt,
-  );
-  const clearQuoteFence = useConfiguratorStore((s) => s.clearQuoteFence);
-  const closeQuoteFence = useConfiguratorStore((s) => s.closeQuoteFence);
-  const applyQuoteToPreview = useConfiguratorStore((s) => s.applyQuoteToPreview);
-
-  const openingPositionLabels = {
-    left: "lewa sekcja",
-    center: "środkowa sekcja",
-    right: "prawa sekcja",
-  } as const;
-
-  const quote = useMemo(
-    () =>
-      calculateQuote({
-        catalog,
-        selection,
-        pricing,
-        perimeterM: quotePerimeterM,
-        fenceEnabled: scope.fence,
-        bramaEnabled,
-        bramaElementId,
-        bramaOccupiedSpanM,
-        furtkaEnabled,
-        furtkaElementId,
-        furtkaPositionLabel: openingPositionLabels[furtkaPosition],
-        footingEnabled,
-        footingHeightId,
-        footingMaterialId,
-        fallbackPanelCount: previewPanelCount,
-      }),
-    [
-      catalog,
-      selection,
-      pricing,
-      quotePerimeterM,
-      scope.fence,
-      bramaEnabled,
-      bramaElementId,
-      bramaOccupiedSpanM,
-      furtkaEnabled,
-      furtkaElementId,
-      furtkaPosition,
-      footingEnabled,
-      footingHeightId,
-      footingMaterialId,
-      previewPanelCount,
-    ],
-  );
-
-  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    const error = validateBackgroundFile(file);
-    if (error) {
-      alert(error);
-      return;
-    }
-    if (!ACCEPTED_BG_TYPES.includes(file.type) || file.size > MAX_BG_SIZE) {
-      return;
-    }
-    setQuotePlanImage(URL.createObjectURL(file));
-  }
-
-  const canCloseFence =
-    quoteFencePoints.length >= 3 && !quoteFenceClosed && quotePxPerMeter;
-
-  const previewPanelsFromQuote = Math.min(
-    quote.estimatedPanels,
-    MAX_PREVIEW_PANELS,
-  );
-
-  const calibrationStatus: StepStatus = quotePxPerMeter
-    ? { label: "Skala OK", tone: "done" }
-    : quoteDrawMode === "calibrate"
-      ? { label: "Zaznaczasz", tone: "active" }
-      : { label: "Do zrobienia", tone: "idle" };
-
-  const fenceStatus: StepStatus = quoteFenceClosed
-    ? { label: "Zamknięty", tone: "done" }
-    : quoteFencePoints.length > 0
-      ? { label: `${quoteFencePoints.length} pkt`, tone: "active" }
-      : { label: "Do zrobienia", tone: "idle" };
-
+function ScopeCard({
+  selected,
+  title,
+  subtitle,
+  onClick,
+}: {
+  selected: boolean;
+  title: string;
+  subtitle: string;
+  onClick: () => void;
+}) {
   return (
-    <div className="space-y-5">
-      <div className="overflow-hidden rounded-xl bg-[#e30311] px-4 py-3.5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-          Wycena na rzucie
-        </p>
-        <p className="mt-1 text-[11px] leading-relaxed text-white/85">
-          Wgraj plan działki, ustaw skalę i obrysuj teren — cena policzy się
-          automatycznie.
-        </p>
-        <div className="mt-2.5 flex flex-wrap gap-1">
-          {["Rzut", "Skala", "Obrys", "Cena"].map((label, i) => (
-            <span
-              key={label}
-              className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/95"
-            >
-              {i + 1}. {label}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <SectionLabel>Rzut działki</SectionLabel>
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full flex-col items-start gap-1 rounded-lg border px-3 py-3 text-left transition-all",
+        selected
+          ? "border-[#e30311] bg-[#2a0e10]"
+          : "border-[#333] bg-[#222] hover:border-[#444] hover:bg-[#282828]",
+      )}
+    >
+      <div className="flex w-full items-center gap-2">
+        <div
           className={cn(
-            "group flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition-colors",
-            quotePlanImageUrl
-              ? "border-[#3a3a36] bg-[#222] text-[#ccc] hover:border-[#555] hover:bg-[#2a2a28]"
-              : "border-dashed border-[#e30311]/60 bg-[#2a0e10]/40 text-white hover:bg-[#2a0e10]",
+            "flex h-5 w-5 shrink-0 items-center justify-center rounded border",
+            selected
+              ? "border-[#e30311] bg-[#e30311]"
+              : "border-[#555] bg-transparent",
           )}
         >
-          <ImagePlus className="h-4 w-4 text-[#e30311]" />
-          {quotePlanImageUrl ? "Zmień rzut" : "Prześlij rzut"}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleUpload}
-        />
+          {selected && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+        </div>
+        <span className="text-xs font-bold text-white">{title}</span>
       </div>
+      <span className="pl-7 text-[10px] leading-relaxed text-[#888]">
+        {subtitle}
+      </span>
+    </button>
+  );
+}
 
-      {quotePlanImageUrl && (
-        <>
-          <div>
-            <StepHeader index={1} title="Kalibracja skali" status={calibrationStatus} />
-            <div className={cn(CARD_CLASS, "space-y-3")}>
-              <p className="text-[11px] leading-relaxed text-[#9a9a95]">
-                Kliknij 2 punkty na znanym odcinku (np. bok działki 20 m), a potem
-                wpisz jego długość w metrach.
-              </p>
-              <button
-                type="button"
-                onClick={() => setQuoteDrawMode("calibrate")}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
-                  quoteDrawMode === "calibrate"
-                    ? "border-[#e30311] bg-[#2a0e10]"
-                    : "border-[#3a3a36] hover:border-[#555] hover:bg-[#222]",
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
-                    quoteDrawMode === "calibrate"
-                      ? "bg-[#e30311] text-white"
-                      : "bg-[#161614] text-[#888]",
-                  )}
-                >
-                  <Ruler className="h-4 w-4" />
-                </span>
-                <span className="flex flex-col">
-                  <span
-                    className={cn(
-                      "text-xs font-bold",
-                      quoteDrawMode === "calibrate" ? "text-white" : "text-[#bbb]",
-                    )}
-                  >
-                    Narysuj linię skali
-                  </span>
-                  <span className="text-[10px] text-[#777]">
-                    2 kliknięcia na rzucie
-                  </span>
-                </span>
-              </button>
-
-              <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[#777]">
-                  Długość linii odniesienia
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min={0.1}
-                    step={0.1}
-                    value={quoteCalibrationLengthM}
-                    onChange={(e) =>
-                      setQuoteCalibrationLengthM(Number(e.target.value))
-                    }
-                    className="w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 pr-10 text-sm font-semibold text-white outline-none transition-colors focus:border-[#e30311]"
-                  />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
-                    m
-                  </span>
-                </div>
-              </div>
-
-              {quotePxPerMeter ? (
-                <div className="flex items-center gap-3 rounded-lg border border-[#1f7a4a]/40 bg-[#0e2a1a] px-3 py-2.5">
-                  <Gauge className="h-5 w-5 shrink-0 text-[#4ade80]" />
-                  <div className="min-w-0">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#4ade80]/70">
-                      Skala ustawiona
-                    </p>
-                    <p className="text-sm font-bold text-white">
-                      {quotePxPerMeter.toFixed(1)}{" "}
-                      <span className="text-[11px] font-medium text-[#888]">
-                        px / metr
-                      </span>
-                    </p>
-                  </div>
-                  <span className="ml-auto shrink-0 rounded-md bg-[#1f7a4a]/25 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-[#4ade80]">
-                    Obrys aktywny
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-[11px] text-[#888]">
-                  <span className="flex h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#e30311]" />
-                  {quoteCalibrationLine
-                    ? "Wpisz długość linii w metrach powyżej"
-                    : "Kliknij 2 punkty na rzucie, aby wyznaczyć skalę"}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <StepHeader index={2} title="Obrys ogrodzenia" status={fenceStatus} />
-            <div className={cn(CARD_CLASS, "space-y-3")}>
-              <p className="text-[11px] leading-relaxed text-[#9a9a95]">
-                Klikaj kolejne narożniki działki (min. 3) — tam ma przebiegać płot.
-                Kliknij × na kropce lub w liście poniżej, aby usunąć punkt.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={!quotePxPerMeter}
-                  onClick={() => setQuoteDrawMode("fence")}
-                  className={cn(
-                    "flex flex-1 items-center justify-center gap-2 rounded-lg border px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-colors disabled:opacity-40",
-                    quoteDrawMode === "fence"
-                      ? "border-[#e30311] bg-[#2a0e10] text-white"
-                      : "border-[#3a3a36] text-[#aaa] hover:border-[#555] hover:bg-[#222]",
-                  )}
-                >
-                  <PencilLine className="h-4 w-4" />
-                  Rysuj obrys
-                </button>
-                <button
-                  type="button"
-                  disabled={quoteFencePoints.length === 0}
-                  onClick={undoQuoteFencePoint}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#3a3a36] text-[#aaa] transition-colors hover:border-[#555] hover:text-white disabled:opacity-40 disabled:hover:border-[#3a3a36]"
-                  title="Cofnij punkt"
-                >
-                  <Undo2 className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  disabled={quoteFencePoints.length === 0}
-                  onClick={clearQuoteFence}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#3a3a36] text-[#aaa] transition-colors hover:border-[#e30311] hover:text-[#e30311] disabled:opacity-40 disabled:hover:border-[#3a3a36] disabled:hover:text-[#aaa]"
-                  title="Wyczyść obrys"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              {quoteFencePoints.length > 0 && (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#666]">
-                    Punkty obrysu
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {quoteFencePoints.map((_, index) => (
-                      <button
-                        key={`point-${index}`}
-                        type="button"
-                        onClick={() => removeQuoteFencePointAt(index)}
-                        className="flex items-center gap-1 rounded-md border border-[#3a3a36] bg-[#161614] px-2 py-1 text-[11px] font-semibold text-[#ccc] transition-colors hover:border-[#e30311] hover:text-white"
-                        title={`Usuń punkt ${index + 1}`}
-                      >
-                        <span>{index + 1}</span>
-                        <X className="h-3 w-3 text-[#e30311]" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {canCloseFence && (
-                <button
-                  type="button"
-                  onClick={closeQuoteFence}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#c9020f]"
-                >
-                  <Check className="h-4 w-4" />
-                  Zamknij obrys
-                </button>
-              )}
-              {quoteFenceClosed && quotePerimeterM && (
-                <div className="flex items-center gap-3 rounded-lg border border-[#e30311]/30 bg-[#2a0e10] px-3 py-3">
-                  <Spline className="h-5 w-5 shrink-0 text-[#e30311]" />
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#888]">
-                      Obwód działki
-                    </p>
-                    <p className="font-heading text-lg font-bold leading-none text-white">
-                      {quotePerimeterM.toFixed(1)}{" "}
-                      <span className="text-xs font-medium text-[#888]">
-                        m bież.
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
-
+function QuoteCalculationBlock({
+  quote,
+  previewPanelsFromQuote,
+  quoteFenceScope,
+}: {
+  quote: QuoteResult;
+  previewPanelsFromQuote: number;
+  quoteFenceScope: QuoteFenceScope;
+}) {
+  return (
+    <>
       <div>
         <SectionLabel>Wybrana konfiguracja</SectionLabel>
         <div className="mb-4 space-y-2 rounded-lg border border-[#333] bg-[#222] p-4">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="text-[#888]">Zakres wyceny</span>
+            <span className="text-right font-semibold text-white">
+              {QUOTE_SCOPE_LABELS[quoteFenceScope]}
+            </span>
+          </div>
           {quote.configurationItems.map((item) => (
             <div
               key={item.label}
@@ -456,7 +176,9 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
         <SectionLabel>Kalkulacja</SectionLabel>
         <div className="space-y-2 rounded-lg border border-[#333] bg-[#222] p-4">
           <div className="flex justify-between text-xs">
-            <span className="text-[#888]">Długość bieżąca</span>
+            <span className="text-[#888]">
+              {QUOTE_LENGTH_LABELS[quoteFenceScope]}
+            </span>
             <span className="font-semibold text-white">
               {quote.perimeterM.toFixed(1)} m
               {!quote.hasMeasuredPerimeter && (
@@ -520,14 +242,558 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
           </div>
         </div>
       </div>
+    </>
+  );
+}
 
-      {quoteFenceClosed && quotePerimeterM && (
+type Props = {
+  catalog: CatalogCollections;
+  selection: ConfiguratorSelection;
+};
+
+export function QuoteSidebarPanel({ catalog, selection }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const quotePlanImageUrl = useConfiguratorStore((s) => s.quotePlanImageUrl);
+  const quoteDrawMode = useConfiguratorStore((s) => s.quoteDrawMode);
+  const quoteCalibrationLine = useConfiguratorStore((s) => s.quoteCalibrationLine);
+  const quoteCalibrationLengthM = useConfiguratorStore(
+    (s) => s.quoteCalibrationLengthM,
+  );
+  const quoteFencePoints = useConfiguratorStore((s) => s.quoteFencePoints);
+  const quoteFenceClosed = useConfiguratorStore((s) => s.quoteFenceClosed);
+  const quotePxPerMeter = useConfiguratorStore((s) => s.quotePxPerMeter);
+  const quotePerimeterM = useConfiguratorStore((s) => s.quotePerimeterM);
+  const manualQuotePerimeterM = useConfiguratorStore((s) => s.manualQuotePerimeterM);
+  const quoteFenceScope = useConfiguratorStore((s) => s.quoteFenceScope);
+  const manualQuoteFrontLengthM = useConfiguratorStore(
+    (s) => s.manualQuoteFrontLengthM,
+  );
+  const quoteAdvancedView = useConfiguratorStore((s) => s.quoteAdvancedView);
+  const scope = useConfiguratorStore((s) => s.scope);
+  const bramaEnabled = useConfiguratorStore((s) => s.bramaEnabled);
+  const bramaElementId = useConfiguratorStore((s) => s.bramaElementId);
+  const bramaOccupiedSpanM = useConfiguratorStore((s) => s.bramaOccupiedSpanM);
+  const furtkaEnabled = useConfiguratorStore((s) => s.furtkaEnabled);
+  const furtkaElementId = useConfiguratorStore((s) => s.furtkaElementId);
+  const furtkaPosition = useConfiguratorStore((s) => s.furtkaPosition);
+  const previewPanelCount = useConfiguratorStore((s) => s.previewPanelCount);
+  const footingEnabled = useConfiguratorStore((s) => s.footingEnabled);
+  const footingHeightId = useConfiguratorStore((s) => s.footingHeightId);
+  const footingMaterialId = useConfiguratorStore((s) => s.footingMaterialId);
+  const pricing = useConfiguratorStore((s) => s.pricing);
+
+  const setQuotePlanImage = useConfiguratorStore((s) => s.setQuotePlanImage);
+  const setQuoteCalibrationLengthM = useConfiguratorStore(
+    (s) => s.setQuoteCalibrationLengthM,
+  );
+  const setQuoteDrawMode = useConfiguratorStore((s) => s.setQuoteDrawMode);
+  const setManualQuotePerimeterM = useConfiguratorStore(
+    (s) => s.setManualQuotePerimeterM,
+  );
+  const setQuoteFenceScope = useConfiguratorStore((s) => s.setQuoteFenceScope);
+  const setManualQuoteFrontLengthM = useConfiguratorStore(
+    (s) => s.setManualQuoteFrontLengthM,
+  );
+  const setQuoteAdvancedView = useConfiguratorStore((s) => s.setQuoteAdvancedView);
+  const undoQuoteFencePoint = useConfiguratorStore((s) => s.undoQuoteFencePoint);
+  const removeQuoteFencePointAt = useConfiguratorStore(
+    (s) => s.removeQuoteFencePointAt,
+  );
+  const clearQuoteFence = useConfiguratorStore((s) => s.clearQuoteFence);
+  const closeQuoteFence = useConfiguratorStore((s) => s.closeQuoteFence);
+  const applyQuoteToPreview = useConfiguratorStore((s) => s.applyQuoteToPreview);
+
+  const openingPositionLabels = {
+    left: "lewa sekcja",
+    center: "środkowa sekcja",
+    right: "prawa sekcja",
+  } as const;
+
+  const effectivePerimeterM = useMemo(
+    () =>
+      resolveQuotePerimeterM({
+        quoteFenceClosed,
+        quotePerimeterM,
+        quoteFenceScope,
+        manualQuotePerimeterM,
+        manualQuoteFrontLengthM,
+      }),
+    [
+      quoteFenceClosed,
+      quotePerimeterM,
+      quoteFenceScope,
+      manualQuotePerimeterM,
+      manualQuoteFrontLengthM,
+    ],
+  );
+
+  const quote = useMemo(
+    () =>
+      calculateQuote({
+        catalog,
+        selection,
+        pricing,
+        perimeterM: effectivePerimeterM,
+        fenceEnabled: scope.fence,
+        bramaEnabled,
+        bramaElementId,
+        bramaOccupiedSpanM,
+        furtkaEnabled,
+        furtkaElementId,
+        furtkaPositionLabel: openingPositionLabels[furtkaPosition],
+        footingEnabled,
+        footingHeightId,
+        footingMaterialId,
+        fallbackPanelCount: previewPanelCount,
+      }),
+    [
+      catalog,
+      selection,
+      pricing,
+      effectivePerimeterM,
+      scope.fence,
+      bramaEnabled,
+      bramaElementId,
+      bramaOccupiedSpanM,
+      furtkaEnabled,
+      furtkaElementId,
+      furtkaPosition,
+      footingEnabled,
+      footingHeightId,
+      footingMaterialId,
+      previewPanelCount,
+    ],
+  );
+
+  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const error = validateBackgroundFile(file);
+    if (error) {
+      alert(error);
+      return;
+    }
+    if (!ACCEPTED_BG_TYPES.includes(file.type) || file.size > MAX_BG_SIZE) {
+      return;
+    }
+    setQuotePlanImage(URL.createObjectURL(file));
+  }
+
+  const canCloseFence =
+    quoteFencePoints.length >= 3 && !quoteFenceClosed && quotePxPerMeter;
+
+  const previewPanelsFromQuote = Math.min(
+    quote.estimatedPanels,
+    MAX_PREVIEW_PANELS,
+  );
+
+  const canApplyToPreview =
+    scope.fence && effectivePerimeterM != null && effectivePerimeterM > 0;
+
+  const calibrationStatus: StepStatus = quotePxPerMeter
+    ? { label: "Skala OK", tone: "done" }
+    : quoteDrawMode === "calibrate"
+      ? { label: "Zaznaczasz", tone: "active" }
+      : { label: "Do zrobienia", tone: "idle" };
+
+  const fenceStatus: StepStatus = quoteFenceClosed
+    ? { label: "Zamknięty", tone: "done" }
+    : quoteFencePoints.length > 0
+      ? { label: `${quoteFencePoints.length} pkt`, tone: "active" }
+      : { label: "Do zrobienia", tone: "idle" };
+
+  return (
+    <div className="space-y-5">
+      {quoteAdvancedView ? (
+        <button
+          type="button"
+          onClick={() => setQuoteAdvancedView(false)}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#3a3a36] bg-[#222] py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#ccc] transition-colors hover:border-[#555] hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Wróć do prostego widoku
+        </button>
+      ) : (
+        <>
+          <div className="overflow-hidden rounded-xl bg-[#222] px-4 py-3.5 ring-1 ring-[#333]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#e30311]">
+              Wycena orientacyjna
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-[#9a9a95]">
+              Wybierz zakres i podaj wymiar — policzymy liczbę paneli i cenę
+              netto. W podglądzie po prawej zobaczysz ogrodzenie.
+            </p>
+          </div>
+
+          {scope.fence && (
+            <>
+              <div>
+                <SectionLabel>Co chcesz wycenić?</SectionLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  <ScopeCard
+                    selected={quoteFenceScope === "full-perimeter"}
+                    title="A · Całe ogrodzenie"
+                    subtitle="Obwód całej działki"
+                    onClick={() => setQuoteFenceScope("full-perimeter")}
+                  />
+                  <ScopeCard
+                    selected={quoteFenceScope === "front-only"}
+                    title="B · Tylko front"
+                    subtitle="Jeden bok przy ulicy"
+                    onClick={() => setQuoteFenceScope("front-only")}
+                  />
+                </div>
+              </div>
+
+              {quoteFenceScope === "full-perimeter" ? (
+                <div>
+                  <SectionLabel>Podaj obwód działki</SectionLabel>
+                  <div className={cn(CARD_CLASS, "space-y-3")}>
+                    <p className="text-[11px] leading-relaxed text-[#9a9a95]">
+                      Długość bieżąca ogrodzenia w metrach (suma boków
+                      działki).
+                    </p>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0.1}
+                        step={0.1}
+                        value={manualQuotePerimeterM}
+                        onChange={(e) =>
+                          setManualQuotePerimeterM(Number(e.target.value))
+                        }
+                        className="w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 pr-16 text-sm font-semibold text-white outline-none transition-colors focus:border-[#e30311]"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
+                        m bież.
+                      </span>
+                    </div>
+                    {quoteFenceClosed && quotePerimeterM && (
+                      <p className="text-[10px] leading-relaxed text-[#888]">
+                        Na rzucie zmierzono{" "}
+                        <strong className="text-[#ccc]">
+                          {quotePerimeterM.toFixed(1)} m
+                        </strong>{" "}
+                        — ta wartość ma pierwszeństwo w kalkulacji.
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-xs">
+                      <span className="text-[#888]">Szac. panele</span>
+                      <span className="font-semibold text-white">
+                        {quote.estimatedPanels} szt.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <SectionLabel>Długość frontu przy ulicy</SectionLabel>
+                  <div className={cn(CARD_CLASS, "space-y-3")}>
+                    <p className="text-[11px] leading-relaxed text-[#9a9a95]">
+                      Szerokość działki od jednej granicy do drugiej przy
+                      drodze.
+                    </p>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0.1}
+                        step={0.1}
+                        value={manualQuoteFrontLengthM}
+                        onChange={(e) =>
+                          setManualQuoteFrontLengthM(Number(e.target.value))
+                        }
+                        className="w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 pr-10 text-sm font-semibold text-white outline-none transition-colors focus:border-[#e30311]"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
+                        m
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-xs">
+                      <span className="text-[#888]">Szac. panele</span>
+                      <span className="font-semibold text-white">
+                        {quote.estimatedPanels} szt.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {quoteAdvancedView && (
+        <>
+          <div className="overflow-hidden rounded-xl bg-[#e30311] px-4 py-3.5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+              Wycena na rzucie
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-white/85">
+              Wgraj plan działki, ustaw skalę i obrysuj teren — cena policzy się
+              automatycznie.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-1">
+              {["Rzut", "Skala", "Obrys", "Cena"].map((label, i) => (
+                <span
+                  key={label}
+                  className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/95"
+                >
+                  {i + 1}. {label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <SectionLabel>Rzut działki</SectionLabel>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={cn(
+                "group flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition-colors",
+                quotePlanImageUrl
+                  ? "border-[#3a3a36] bg-[#222] text-[#ccc] hover:border-[#555] hover:bg-[#2a2a28]"
+                  : "border-dashed border-[#e30311]/60 bg-[#2a0e10]/40 text-white hover:bg-[#2a0e10]",
+              )}
+            >
+              <ImagePlus className="h-4 w-4 text-[#e30311]" />
+              {quotePlanImageUrl ? "Zmień rzut" : "Prześlij rzut"}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleUpload}
+            />
+          </div>
+
+          {quotePlanImageUrl && (
+            <>
+              <div>
+                <StepHeader
+                  index={1}
+                  title="Kalibracja skali"
+                  status={calibrationStatus}
+                />
+                <div className={cn(CARD_CLASS, "space-y-3")}>
+                  <p className="text-[11px] leading-relaxed text-[#9a9a95]">
+                    Kliknij 2 punkty na znanym odcinku (np. bok działki 20 m), a
+                    potem wpisz jego długość w metrach.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setQuoteDrawMode("calibrate")}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
+                      quoteDrawMode === "calibrate"
+                        ? "border-[#e30311] bg-[#2a0e10]"
+                        : "border-[#3a3a36] hover:border-[#555] hover:bg-[#222]",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
+                        quoteDrawMode === "calibrate"
+                          ? "bg-[#e30311] text-white"
+                          : "bg-[#161614] text-[#888]",
+                      )}
+                    >
+                      <Ruler className="h-4 w-4" />
+                    </span>
+                    <span className="flex flex-col">
+                      <span
+                        className={cn(
+                          "text-xs font-bold",
+                          quoteDrawMode === "calibrate"
+                            ? "text-white"
+                            : "text-[#bbb]",
+                        )}
+                      >
+                        Narysuj linię skali
+                      </span>
+                      <span className="text-[10px] text-[#777]">
+                        2 kliknięcia na rzucie
+                      </span>
+                    </span>
+                  </button>
+
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[#777]">
+                      Długość linii odniesienia
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={0.1}
+                        step={0.1}
+                        value={quoteCalibrationLengthM}
+                        onChange={(e) =>
+                          setQuoteCalibrationLengthM(Number(e.target.value))
+                        }
+                        className="w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 pr-10 text-sm font-semibold text-white outline-none transition-colors focus:border-[#e30311]"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
+                        m
+                      </span>
+                    </div>
+                  </div>
+
+                  {quotePxPerMeter ? (
+                    <div className="flex items-center gap-3 rounded-lg border border-[#1f7a4a]/40 bg-[#0e2a1a] px-3 py-2.5">
+                      <Gauge className="h-5 w-5 shrink-0 text-[#4ade80]" />
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-[#4ade80]/70">
+                          Skala ustawiona
+                        </p>
+                        <p className="text-sm font-bold text-white">
+                          {quotePxPerMeter.toFixed(1)}{" "}
+                          <span className="text-[11px] font-medium text-[#888]">
+                            px / metr
+                          </span>
+                        </p>
+                      </div>
+                      <span className="ml-auto shrink-0 rounded-md bg-[#1f7a4a]/25 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-[#4ade80]">
+                        Obrys aktywny
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-[11px] text-[#888]">
+                      <span className="flex h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#e30311]" />
+                      {quoteCalibrationLine
+                        ? "Wpisz długość linii w metrach powyżej"
+                        : "Kliknij 2 punkty na rzucie, aby wyznaczyć skalę"}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <StepHeader
+                  index={2}
+                  title="Obrys ogrodzenia"
+                  status={fenceStatus}
+                />
+                <div className={cn(CARD_CLASS, "space-y-3")}>
+                  <p className="text-[11px] leading-relaxed text-[#9a9a95]">
+                    Klikaj kolejne narożniki działki (min. 3) — tam ma przebiegać
+                    płot. Kliknij × na kropce lub w liście poniżej, aby usunąć
+                    punkt.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={!quotePxPerMeter}
+                      onClick={() => setQuoteDrawMode("fence")}
+                      className={cn(
+                        "flex flex-1 items-center justify-center gap-2 rounded-lg border px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-colors disabled:opacity-40",
+                        quoteDrawMode === "fence"
+                          ? "border-[#e30311] bg-[#2a0e10] text-white"
+                          : "border-[#3a3a36] text-[#aaa] hover:border-[#555] hover:bg-[#222]",
+                      )}
+                    >
+                      <PencilLine className="h-4 w-4" />
+                      Rysuj obrys
+                    </button>
+                    <button
+                      type="button"
+                      disabled={quoteFencePoints.length === 0}
+                      onClick={undoQuoteFencePoint}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#3a3a36] text-[#aaa] transition-colors hover:border-[#555] hover:text-white disabled:opacity-40 disabled:hover:border-[#3a3a36]"
+                      title="Cofnij punkt"
+                    >
+                      <Undo2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={quoteFencePoints.length === 0}
+                      onClick={clearQuoteFence}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#3a3a36] text-[#aaa] transition-colors hover:border-[#e30311] hover:text-[#e30311] disabled:opacity-40 disabled:hover:border-[#3a3a36] disabled:hover:text-[#aaa]"
+                      title="Wyczyść obrys"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {quoteFencePoints.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#666]">
+                        Punkty obrysu
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {quoteFencePoints.map((_, index) => (
+                          <button
+                            key={`point-${index}`}
+                            type="button"
+                            onClick={() => removeQuoteFencePointAt(index)}
+                            className="flex items-center gap-1 rounded-md border border-[#3a3a36] bg-[#161614] px-2 py-1 text-[11px] font-semibold text-[#ccc] transition-colors hover:border-[#e30311] hover:text-white"
+                            title={`Usuń punkt ${index + 1}`}
+                          >
+                            <span>{index + 1}</span>
+                            <X className="h-3 w-3 text-[#e30311]" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {canCloseFence && (
+                    <button
+                      type="button"
+                      onClick={closeQuoteFence}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#c9020f]"
+                    >
+                      <Check className="h-4 w-4" />
+                      Zamknij obrys
+                    </button>
+                  )}
+                  {quoteFenceClosed && quotePerimeterM && (
+                    <div className="flex items-center gap-3 rounded-lg border border-[#e30311]/30 bg-[#2a0e10] px-3 py-3">
+                      <Spline className="h-5 w-5 shrink-0 text-[#e30311]" />
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-[#888]">
+                          Obwód działki
+                        </p>
+                        <p className="font-heading text-lg font-bold leading-none text-white">
+                          {quotePerimeterM.toFixed(1)}{" "}
+                          <span className="text-xs font-medium text-[#888]">
+                            m bież.
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      <QuoteCalculationBlock
+        quote={quote}
+        previewPanelsFromQuote={previewPanelsFromQuote}
+        quoteFenceScope={quoteFenceScope}
+      />
+
+      {canApplyToPreview && (
         <button
           type="button"
           onClick={applyQuoteToPreview}
           className="w-full rounded-lg border border-[#e30311]/40 bg-[#2a0e10] py-3 text-[11px] font-bold uppercase tracking-[0.15em] text-white transition-colors hover:bg-[#3a1012]"
         >
           Zastosuj do podglądu ({previewPanelsFromQuote} paneli)
+        </button>
+      )}
+
+      {!quoteAdvancedView && (
+        <button
+          type="button"
+          onClick={() => setQuoteAdvancedView(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#3a3a36] bg-[#161614] py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[#ccc] transition-colors hover:border-[#555] hover:text-white"
+        >
+          <Map className="h-4 w-4 text-[#e30311]" />
+          Zaawansowany widok
         </button>
       )}
     </div>

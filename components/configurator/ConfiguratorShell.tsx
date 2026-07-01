@@ -81,6 +81,7 @@ export function ConfiguratorShell() {
     setPricing,
     scopeConfirmed,
     scope,
+    quoteAdvancedView,
   } = useConfiguratorStore();
 
   useEffect(() => {
@@ -176,7 +177,7 @@ export function ConfiguratorShell() {
             />
 
             <section className="min-h-[360px] flex-1 overflow-hidden">
-              {activeTab === "quote" ? (
+              {activeTab === "quote" && quoteAdvancedView ? (
                 <QuotePlanCanvas />
               ) : scope.fence ? (
                 <FencePreview catalog={catalog} selection={selection} />
