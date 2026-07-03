@@ -28,6 +28,7 @@ import {
   type QuoteFenceScope,
 } from "@/lib/configurator/state";
 import type { CatalogCollections, ConfiguratorSelection, QuoteResult } from "@/lib/types";
+import { DecimalInput } from "./DecimalInput";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -455,21 +456,15 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                       Długość bieżąca ogrodzenia w metrach (suma boków
                       działki).
                     </p>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min={0.1}
-                        step={0.1}
-                        value={manualQuotePerimeterM}
-                        onChange={(e) =>
-                          setManualQuotePerimeterM(Number(e.target.value))
-                        }
-                        className="w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 pr-16 text-sm font-semibold text-white outline-none transition-colors focus:border-[#e30311]"
-                      />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
-                        m bież.
-                      </span>
-                    </div>
+                    <DecimalInput
+                      value={manualQuotePerimeterM}
+                      onChange={setManualQuotePerimeterM}
+                      suffix={
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
+                          m bież.
+                        </span>
+                      }
+                    />
                     {quoteFenceClosed && quotePerimeterM && (
                       <p className="text-[10px] leading-relaxed text-[#888]">
                         Na rzucie zmierzono{" "}
@@ -495,21 +490,15 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                       Szerokość działki od jednej granicy do drugiej przy
                       drodze.
                     </p>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min={0.1}
-                        step={0.1}
-                        value={manualQuoteFrontLengthM}
-                        onChange={(e) =>
-                          setManualQuoteFrontLengthM(Number(e.target.value))
-                        }
-                        className="w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 pr-10 text-sm font-semibold text-white outline-none transition-colors focus:border-[#e30311]"
-                      />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
-                        m
-                      </span>
-                    </div>
+                    <DecimalInput
+                      value={manualQuoteFrontLengthM}
+                      onChange={setManualQuoteFrontLengthM}
+                      suffix={
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
+                          m
+                        </span>
+                      }
+                    />
                     <div className="flex items-center justify-between rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-xs">
                       <span className="text-[#888]">Szac. panele</span>
                       <span className="font-semibold text-white">
@@ -624,21 +613,15 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[#777]">
                       Długość linii odniesienia
                     </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min={0.1}
-                        step={0.1}
-                        value={quoteCalibrationLengthM}
-                        onChange={(e) =>
-                          setQuoteCalibrationLengthM(Number(e.target.value))
-                        }
-                        className="w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 pr-10 text-sm font-semibold text-white outline-none transition-colors focus:border-[#e30311]"
-                      />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
-                        m
-                      </span>
-                    </div>
+                    <DecimalInput
+                      value={quoteCalibrationLengthM}
+                      onChange={setQuoteCalibrationLengthM}
+                      suffix={
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#666]">
+                          m
+                        </span>
+                      }
+                    />
                   </div>
 
                   {quotePxPerMeter ? (

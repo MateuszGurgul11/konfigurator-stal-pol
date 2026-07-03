@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { Check } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Check, FileDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
   CatalogCollections,
@@ -27,7 +27,9 @@ import {
 import { ConfiguratorTabs } from "./ConfiguratorTabs";
 import { BackgroundPicker } from "./BackgroundPicker";
 import { QuoteSidebarPanel } from "./QuoteSidebarPanel";
+import { PdfDocument } from "./PdfDocument";
 import { calculateQuote } from "@/lib/pricing/calculateQuote";
+import { generateConfiguratorPdf } from "@/lib/pdf/generateConfiguratorPdf";
 import { resolveSurchargePerPanel } from "@/lib/pricing/surcharges";
 import {
   formatElementPriceSubtitle,
@@ -383,6 +385,20 @@ export function OptionSidebar({
   );
 
   const nextTab = getNextConfiguratorTab(activeTab, scope);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  async function handleDownloadPdf() {
+    if (!pdfContainerRef.current) return;
+    setIsGeneratingPdf(true);
+    try {
+      await generateConfiguratorPdf(pdfContainerRef.current);
+    } catch (error) {
+      console.error("[PDF] Nie udało się wygenerować pliku:", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -857,6 +873,33 @@ export function OptionSidebar({
               </div>
             </div>
             </div>
+
+            <PdfDocument
+              ref={pdfContainerRef}
+              catalog={catalog}
+              selection={selection}
+              pricing={pricing}
+              scope={scope}
+              quote={quote}
+              selectedPanel={selectedPanel}
+              selectedColor={selectedColor}
+              selectedSpacer={selectedSpacer}
+              selectedHeight={selectedHeight}
+              selectedPost={selectedPost}
+              selectedFootingHeight={selectedFootingHeight}
+              selectedFootingMaterial={selectedFootingMaterial}
+              previewPanelCount={previewPanelCount}
+              effectiveQuotePerimeterM={effectiveQuotePerimeterM}
+              footingEnabled={footingEnabled}
+              bramaEnabled={bramaEnabled}
+              bramaElementId={bramaElementId}
+              furtkaEnabled={furtkaEnabled}
+              furtkaElementId={furtkaElementId}
+              furtkaPosition={furtkaPosition}
+              furtkaHingeSide={furtkaHingeSide}
+              footingHeightId={footingHeightId}
+              footingMaterialId={footingMaterialId}
+            />
           </div>
         )}
       </div>
@@ -877,17 +920,32 @@ export function OptionSidebar({
             {quote.panelUnits} paneli · {quote.perimeterM.toFixed(1)} m bieżących
           </p>
         </div>
-        <button
-          type="button"
-          disabled={!nextTab}
-          onClick={() => nextTab && onTabChange(nextTab)}
-          className={cn(
-            "w-full rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors",
-            nextTab ? "hover:bg-[#c9020f]" : "cursor-not-allowed opacity-50",
-          )}
-        >
-          Przejdź dalej
-        </button>
+        {activeTab === "review" ? (
+          <button
+            type="button"
+            disabled={isGeneratingPdf}
+            onClick={handleDownloadPdf}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors",
+              isGeneratingPdf ? "cursor-wait opacity-60" : "hover:bg-[#c9020f]",
+            )}
+          >
+            <FileDown className="h-4 w-4" />
+            {isGeneratingPdf ? "Generowanie PDF…" : "Pobierz PDF"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={!nextTab}
+            onClick={() => nextTab && onTabChange(nextTab)}
+            className={cn(
+              "w-full rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors",
+              nextTab ? "hover:bg-[#c9020f]" : "cursor-not-allowed opacity-50",
+            )}
+          >
+            Przejdź dalej
+          </button>
+        )}
       </div>
     </div>
   );

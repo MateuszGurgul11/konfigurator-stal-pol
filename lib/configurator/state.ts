@@ -597,7 +597,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   },
   setQuoteDrawMode: (mode) => set({ quoteDrawMode: mode }),
   setQuoteCalibrationLengthM: (lengthM) =>
-    set({ quoteCalibrationLengthM: Math.max(0.1, lengthM) }),
+    set({ quoteCalibrationLengthM: lengthM }),
   setQuoteCalibrationLine: (line) => {
     set({ quoteCalibrationLine: line });
     if (!line) {
@@ -667,10 +667,10 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       ),
     })),
   setManualQuotePerimeterM: (perimeterM) =>
-    set({ manualQuotePerimeterM: Math.max(0.1, perimeterM) }),
+    set({ manualQuotePerimeterM: perimeterM }),
   setQuoteFenceScope: (scope) => set({ quoteFenceScope: scope }),
   setManualQuoteFrontLengthM: (lengthM) =>
-    set({ manualQuoteFrontLengthM: Math.max(0.1, lengthM) }),
+    set({ manualQuoteFrontLengthM: lengthM }),
   setQuoteAdvancedView: (open) => set({ quoteAdvancedView: open }),
   resetQuoteDrawing: () =>
     set({
