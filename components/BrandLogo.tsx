@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
-const SITE_URL = "https://srv100483.seohost.com.pl/stal-pol/";
+import { STAL_POL_WEBSITE_URL } from "@/lib/site";
 
 type BrandLogoProps = {
   className?: string;
@@ -14,7 +13,7 @@ export function BrandLogo({ className, height = 36 }: BrandLogoProps) {
 
   return (
     <Link
-      href={SITE_URL}
+      href={STAL_POL_WEBSITE_URL}
       target="_blank"
       rel="noopener noreferrer"
       className={cn("inline-flex shrink-0 items-center", className)}

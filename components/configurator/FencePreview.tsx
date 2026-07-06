@@ -39,7 +39,7 @@ import {
   resolvePostTextureUrl,
 } from "@/lib/fence/resolveTexture";
 import { PreviewControlsBar } from "./PreviewControlsBar";
-import { useIsLgUp } from "@/lib/hooks/use-media-query";
+import { useIsLgUp, useIsMobileLandscape } from "@/lib/hooks/use-media-query";
 
 const MIN_FENCE_SCALE = 0.6;
 const MAX_FENCE_SCALE = 3.5;
@@ -54,6 +54,7 @@ const FENCE_TARGET_WIDTH_RATIO = 0.92;
 const FENCE_TARGET_WIDTH_PER_PANEL = 0.015;
 /** Odległość płotu od dołu sceny — większa wartość = wyżej na zdjęciu. */
 const FENCE_SCENE_BOTTOM_PERCENT = 15;
+const FENCE_SCENE_BOTTOM_PERCENT_MOBILE_LANDSCAPE = 32;
 
 type FenceTransform = { x: number; y: number; scale: number };
 type DragState = {
@@ -316,6 +317,10 @@ export function FencePreview({ catalog, selection }: Props) {
   const sidebarOpen = useConfiguratorStore((s) => s.sidebarOpen);
   const toggleSidebarOpen = useConfiguratorStore((s) => s.toggleSidebarOpen);
   const isLgUp = useIsLgUp();
+  const isMobileLandscape = useIsMobileLandscape();
+  const sceneBottomPercent = isMobileLandscape
+    ? FENCE_SCENE_BOTTOM_PERCENT_MOBILE_LANDSCAPE
+    : FENCE_SCENE_BOTTOM_PERCENT;
 
   const post = catalog.posts.find((p) => p.id === selection.postId);
   const panel = catalog.panels.find((p) => p.id === selection.panelId);
@@ -735,7 +740,7 @@ export function FencePreview({ catalog, selection }: Props) {
   return (
     <div
       ref={previewRootRef}
-      className="relative flex h-full min-h-[420px] flex-col bg-[#f0f0f0]"
+      className="relative flex h-full min-h-[420px] flex-col bg-[#f0f0f0] max-lg:min-h-0"
     >
       <div className="absolute right-4 top-4 z-20 hidden gap-2 lg:flex">
         <button
@@ -785,7 +790,7 @@ export function FencePreview({ catalog, selection }: Props) {
         className="relative flex flex-1 overflow-hidden rounded-none max-lg:min-h-0"
         onClick={() => setFenceSelected(false)}
         style={{
-          minHeight: 480,
+          minHeight: isLgUp ? 480 : undefined,
           backgroundImage: `url(${sceneBackgroundUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -800,7 +805,7 @@ export function FencePreview({ catalog, selection }: Props) {
           <div
             className="absolute left-1/2 z-10"
             style={{
-              bottom: `${FENCE_SCENE_BOTTOM_PERCENT}%`,
+              bottom: `${sceneBottomPercent}%`,
               transform: `translate(calc(-50% + ${fenceTransform.x}px), ${fenceTransform.y}px) scale(${fenceTransform.scale})`,
               transformOrigin: "center bottom",
             }}

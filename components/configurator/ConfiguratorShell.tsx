@@ -15,6 +15,7 @@ import { RotateDeviceOverlay } from "./RotateDeviceOverlay";
 import { Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobilePortrait } from "@/lib/hooks/use-media-query";
+import { useVisualViewportHeight } from "@/lib/hooks/use-visual-viewport-height";
 
 type SidebarProps = {
   catalog: NonNullable<ReturnType<typeof useConfiguratorStore.getState>["catalog"]>;
@@ -130,6 +131,7 @@ function LoadingView() {
 
 export function ConfiguratorShell() {
   const mounted = useMounted();
+  useVisualViewportHeight();
   const isMobilePortrait = useIsMobilePortrait();
   const hideConfiguratorOnMobilePortrait = mounted && isMobilePortrait;
   const {
@@ -220,7 +222,7 @@ export function ConfiguratorShell() {
 
       <div
         className={cn(
-          "flex h-screen w-full flex-col overflow-hidden bg-white max-lg:h-dvh",
+          "flex h-screen w-full flex-col overflow-hidden bg-white max-lg:h-app-mobile max-lg:bg-[#f0f0f0]",
           hideConfiguratorOnMobilePortrait &&
             "max-lg:pointer-events-none max-lg:invisible max-lg:select-none",
         )}
@@ -261,7 +263,7 @@ export function ConfiguratorShell() {
           <div className="flex min-h-0 flex-1 flex-col max-lg:landscape:min-h-0 lg:flex-row">
             <DesktopSidebar {...sidebarProps} />
 
-            <section className="min-h-[360px] flex-1 overflow-hidden max-lg:min-h-0">
+            <section className="min-h-0 flex-1 overflow-hidden lg:min-h-[360px]">
               {activeTab === "quote" && quoteAdvancedView ? (
                 <QuotePlanCanvas />
               ) : scope.fence ? (
