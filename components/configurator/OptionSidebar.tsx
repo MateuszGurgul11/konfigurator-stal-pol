@@ -401,8 +401,8 @@ export function OptionSidebar({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-[#2A2A26] px-5 py-4 max-lg:px-4">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="border-b border-[#2A2A26] px-5 py-4 max-lg:px-4 max-lg:landscape:hidden">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="font-heading text-lg font-bold text-white max-lg:text-base">
@@ -424,7 +424,7 @@ export function OptionSidebar({
 
       <ConfiguratorTabs active={activeTab} scope={scope} onChange={onTabChange} />
 
-      <div className="flex-1 overflow-y-auto px-5 py-5 scrollbar-dark max-lg:px-4">
+      <div className="mobile-drawer-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 scrollbar-dark max-lg:px-4 max-lg:landscape:py-3">
         {activeTab === "model" && (
           <div className="space-y-6">
             <div>
@@ -591,7 +591,7 @@ export function OptionSidebar({
                 onChange={(e) => setPreviewPanelCount(Number(e.target.value))}
                 className="w-full accent-[#e30311]"
               />
-              <p className="mt-2 text-[10px] leading-relaxed text-[#666]">
+              <p className="mt-2 text-[10px] leading-relaxed text-[#666] max-lg:landscape:hidden">
                 Przeciągnij boczne uchwyty płotu w podglądzie, aby szybko
                 dodać lub usunąć panele.
               </p>
@@ -904,18 +904,20 @@ export function OptionSidebar({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-[#2A2A26] bg-[#1A1A18] px-5 py-4">
-        <div className="mb-3">
-          <div className="flex items-baseline justify-between">
+      <div className="shrink-0 border-t border-[#2A2A26] bg-[#1A1A18] px-5 py-4 max-lg:landscape:px-4 max-lg:landscape:py-2">
+        <div className="mb-3 max-lg:landscape:mb-2">
+          <div className="flex items-baseline justify-between gap-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#666]">
               Wycena orientacyjna
             </span>
-            <span className="font-heading text-xl font-bold text-white">
+            <span className="font-heading text-xl font-bold text-white max-lg:landscape:text-lg">
               {Math.round(quote.totalNet).toLocaleString("pl-PL")}{" "}
-              <span className="text-sm font-semibold text-[#888]">PLN netto</span>
+              <span className="text-sm font-semibold text-[#888] max-lg:landscape:text-xs">
+                PLN netto
+              </span>
             </span>
           </div>
-          <p className="mt-1 text-right text-[10px] text-[#666]">
+          <p className="mt-1 text-right text-[10px] text-[#666] max-lg:landscape:hidden">
             {quote.pricePerPanelNet.toLocaleString("pl-PL")} PLN/panel ·{" "}
             {quote.panelUnits} paneli · {quote.perimeterM.toFixed(1)} m bieżących
           </p>
@@ -926,7 +928,7 @@ export function OptionSidebar({
             disabled={isGeneratingPdf}
             onClick={handleDownloadPdf}
             className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors",
+              "flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors max-lg:landscape:py-2.5",
               isGeneratingPdf ? "cursor-wait opacity-60" : "hover:bg-[#c9020f]",
             )}
           >
@@ -939,7 +941,7 @@ export function OptionSidebar({
             disabled={!nextTab}
             onClick={() => nextTab && onTabChange(nextTab)}
             className={cn(
-              "w-full rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors",
+              "w-full rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors max-lg:landscape:py-2.5",
               nextTab ? "hover:bg-[#c9020f]" : "cursor-not-allowed opacity-50",
             )}
           >

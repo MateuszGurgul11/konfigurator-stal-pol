@@ -123,6 +123,13 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+@media (max-width: 1023px) and (orientation: landscape) {
+  .mobile-drawer-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
 }

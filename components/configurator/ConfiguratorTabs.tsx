@@ -27,7 +27,7 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
   const visibleTabs = tabs.filter((tab) => visibleTabIds.has(tab.id));
 
   return (
-    <div className="scrollbar-dark flex flex-nowrap gap-0.5 overflow-x-auto border-b border-[#2A2A26] px-2 pb-0 pt-3 sm:gap-1 sm:px-4">
+    <div className="scrollbar-dark flex flex-nowrap gap-0.5 overflow-x-auto border-b border-[#2A2A26] px-2 pb-0 pt-3 max-lg:landscape:pt-1.5 sm:gap-1 sm:px-4">
       {visibleTabs.map(({ id, label, icon: Icon }) => {
         const isActive = active === id;
         return (
@@ -36,7 +36,7 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
             type="button"
             onClick={() => onChange(id)}
             className={cn(
-              "flex shrink-0 flex-col items-center gap-1.5 rounded-t-lg px-2.5 py-2.5 transition-all max-lg:min-h-[44px] max-lg:px-3 sm:px-3",
+              "flex shrink-0 flex-col items-center gap-1.5 rounded-t-lg px-2.5 py-2.5 transition-all max-lg:min-h-[44px] max-lg:flex-row max-lg:gap-1.5 max-lg:landscape:min-h-0 max-lg:landscape:py-1.5 max-lg:px-3 sm:px-3",
               isActive
                 ? "bg-[#2A2A26] text-[#e30311]"
                 : "text-[#666] hover:bg-[#222] hover:text-[#999]",

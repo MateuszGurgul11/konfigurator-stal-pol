@@ -76,18 +76,22 @@ function MobileOptionsDrawer({
         <button
           type="button"
           aria-label="Zamknij panel opcji"
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 max-lg:landscape:hidden lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[min(400px,calc(100%-3rem))] flex-col bg-[#1A1A18] shadow-2xl transition-transform duration-300 ease-out lg:hidden",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
+          "fixed z-50 flex max-h-[100dvh] flex-col overflow-hidden bg-[#1A1A18] shadow-2xl transition-transform duration-300 ease-out lg:hidden",
+          "inset-y-0 left-0 w-[min(400px,calc(100%-3rem))]",
+          "max-lg:landscape:inset-0 max-lg:landscape:w-full",
+          sidebarOpen
+            ? "pointer-events-auto translate-x-0"
+            : "pointer-events-none -translate-x-full",
         )}
         aria-hidden={!sidebarOpen}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-[#2A2A26] px-4 py-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-[#2A2A26] px-4 py-3 max-lg:landscape:py-2">
           <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white">
             Opcje
           </p>
@@ -100,7 +104,7 @@ function MobileOptionsDrawer({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex min-h-0 flex-1 flex-col overscroll-contain pb-safe">
+        <div className="flex min-h-0 flex-1 flex-col overscroll-contain pb-safe max-lg:landscape:pb-2">
           <OptionSidebar
             catalog={catalog}
             selection={selection}
@@ -240,7 +244,7 @@ export function ConfiguratorShell() {
         {showScopeStep && <ProductScopeStep />}
 
         {showConfigurator && scopeConfirmed && catalog && (
-          <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+          <div className="flex min-h-0 flex-1 flex-col max-lg:landscape:min-h-0 lg:flex-row">
             <DesktopSidebar {...sidebarProps} />
 
             <section className="min-h-[360px] flex-1 overflow-hidden max-lg:min-h-0">
