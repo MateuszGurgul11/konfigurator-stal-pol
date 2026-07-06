@@ -38,6 +38,8 @@ import {
   resolvePanelTileHeightM,
   resolvePostTextureUrl,
 } from "@/lib/fence/resolveTexture";
+import { PreviewControlsBar } from "./PreviewControlsBar";
+import { useIsLgUp } from "@/lib/hooks/use-media-query";
 
 const MIN_FENCE_SCALE = 0.6;
 const MAX_FENCE_SCALE = 3.5;
@@ -183,7 +185,7 @@ function StretchHandle({
     <div
       data-stretch-handle=""
       role="presentation"
-      className={`absolute z-30 h-4 w-4 rounded-sm border-2 border-white bg-[#e30311] shadow-md ${pos[side]}`}
+      className={`absolute z-30 h-4 w-4 rounded-sm border-2 border-white bg-[#e30311] shadow-md max-lg:h-5 max-lg:w-5 ${pos[side]}`}
       onPointerDown={(e) => onPointerDown(e, side)}
     />
   );
@@ -207,7 +209,7 @@ function ResizeHandle({
     <div
       data-resize-handle=""
       role="presentation"
-      className={`absolute z-30 h-3.5 w-3.5 rounded-sm border-2 border-white bg-[#e30311] shadow-md ${pos[corner]}`}
+      className={`absolute z-30 h-3.5 w-3.5 rounded-sm border-2 border-white bg-[#e30311] shadow-md max-lg:h-5 max-lg:w-5 ${pos[corner]}`}
       onPointerDown={(e) => onPointerDown(e, corner)}
     />
   );
@@ -254,7 +256,7 @@ function PreviewInfoBar({
   items: { label: string; value: string }[];
 }) {
   return (
-    <div className="pointer-events-none absolute left-4 right-24 top-4 z-20 flex flex-wrap gap-2">
+    <div className="pointer-events-none absolute left-4 right-24 top-4 z-20 hidden flex-wrap gap-2 lg:flex">
       {items.map(({ label, value }) => (
         <div
           key={label}
@@ -263,7 +265,9 @@ function PreviewInfoBar({
           <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#e30311]">
             {label}
           </p>
-          <p className="whitespace-nowrap text-xs font-semibold text-[#303638]">{value}</p>
+          <p className="text-xs font-semibold text-[#303638] whitespace-nowrap">
+            {value}
+          </p>
         </div>
       ))}
     </div>
@@ -311,6 +315,7 @@ export function FencePreview({ catalog, selection }: Props) {
   const pricing = useConfiguratorStore((s) => s.pricing);
   const sidebarOpen = useConfiguratorStore((s) => s.sidebarOpen);
   const toggleSidebarOpen = useConfiguratorStore((s) => s.toggleSidebarOpen);
+  const isLgUp = useIsLgUp();
 
   const post = catalog.posts.find((p) => p.id === selection.postId);
   const panel = catalog.panels.find((p) => p.id === selection.panelId);
@@ -732,8 +737,7 @@ export function FencePreview({ catalog, selection }: Props) {
       ref={previewRootRef}
       className="relative flex h-full min-h-[420px] flex-col bg-[#f0f0f0]"
     >
-      {/* View controls */}
-      <div className="absolute right-4 top-4 z-20 flex gap-2">
+      <div className="absolute right-4 top-4 z-20 hidden gap-2 lg:flex">
         <button
           type="button"
           aria-label={sidebarOpen ? "Ukryj panel opcji" : "Pokaż panel opcji"}
@@ -771,10 +775,14 @@ export function FencePreview({ catalog, selection }: Props) {
         </button>
       </div>
 
+      <div className="lg:hidden">
+        <PreviewControlsBar className="left-3 right-auto top-3" accent />
+      </div>
+
       {/* Scene */}
       <div
         ref={sceneRef}
-        className="relative flex flex-1 overflow-hidden rounded-none lg:rounded-none"
+        className="relative flex flex-1 overflow-hidden rounded-none max-lg:min-h-0"
         onClick={() => setFenceSelected(false)}
         style={{
           minHeight: 480,
@@ -785,7 +793,7 @@ export function FencePreview({ catalog, selection }: Props) {
       >
         <div className="pointer-events-none absolute inset-0 bg-white/5" />
 
-        {allSelected && <PreviewInfoBar items={previewInfoItems} />}
+        {allSelected && isLgUp && <PreviewInfoBar items={previewInfoItems} />}
 
         {/* Fence SVG (draggable / resizable, tight bounds like Drutex) */}
         {svgMarkup && contentBounds ? (
@@ -797,7 +805,7 @@ export function FencePreview({ catalog, selection }: Props) {
               transformOrigin: "center bottom",
             }}
           >
-            {showFenceHint && !fenceSelected && (
+            {showFenceHint && !fenceSelected && isLgUp && (
               <FenceInteractionHint inverseScale={1 / fenceTransform.scale} />
             )}
             <div
@@ -834,10 +842,10 @@ export function FencePreview({ catalog, selection }: Props) {
                 />
               </div>
 
-              {(fenceSelected || showFenceHint) && (
+              {(fenceSelected || (showFenceHint && isLgUp)) && (
                 <div
                   className={`pointer-events-none absolute inset-0 z-20 border-2 border-dashed border-[#e30311] ${
-                    showFenceHint && !fenceSelected ? "animate-pulse" : ""
+                    showFenceHint && !fenceSelected && isLgUp ? "animate-pulse" : ""
                   }`}
                   aria-hidden
                 />
@@ -862,7 +870,7 @@ export function FencePreview({ catalog, selection }: Props) {
           </div>
         )}
 
-        {fenceSelected && svgMarkup && (
+        {fenceSelected && svgMarkup && isLgUp && (
           <p className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-md border border-[#e5e7eb] bg-white/92 px-3 py-1 text-[10px] text-[#6b7280] shadow-sm backdrop-blur-sm">
             Przeciągnij aby przesunąć · boki: panele · rogi: skala · scroll: zoom
           </p>
@@ -870,7 +878,7 @@ export function FencePreview({ catalog, selection }: Props) {
       </div>
 
       {/* Bottom info bar */}
-      {allSelected && (
+      {allSelected && isLgUp && (
         <div className="flex items-center gap-4 border-t border-[#e8e8e8] bg-white px-6 py-3">
           <div className="flex items-center gap-2">
             <span

@@ -18,6 +18,8 @@ import {
   resolvePanelTileHeightM,
 } from "@/lib/fence/resolveTexture";
 
+import { PreviewControlsBar } from "./PreviewControlsBar";
+
 type Props = {
   catalog: CatalogCollections;
 };
@@ -146,7 +148,12 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
 
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-[#e8f4fc] to-[#f5f9fd]">
-      <div className="flex flex-1 items-center justify-center px-6 py-8">
+      <div className="relative flex flex-1 flex-col max-lg:min-h-[40dvh]">
+        <div className="lg:hidden">
+          <PreviewControlsBar className="left-3 right-auto top-3" accent />
+        </div>
+
+        <div className="flex flex-1 items-center justify-center px-6 py-8 max-lg:px-4 max-lg:py-6">
         {svgMarkup ? (
           <div
             className="w-full max-w-3xl"
@@ -166,10 +173,11 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
             </p>
           </div>
         )}
+        </div>
       </div>
 
-      <div className="border-t border-[#dce6ef] bg-white/70 px-6 py-4 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-3">
+      <div className="hidden border-t border-[#dce6ef] bg-white/70 px-6 py-4 backdrop-blur lg:block">
+        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 max-lg:flex-col max-lg:items-start">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             {scope.gate && (
               <span className="text-[#1A1A18]">

@@ -36,7 +36,7 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
             type="button"
             onClick={() => onChange(id)}
             className={cn(
-              "flex shrink-0 flex-col items-center gap-1.5 rounded-t-lg px-2.5 py-2.5 transition-all sm:px-3",
+              "flex shrink-0 flex-col items-center gap-1.5 rounded-t-lg px-2.5 py-2.5 transition-all max-lg:min-h-[44px] max-lg:px-3 sm:px-3",
               isActive
                 ? "bg-[#2A2A26] text-[#e30311]"
                 : "text-[#666] hover:bg-[#222] hover:text-[#999]",

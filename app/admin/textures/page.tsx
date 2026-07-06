@@ -224,6 +224,7 @@ export default function AdminTexturesPage() {
           <Loader2 className="text-primary h-8 w-8 animate-spin" />
         </div>
       ) : (
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
@@ -319,6 +320,7 @@ export default function AdminTexturesPage() {
               ))}
             </tbody>
           </table>
+        </div>
         </div>
       )}
     </div>

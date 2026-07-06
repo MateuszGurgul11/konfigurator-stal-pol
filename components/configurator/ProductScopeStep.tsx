@@ -54,12 +54,12 @@ export function ProductScopeStep() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-[#1A1A18] px-6 py-12">
+    <div className="flex flex-1 flex-col items-center justify-center bg-[#1A1A18] px-6 py-12 max-lg:overflow-y-auto max-lg:px-4 max-lg:py-8">
       <div className="w-full max-w-lg">
         <p className="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-[#e30311]">
           STAL-POL
         </p>
-        <h1 className="mt-2 text-center font-heading text-2xl font-bold text-white">
+        <h1 className="mt-2 text-center font-heading text-2xl font-bold text-white max-lg:text-xl">
           Co chcesz skonfigurować?
         </h1>
         <p className="mt-2 text-center text-sm text-[#888]">

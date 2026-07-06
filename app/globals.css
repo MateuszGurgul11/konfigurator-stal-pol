@@ -110,3 +110,19 @@
   background-color: #2A2A26;
   border-radius: 2px;
 }
+
+.h-app {
+  height: 100dvh;
+}
+
+.min-h-app {
+  min-height: 100dvh;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}

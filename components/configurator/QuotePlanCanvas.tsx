@@ -19,6 +19,7 @@ import {
   validateBackgroundFile,
 } from "@/lib/configurator/backgrounds";
 import { useConfiguratorStore } from "@/lib/configurator/state";
+import { PreviewControlsBar } from "./PreviewControlsBar";
 import {
   gatePositionFromPoint,
   perimeterSlicePoints,
@@ -367,7 +368,11 @@ export function QuotePlanCanvas() {
         onChange={handleUpload}
       />
 
-      <div className="absolute right-4 top-4 z-20 flex flex-wrap items-center gap-2">
+      <div className="lg:hidden">
+        <PreviewControlsBar />
+      </div>
+
+      <div className="absolute right-4 top-4 z-20 hidden flex-wrap items-center gap-2 lg:flex">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -414,6 +419,61 @@ export function QuotePlanCanvas() {
               type="button"
               onClick={resetQuoteDrawing}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-black/5 bg-white/85 text-[#6b7280] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white hover:text-[#e30311]"
+              title="Resetuj rysowanie"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="absolute bottom-20 left-3 right-3 z-20 flex flex-wrap items-center justify-center gap-2 lg:hidden">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex h-10 items-center gap-2 rounded-full border border-black/5 bg-white/85 px-3.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#303638] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white"
+        >
+          <ImagePlus className="h-4 w-4 text-[#e30311]" />
+          {quotePlanImageUrl ? "Zmień rzut" : "Wgraj rzut"}
+        </button>
+        {quotePlanImageUrl && (
+          <>
+            <div className="flex items-center gap-1 rounded-full border border-black/5 bg-white/85 p-1 shadow-md shadow-black/10 backdrop-blur">
+              <button
+                type="button"
+                onClick={() => {
+                  setQuoteDrawMode("calibrate");
+                  setQuoteCalibrationPending(null);
+                }}
+                className={cn(
+                  "flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors",
+                  quoteDrawMode === "calibrate"
+                    ? "bg-[#e30311] text-white shadow-sm"
+                    : "text-[#5b6164] hover:bg-black/5",
+                )}
+              >
+                <Ruler className="h-3.5 w-3.5" />
+                Skala
+              </button>
+              <button
+                type="button"
+                disabled={!quotePxPerMeter}
+                onClick={() => setQuoteDrawMode("fence")}
+                className={cn(
+                  "flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
+                  quoteDrawMode === "fence"
+                    ? "bg-[#e30311] text-white shadow-sm"
+                    : "text-[#5b6164] hover:bg-black/5",
+                )}
+              >
+                <Fence className="h-3.5 w-3.5" />
+                Obrys
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={resetQuoteDrawing}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-black/5 bg-white/85 text-[#6b7280] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white hover:text-[#e30311]"
               title="Resetuj rysowanie"
             >
               <RotateCcw className="h-4 w-4" />
@@ -685,7 +745,12 @@ export function QuotePlanCanvas() {
             </div>
           )}
 
-          <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex items-center gap-2.5 rounded-xl border border-black/5 bg-white/90 px-3 py-2.5 shadow-lg shadow-black/10 backdrop-blur sm:right-auto sm:max-w-md">
+          <div
+            className={cn(
+              "pointer-events-none absolute left-3 right-3 flex items-center gap-2.5 rounded-xl border border-black/5 bg-white/90 px-3 py-2.5 shadow-lg shadow-black/10 backdrop-blur sm:right-auto sm:max-w-md lg:left-4 lg:bottom-4",
+              quotePlanImageUrl ? "bottom-28 max-lg:bottom-28 lg:bottom-4" : "bottom-4",
+            )}
+          >
             <span
               className={cn(
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white",

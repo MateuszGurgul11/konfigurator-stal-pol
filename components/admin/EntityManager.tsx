@@ -296,8 +296,9 @@ export function EntityManager<
           <Loader2 className="text-primary h-8 w-8 animate-spin" />
         </div>
       ) : (
-        <div className="rounded-lg border">
-          <Table>
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <div className="rounded-lg border">
+            <Table>
             <TableHeader>
               <TableRow>
                 {fields.slice(0, 4).map((f) => (
@@ -371,6 +372,7 @@ export function EntityManager<
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
 

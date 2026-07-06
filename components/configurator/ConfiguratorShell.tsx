@@ -11,36 +11,39 @@ import { FencePreview } from "./FencePreview";
 import { OpeningsOnlyPreview } from "./OpeningsOnlyPreview";
 import { ProductScopeStep } from "./ProductScopeStep";
 import { QuotePlanCanvas } from "./QuotePlanCanvas";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function ConfiguratorSidebar({
-  catalog,
-  selection,
-  activeTab,
-  onSelect,
-  onTabChange,
-}: {
+type SidebarProps = {
   catalog: NonNullable<ReturnType<typeof useConfiguratorStore.getState>["catalog"]>;
   selection: ReturnType<typeof useConfiguratorStore.getState>["selection"];
   activeTab: ReturnType<typeof useConfiguratorStore.getState>["activeTab"];
   onSelect: ReturnType<typeof useConfiguratorStore.getState>["setSelection"];
   onTabChange: ReturnType<typeof useConfiguratorStore.getState>["setActiveTab"];
-}) {
+};
+
+/** Oryginalny panel boczny — tylko desktop (lg+). */
+function DesktopSidebar({
+  catalog,
+  selection,
+  activeTab,
+  onSelect,
+  onTabChange,
+}: SidebarProps) {
   const sidebarOpen = useConfiguratorStore((s) => s.sidebarOpen);
 
   return (
     <aside
       className={cn(
-        "flex shrink-0 flex-col bg-[#1A1A18] transition-all duration-300 ease-out lg:border-r lg:border-[#2A2A26]",
+        "hidden shrink-0 flex-col bg-[#1A1A18] transition-all duration-300 ease-out lg:flex lg:border-r lg:border-[#2A2A26]",
         sidebarOpen
-          ? "w-full lg:w-[400px] xl:w-[420px]"
+          ? "lg:w-[400px] xl:w-[420px]"
           : "w-0 overflow-hidden border-r-0 lg:w-0",
       )}
     >
       <div
         className={cn(
-          "flex h-full w-full min-w-[280px] flex-col lg:min-w-[400px] xl:min-w-[420px]",
+          "flex h-full w-full min-w-[400px] flex-col xl:min-w-[420px]",
           !sidebarOpen && "pointer-events-none opacity-0",
         )}
       >
@@ -53,6 +56,61 @@ function ConfiguratorSidebar({
         />
       </div>
     </aside>
+  );
+}
+
+/** Drawer z opcjami — tylko mobile/tablet (<lg). */
+function MobileOptionsDrawer({
+  catalog,
+  selection,
+  activeTab,
+  onSelect,
+  onTabChange,
+}: SidebarProps) {
+  const sidebarOpen = useConfiguratorStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useConfiguratorStore((s) => s.setSidebarOpen);
+
+  return (
+    <>
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Zamknij panel opcji"
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 flex w-[min(400px,calc(100%-3rem))] flex-col bg-[#1A1A18] shadow-2xl transition-transform duration-300 ease-out lg:hidden",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
+        )}
+        aria-hidden={!sidebarOpen}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-[#2A2A26] px-4 py-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white">
+            Opcje
+          </p>
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[#888] transition-colors hover:bg-[#222] hover:text-white"
+            aria-label="Wróć do podglądu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col overscroll-contain pb-safe">
+          <OptionSidebar
+            catalog={catalog}
+            selection={selection}
+            activeTab={activeTab}
+            onSelect={onSelect}
+            onTabChange={onTabChange}
+          />
+        </div>
+      </aside>
+    </>
   );
 }
 
@@ -82,7 +140,14 @@ export function ConfiguratorShell() {
     scopeConfirmed,
     scope,
     quoteAdvancedView,
+    setSidebarOpen,
   } = useConfiguratorStore();
+
+  useEffect(() => {
+    if (!mounted) return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    if (!mq.matches) setSidebarOpen(false);
+  }, [mounted, setSidebarOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,13 +198,21 @@ export function ConfiguratorShell() {
   const showConfigurator = mounted && !loading && !error && catalog;
   const showScopeStep = showConfigurator && !scopeConfirmed;
 
+  const sidebarProps = {
+    catalog: catalog!,
+    selection,
+    activeTab,
+    onSelect: setSelection,
+    onTabChange: setActiveTab,
+  };
+
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-white">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-white max-lg:h-dvh">
         <ConfiguratorHeader />
 
         {showDemoBanner && (
-          <div className="shrink-0 border-b border-amber-200/20 bg-amber-950/40 px-5 py-2 text-center">
-            <p className="text-[11px] text-amber-400/90">
+          <div className="shrink-0 border-b border-amber-200/20 bg-amber-950/40 px-5 py-2 text-center max-lg:px-4">
+            <p className="text-[11px] text-amber-400/90 max-lg:text-[10px]">
               API niedostępne — wyświetlane są dane demo. Sprawdź backend na
               Render i zmienną NEXT_PUBLIC_API_URL (lokalnie) lub proxy /api
               (produkcja Vercel).{" "}
@@ -153,7 +226,7 @@ export function ConfiguratorShell() {
         {showLoading && <LoadingView />}
 
         {showError && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-[#1A1A18] px-6 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-[#1A1A18] px-6 text-center max-lg:px-4">
             <p className="max-w-md text-sm text-[#ff6b6b]">{error}</p>
             <Link
               href="/admin"
@@ -166,17 +239,11 @@ export function ConfiguratorShell() {
 
         {showScopeStep && <ProductScopeStep />}
 
-        {showConfigurator && scopeConfirmed && (
+        {showConfigurator && scopeConfirmed && catalog && (
           <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-            <ConfiguratorSidebar
-              catalog={catalog}
-              selection={selection}
-              activeTab={activeTab}
-              onSelect={setSelection}
-              onTabChange={setActiveTab}
-            />
+            <DesktopSidebar {...sidebarProps} />
 
-            <section className="min-h-[360px] flex-1 overflow-hidden">
+            <section className="min-h-[360px] flex-1 overflow-hidden max-lg:min-h-0">
               {activeTab === "quote" && quoteAdvancedView ? (
                 <QuotePlanCanvas />
               ) : scope.fence ? (
@@ -185,6 +252,8 @@ export function ConfiguratorShell() {
                 <OpeningsOnlyPreview catalog={catalog} />
               )}
             </section>
+
+            <MobileOptionsDrawer {...sidebarProps} />
           </div>
         )}
     </div>

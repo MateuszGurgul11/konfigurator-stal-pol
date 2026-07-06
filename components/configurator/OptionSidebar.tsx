@@ -402,10 +402,10 @@ export function OptionSidebar({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-[#2A2A26] px-5 py-4">
+      <div className="border-b border-[#2A2A26] px-5 py-4 max-lg:px-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="font-heading text-lg font-bold text-white">
+            <h1 className="font-heading text-lg font-bold text-white max-lg:text-base">
               Konfigurator Ogrodzenia
             </h1>
             <p className="mt-0.5 text-[11px] text-[#666]">
@@ -424,7 +424,7 @@ export function OptionSidebar({
 
       <ConfiguratorTabs active={activeTab} scope={scope} onChange={onTabChange} />
 
-      <div className="flex-1 overflow-y-auto px-5 py-5 scrollbar-dark">
+      <div className="flex-1 overflow-y-auto px-5 py-5 scrollbar-dark max-lg:px-4">
         {activeTab === "model" && (
           <div className="space-y-6">
             <div>
