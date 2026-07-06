@@ -25,3 +25,13 @@ export function useMediaQuery(query: string): boolean {
 export function useIsLgUp(): boolean {
   return useMediaQuery("(min-width: 1024px)");
 }
+
+/** Mobile/tablet w orientacji poziomej (< lg) */
+export function useIsMobileLandscape(): boolean {
+  return useMediaQuery("(max-width: 1023px) and (orientation: landscape)");
+}
+
+/** Mobile/tablet w orientacji pionowej (< lg) */
+export function useIsMobilePortrait(): boolean {
+  return useMediaQuery("(max-width: 1023px) and (orientation: portrait)");
+}

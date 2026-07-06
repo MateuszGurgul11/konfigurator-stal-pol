@@ -11,8 +11,10 @@ import { FencePreview } from "./FencePreview";
 import { OpeningsOnlyPreview } from "./OpeningsOnlyPreview";
 import { ProductScopeStep } from "./ProductScopeStep";
 import { QuotePlanCanvas } from "./QuotePlanCanvas";
+import { RotateDeviceOverlay } from "./RotateDeviceOverlay";
 import { Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobilePortrait } from "@/lib/hooks/use-media-query";
 
 type SidebarProps = {
   catalog: NonNullable<ReturnType<typeof useConfiguratorStore.getState>["catalog"]>;
@@ -128,6 +130,8 @@ function LoadingView() {
 
 export function ConfiguratorShell() {
   const mounted = useMounted();
+  const isMobilePortrait = useIsMobilePortrait();
+  const hideConfiguratorOnMobilePortrait = mounted && isMobilePortrait;
   const {
     catalog,
     loading,
@@ -211,7 +215,17 @@ export function ConfiguratorShell() {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-white max-lg:h-dvh">
+    <>
+      <RotateDeviceOverlay />
+
+      <div
+        className={cn(
+          "flex h-screen w-full flex-col overflow-hidden bg-white max-lg:h-dvh",
+          hideConfiguratorOnMobilePortrait &&
+            "max-lg:pointer-events-none max-lg:invisible max-lg:select-none",
+        )}
+        aria-hidden={hideConfiguratorOnMobilePortrait}
+      >
         <ConfiguratorHeader />
 
         {showDemoBanner && (
@@ -260,6 +274,7 @@ export function ConfiguratorShell() {
             <MobileOptionsDrawer {...sidebarProps} />
           </div>
         )}
-    </div>
+      </div>
+    </>
   );
 }
