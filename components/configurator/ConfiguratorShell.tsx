@@ -15,7 +15,6 @@ import { RotateDeviceOverlay } from "./RotateDeviceOverlay";
 import { Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobilePortrait } from "@/lib/hooks/use-media-query";
-import { useVisualViewportHeight } from "@/lib/hooks/use-visual-viewport-height";
 
 type SidebarProps = {
   catalog: NonNullable<ReturnType<typeof useConfiguratorStore.getState>["catalog"]>;
@@ -131,7 +130,6 @@ function LoadingView() {
 
 export function ConfiguratorShell() {
   const mounted = useMounted();
-  useVisualViewportHeight();
   const isMobilePortrait = useIsMobilePortrait();
   const hideConfiguratorOnMobilePortrait = mounted && isMobilePortrait;
   const {
@@ -222,7 +220,7 @@ export function ConfiguratorShell() {
 
       <div
         className={cn(
-          "flex h-screen w-full flex-col overflow-hidden bg-white max-lg:h-app-mobile max-lg:bg-[#f0f0f0]",
+          "flex w-full flex-col bg-white max-lg:min-h-dvh max-lg:overflow-visible max-lg:bg-[#f0f0f0] lg:h-screen lg:overflow-hidden",
           hideConfiguratorOnMobilePortrait &&
             "max-lg:pointer-events-none max-lg:invisible max-lg:select-none",
         )}

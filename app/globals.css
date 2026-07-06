@@ -119,9 +119,8 @@
   min-height: 100dvh;
 }
 
-.h-app-mobile {
-  height: 100svh;
-  height: var(--app-vh, 100svh);
+.min-h-app-mobile {
+  min-height: 100dvh;
 }
 
 .pb-safe {
