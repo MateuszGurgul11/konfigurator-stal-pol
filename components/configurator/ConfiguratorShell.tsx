@@ -71,6 +71,12 @@ function MobileOptionsDrawer({
 }: SidebarProps) {
   const sidebarOpen = useConfiguratorStore((s) => s.sidebarOpen);
   const setSidebarOpen = useConfiguratorStore((s) => s.setSidebarOpen);
+  const resetScope = useConfiguratorStore((s) => s.resetScope);
+
+  function handleResetScope() {
+    resetScope();
+    setSidebarOpen(false);
+  }
 
   return (
     <>
@@ -93,8 +99,15 @@ function MobileOptionsDrawer({
         )}
         aria-hidden={!sidebarOpen}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-[#2A2A26] px-4 py-3 max-lg:landscape:py-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#2A2A26] px-4 py-3 max-lg:landscape:py-2">
+          <button
+            type="button"
+            onClick={handleResetScope}
+            className="shrink-0 font-semibold uppercase tracking-wider text-[#888] underline-offset-2 transition-colors hover:text-[#e30311] hover:underline"
+          >
+            Zmień zakres
+          </button>
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white max-lg:landscape:hidden">
             Opcje
           </p>
           <button
