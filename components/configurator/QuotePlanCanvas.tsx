@@ -359,7 +359,7 @@ export function QuotePlanCanvas() {
   }
 
   return (
-    <div className="relative flex h-full min-h-[420px] flex-col bg-[#e8e8e8]">
+    <div className="relative flex min-h-[420px] w-full flex-1 flex-col bg-[#e8e8e8] max-lg:min-h-0">
       <input
         ref={fileInputRef}
         type="file"

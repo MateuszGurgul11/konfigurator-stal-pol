@@ -147,7 +147,7 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
   }, [hasDrivewayGate, hasWicket, pricing.panelWidthCm]);
 
   return (
-    <div className="flex h-full flex-col bg-gradient-to-b from-[#e8f4fc] to-[#f5f9fd]">
+    <div className="flex w-full flex-1 flex-col bg-gradient-to-b from-[#e8f4fc] to-[#f5f9fd]">
       <div className="relative flex flex-1 flex-col max-lg:min-h-[40dvh]">
         <div className="lg:hidden">
           <PreviewControlsBar className="left-3 right-auto top-3" accent />

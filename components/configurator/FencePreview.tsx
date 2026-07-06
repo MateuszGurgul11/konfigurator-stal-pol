@@ -740,7 +740,7 @@ export function FencePreview({ catalog, selection }: Props) {
   return (
     <div
       ref={previewRootRef}
-      className="relative flex h-full min-h-[420px] flex-col bg-[#f0f0f0] max-lg:min-h-0"
+      className="relative flex min-h-[420px] w-full flex-1 flex-col bg-[#f0f0f0] max-lg:min-h-0"
     >
       <div className="absolute right-4 top-4 z-20 hidden gap-2 lg:flex">
         <button

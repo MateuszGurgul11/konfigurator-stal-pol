@@ -261,7 +261,7 @@ export function ConfiguratorShell() {
           <div className="flex min-h-0 flex-1 flex-col max-lg:landscape:min-h-0 lg:flex-row">
             <DesktopSidebar {...sidebarProps} />
 
-            <section className="min-h-0 flex-1 overflow-hidden lg:min-h-[360px]">
+            <section className="flex min-h-0 flex-1 flex-col overflow-hidden lg:min-h-[360px]">
               {activeTab === "quote" && quoteAdvancedView ? (
                 <QuotePlanCanvas />
               ) : scope.fence ? (
