@@ -65,6 +65,10 @@ export const VIEW_H = 440;
 const MARGIN_X = 80;
 const SECTION_WIDTH = 230;
 const DEFAULT_PANEL_WIDTH_CM = 250;
+// Referencyjne wymiary przęsła (w px danego renderu) przekazywane do bramy
+// wjazdowej, żeby jej profil miał dokładnie ten sam rozmiar co na przęśle
+// i tylko się powielał (zamiast rozciągać wraz z szerszym segmentem).
+type PanelRef = { sectionW: number; h: number };
 
 export type ViewWidthOptions = {
   hasWicket?: boolean;
@@ -391,18 +395,26 @@ function drawHorizontalPanel(
   colorHex: string,
   shadowEdge: string,
   shadowBottom: string,
+  ref?: PanelRef,
 ): string {
-  const frame = Math.max(3, sectionW * 0.045);
+  // ref (brama wjazdowa): rama i listwy o wymiarach takich jak na przęśle,
+  // listwy powielane; inaczej proporcjonalnie: rama od szerokości segmentu
+  // i zawsze 7 listew na wysokości.
+  const frame = Math.max(3, (ref?.sectionW ?? sectionW) * 0.045);
   const innerX = px + frame;
   const innerY = y + frame;
   const innerW = sectionW - frame * 2;
   const innerH = h - frame * 2;
   const highlight = lighten(colorHex, 0.1);
-  const slatCount = 7;
   const gapRatio = Math.min(0.35, 0.22 + openness * 0.18);
-  const pitch = innerH / slatCount;
+  const pitch = (ref ? ref.h - frame * 2 : innerH) / 7;
   const slatH = pitch * (1 - gapRatio);
   const gap = pitch - slatH;
+  const slatCount = ref
+    ? Math.max(1, Math.floor((innerH + gap) / pitch))
+    : 7;
+  const totalH = slatCount * slatH + (slatCount - 1) * gap;
+  const slatOffsetY = innerY + (innerH - totalH) / 2;
 
   let out = "";
 
@@ -412,7 +424,7 @@ function drawHorizontalPanel(
   out += `<rect x="${px.toFixed(1)}" y="${(y + h - frame).toFixed(1)}" width="${sectionW.toFixed(1)}" height="${frame.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
 
   for (let i = 0; i < slatCount; i++) {
-    const sy = innerY + i * pitch + gap / 2;
+    const sy = slatOffsetY + i * pitch;
     out += `<rect x="${innerX.toFixed(1)}" y="${sy.toFixed(1)}" width="${innerW.toFixed(1)}" height="${slatH.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
     out += `<rect x="${innerX.toFixed(1)}" y="${sy.toFixed(1)}" width="${innerW.toFixed(1)}" height="1.5" fill="${highlight}" opacity="0.55"/>`;
     out += `<rect x="${innerX.toFixed(1)}" y="${(sy + slatH - 1.5).toFixed(1)}" width="${innerW.toFixed(1)}" height="1.5" fill="${shadowBottom}" opacity="0.4"/>`;
@@ -798,8 +810,11 @@ function drawPalisadeSlats(
   colorHex: string,
   shadowEdge: string,
   shadowBottom: string,
+  refSectionW?: number,
 ): string {
-  const slatW = Math.max(3, sectionW * 0.07);
+  // refSectionW (brama wjazdowa): sztacheta o szerokości takiej jak na
+  // przęśle, tylko powielana; inaczej proporcjonalnie do segmentu.
+  const slatW = Math.max(3, (refSectionW ?? sectionW) * 0.07);
   const gap = Math.max(2, slatW * (0.4 + openness * 1.2));
   const pitch = slatW + gap;
   const count = Math.max(1, Math.floor((sectionW + gap) / pitch));
@@ -832,6 +847,7 @@ function drawSectionPanels(
   patternId: PatternId,
   panelTextureUrl?: string | null,
   textureTileCount?: number,
+  ref?: PanelRef,
 ): string {
   const { useStacked, plankCount, slitGap, plankH } = computePlankLayout(
     h,
@@ -853,6 +869,7 @@ function drawSectionPanels(
       colorHex,
       shadowEdge,
       shadowBottom,
+      ref?.sectionW,
     );
   }
   if (patternId === "pattern-panel-horizontal") {
@@ -865,6 +882,7 @@ function drawSectionPanels(
       colorHex,
       shadowEdge,
       shadowBottom,
+      ref,
     );
   }
   if (patternId === "pattern-3d") {
@@ -907,9 +925,12 @@ function drawDrivewayGateDoubleLeaf(
   infillPatternId: PatternId,
   textureUrl?: string | null,
   textureTileCount?: number,
+  refSectionW?: number,
 ): { body: string; hardware: string } {
   const shadowEdge = darken(colorHex, 0.3);
   const shadowBottom = darken(colorHex, 0.2);
+  const panelRef: PanelRef | undefined =
+    refSectionW !== undefined ? { sectionW: refSectionW, h } : undefined;
   const centerGap = 2;
   const leafW = (segW - centerGap) / 2;
   const leftX = px;
@@ -931,6 +952,7 @@ function drawDrivewayGateDoubleLeaf(
     infillPatternId,
     textureUrl,
     textureTileCount,
+    panelRef,
   );
   body += drawSectionPanels(
     rightX,
@@ -945,6 +967,7 @@ function drawDrivewayGateDoubleLeaf(
     infillPatternId,
     textureUrl,
     textureTileCount,
+    panelRef,
   );
   body += `<rect x="${(px + leafW).toFixed(1)}" y="${(y + h - stopH).toFixed(1)}" width="${stopW.toFixed(1)}" height="${stopH.toFixed(1)}" fill="${darken(colorHex, 0.25)}" rx="0.5"/>`;
 
@@ -969,6 +992,7 @@ function drawDrivewayGateSliding(
   infillPatternId: PatternId,
   textureUrl?: string | null,
   textureTileCount?: number,
+  refSectionW?: number,
 ): { body: string; hardware: string } {
   // Brama przesuwna w pozycji ZAMKNIĘTEJ: prosty prostokątny panel z ramą,
   // pionowymi podziałami i dolną szyną jezdną z rolkami.
@@ -1003,6 +1027,7 @@ function drawDrivewayGateSliding(
       infillPatternId,
       textureUrl,
       textureTileCount,
+      refSectionW !== undefined ? { sectionW: refSectionW, h } : undefined,
     );
   }
 
@@ -1048,6 +1073,7 @@ function drawDrivewayGateSection(
   infillPatternId: PatternId,
   textureUrl?: string | null,
   textureTileCount?: number,
+  refSectionW?: number,
 ): { body: string; hardware: string } {
   if (textureUrl) {
     const drawFn =
@@ -1064,6 +1090,7 @@ function drawDrivewayGateSection(
       infillPatternId,
       textureUrl,
       textureTileCount,
+      refSectionW,
     );
     return {
       body: drawTexturedStack(
@@ -1090,6 +1117,7 @@ function drawDrivewayGateSection(
       infillPatternId,
       textureUrl,
       textureTileCount,
+      refSectionW,
     );
   }
   return drawDrivewayGateDoubleLeaf(
@@ -1104,6 +1132,7 @@ function drawDrivewayGateSection(
     infillPatternId,
     textureUrl,
     textureTileCount,
+    refSectionW,
   );
 }
 
@@ -1236,6 +1265,8 @@ function renderFenceSegments(
   const weights = segmentWidthWeights(segments, wicketWidthCm, panelWidthCm);
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
   const innerW = totalW - gap * Math.max(0, segments.length - 1);
+  // Szerokość zwykłego przęsła w px tego renderu — wzorzec dla profilu bramy.
+  const panelRefW = (innerW * SECTION_WIDTH) / totalWeight;
   const shadowEdge = darken(colorHex, 0.3);
   const shadowBottom = darken(colorHex, 0.2);
   const footingSegments: { x: number; w: number }[] = [];
@@ -1283,6 +1314,7 @@ function renderFenceSegments(
         drivewayGateInfillPatternId ?? patternId,
         drivewayGateTextureUrl,
         textureTileCount,
+        panelRefW,
       );
       out += gate.body;
       wicketHardware += gate.hardware;
