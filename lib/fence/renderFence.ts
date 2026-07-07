@@ -542,9 +542,20 @@ function drawMeshInfill(
   shadowEdge: string,
   shadowBottom: string,
   patternId: PatternId,
+  refSectionW?: number,
 ): string {
   if (patternId === "pattern-palisade") {
-    return drawPalisadeSlats(px, y, w, h, openness, colorHex, shadowEdge, shadowBottom);
+    return drawPalisadeSlats(
+      px,
+      y,
+      w,
+      h,
+      openness,
+      colorHex,
+      shadowEdge,
+      shadowBottom,
+      refSectionW,
+    );
   }
   if (patternId === "pattern-panel-horizontal") {
     return drawHorizontalInfill(px, y, w, h, openness, colorHex, shadowEdge, shadowBottom);
@@ -812,7 +823,7 @@ function drawPalisadeSlats(
   shadowBottom: string,
   refSectionW?: number,
 ): string {
-  // refSectionW (brama wjazdowa): sztacheta o szerokości takiej jak na
+  // refSectionW (brama wjazdowa, furtka): sztacheta o szerokości takiej jak na
   // przęśle, tylko powielana; inaczej proporcjonalnie do segmentu.
   const slatW = Math.max(3, (refSectionW ?? sectionW) * 0.07);
   const gap = Math.max(2, slatW * (0.4 + openness * 1.2));
@@ -1186,6 +1197,7 @@ function drawGateSection(
   endSide: GateEndSide,
   openingTextureUrl?: string | null,
   textureTileCount?: number,
+  refSectionW?: number,
 ): { body: string; hardware: string } {
   const { gateX, gateW, latchSide, hingeEdgeX } = computeWicketGateLayout(
     px,
@@ -1235,6 +1247,7 @@ function drawGateSection(
       shadowEdge,
       shadowBottom,
       patternId,
+      refSectionW,
     );
   }
 
@@ -1297,6 +1310,7 @@ function renderFenceSegments(
         endSide,
         openingTextureUrl,
         textureTileCount,
+        panelRefW,
       );
       out += gate.body;
       wicketHardware += gate.hardware;
