@@ -95,20 +95,38 @@
   }
 }
 
-/* Custom dark scrollbar for sidebar */
+/* Custom dark scrollbar for sidebar.
+   NOTE: we intentionally do NOT set the standard `scrollbar-width` /
+   `scrollbar-color` on Chromium — setting them makes Chrome ignore the
+   ::-webkit-scrollbar rules and fall back to a thin, auto-hiding overlay
+   scrollbar. Styling ::-webkit-scrollbar forces a persistent, always-visible
+   scrollbar in Chrome/Safari. Firefox gets the standard props via @supports. */
 .scrollbar-dark {
-  scrollbar-width: thin;
-  scrollbar-color: #2A2A26 transparent;
+  /* Reserve gutter space so the scrollbar is always present and content never shifts */
+  scrollbar-gutter: stable;
 }
 .scrollbar-dark::-webkit-scrollbar {
-  width: 4px;
+  width: 12px;
 }
 .scrollbar-dark::-webkit-scrollbar-track {
-  background: transparent;
+  background: #222220;
+  border-radius: 6px;
 }
 .scrollbar-dark::-webkit-scrollbar-thumb {
-  background-color: #2A2A26;
-  border-radius: 2px;
+  background-color: #6B6B63;
+  border: 2px solid #222220;
+  border-radius: 6px;
+  min-height: 40px;
+}
+.scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background-color: #8A8A80;
+}
+/* Firefox only — Chromium keeps the webkit rules above */
+@supports not selector(::-webkit-scrollbar) {
+  .scrollbar-dark {
+    scrollbar-width: auto;
+    scrollbar-color: #6B6B63 #222220;
+  }
 }
 
 .h-app {
