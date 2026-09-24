@@ -16,19 +16,21 @@ import {
 import { Loader2 } from "lucide-react";
 
 const sections = [
-  { href: "/admin/posts", title: "Słupki", desc: "Warianty słupków ogrodzenia" },
-  { href: "/admin/panels", title: "Panele", desc: "Wzory paneli stalowych" },
+  {
+    href: "/admin/model",
+    title: "Model",
+    desc: "Panele, kolory RAL, wykończenie, podmurówka",
+  },
+  {
+    href: "/admin/dimensions",
+    title: "Wymiary",
+    desc: "Presety wysokości płotu",
+  },
   {
     href: "/admin/elements",
     title: "Elementy",
-    desc: "Brama i furtka — wygląd i ceny",
+    desc: "Bramy, furtki i słupki",
   },
-  {
-    href: "/admin/heights",
-    title: "Wysokości",
-    desc: "Wysokości paneli (1,53–2,00 m)",
-  },
-  { href: "/admin/colors", title: "Kolory", desc: "Kolory malowania" },
   {
     href: "/admin/pricing",
     title: "Wycena",
@@ -67,11 +69,11 @@ export default function AdminDashboardPage() {
         <p className="text-muted-foreground mt-1 text-sm">
           {user?.email
             ? `Zalogowano jako ${user.email}`
-            : "Zarządzaj katalogiem wariantów"}
+            : "Zarządzaj katalogiem według zakładek konfiguratora"}
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {sections.map((s) => (
           <Link key={s.href} href={s.href}>
             <Card className="h-full transition-shadow hover:shadow-md">

@@ -1,47 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { EntityManager } from "@/components/admin/EntityManager";
-import { colorSchema } from "@/lib/validations";
-import type { Color } from "@/lib/types";
-
-const emptyItem = {
-  name: "",
-  hex: "#9ca3af",
-  priceSurchargePerMeter: 0,
-  priceSurchargePerPanel: 0,
-  sortOrder: 0,
-  active: true,
-};
-
-export default function AdminColorsPage() {
-  return (
-    <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
-        Kolory malowania paneli i elementów. Ustawiasz nazwę oraz kod koloru
-        (#RRGGBB).
-      </p>
-      <EntityManager<Color>
-      collection="colors"
-      title="Kolory"
-      schema={colorSchema}
-      emptyItem={emptyItem}
-      fields={[
-        { name: "name", label: "Nazwa", type: "text" },
-        { name: "hex", label: "Kolor", type: "color" },
-        {
-          name: "priceSurchargePerPanel",
-          label: "Dopłata za panel (PLN)",
-          type: "number",
-        },
-        {
-          name: "priceSurchargePerMeter",
-          label: "Dopłata za m bieżący (PLN, legacy)",
-          type: "number",
-        },
-        { name: "sortOrder", label: "Kolejność", type: "number" },
-        { name: "active", label: "Aktywny", type: "boolean" },
-      ]}
-      />
-    </div>
-  );
+export default function AdminColorsRedirect() {
+  redirect("/admin/model");
 }

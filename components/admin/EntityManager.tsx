@@ -62,7 +62,11 @@ type EntityManagerProps<
   fields: FieldConfig[];
   schema: z.ZodType<Record<string, unknown>>;
   emptyItem: Record<string, unknown>;
+  /** Gdy true — tytuł jako h2 (sekcja na stronie zakładki CMS) */
+  asSection?: boolean;
 };
+
+export type { FieldConfig };
 
 export function EntityManager<
   T extends { id: string; active: boolean; sortOrder: number },
@@ -72,6 +76,7 @@ export function EntityManager<
   fields,
   schema,
   emptyItem,
+  asSection = false,
 }: EntityManagerProps<T>) {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -278,7 +283,11 @@ export function EntityManager<
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-semibold">{title}</h1>
+        {asSection ? (
+          <h2 className="font-heading text-xl font-semibold">{title}</h2>
+        ) : (
+          <h1 className="font-heading text-2xl font-semibold">{title}</h1>
+        )}
         <Button onClick={openCreate} disabled={!canManage || !isApiConfigured()}>
           <Plus className="mr-1 h-4 w-4" />
           Dodaj

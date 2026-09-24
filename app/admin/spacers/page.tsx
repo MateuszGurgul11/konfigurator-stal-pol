@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function AdminPanelsRedirect() {
+export default function AdminSpacersRedirect() {
   redirect("/admin/model");
 }

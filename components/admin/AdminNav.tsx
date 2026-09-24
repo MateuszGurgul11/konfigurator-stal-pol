@@ -10,13 +10,9 @@ import { Button } from "@/components/ui/button";
 
 const links = [
   { href: "/admin", label: "Dashboard" },
-  { href: "/admin/posts", label: "Słupki" },
-  { href: "/admin/panels", label: "Panele" },
+  { href: "/admin/model", label: "Model" },
+  { href: "/admin/dimensions", label: "Wymiary" },
   { href: "/admin/elements", label: "Elementy" },
-  { href: "/admin/heights", label: "Wysokości" },
-  { href: "/admin/colors", label: "Kolory" },
-  { href: "/admin/footing-heights", label: "Podmur. wys." },
-  { href: "/admin/footing-materials", label: "Podmur. mat." },
   { href: "/admin/pricing", label: "Wycena" },
 ];
 
