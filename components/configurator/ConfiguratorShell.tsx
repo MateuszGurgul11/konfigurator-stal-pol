@@ -39,13 +39,13 @@ function DesktopSidebar({
       className={cn(
         "hidden shrink-0 flex-col bg-[#1A1A18] transition-all duration-300 ease-out lg:flex lg:border-r lg:border-[#2A2A26]",
         sidebarOpen
-          ? "lg:w-[400px] xl:w-[420px]"
+          ? "lg:w-[min(480px,38vw)] xl:w-[min(540px,40vw)]"
           : "w-0 overflow-hidden border-r-0 lg:w-0",
       )}
     >
       <div
         className={cn(
-          "flex h-full w-full min-w-[400px] flex-col xl:min-w-[420px]",
+          "flex h-full w-full min-w-[480px] flex-col xl:min-w-[540px]",
           !sidebarOpen && "pointer-events-none opacity-0",
         )}
       >
@@ -91,7 +91,7 @@ function MobileOptionsDrawer({
       <aside
         className={cn(
           "fixed z-50 flex max-h-[100dvh] flex-col overflow-hidden bg-[#1A1A18] shadow-2xl transition-transform duration-300 ease-out lg:hidden",
-          "inset-y-0 left-0 w-[min(400px,calc(100%-3rem))]",
+          "inset-y-0 left-0 w-[min(480px,calc(100%-2rem))]",
           "max-lg:landscape:inset-0 max-lg:landscape:w-full",
           sidebarOpen
             ? "pointer-events-auto translate-x-0"

@@ -64,9 +64,9 @@ function firstTabForScope(scope: ProductScope): ConfiguratorTab {
 }
 
 export function getVisibleConfiguratorTabs(scope: ProductScope): ConfiguratorTab[] {
-  const all: ConfiguratorTab[] = ["model", "dimensions", "gates", "quote", "review"];
+  const all: ConfiguratorTab[] = ["model", "gates", "quote", "review"];
   return all.filter((tab) => {
-    if (tab === "model" || tab === "dimensions") return scope.fence;
+    if (tab === "model") return scope.fence;
     if (tab === "gates") return scope.gate || scope.wicket;
     return true;
   });
@@ -277,6 +277,8 @@ type ConfiguratorState = {
   setQuoteCalibrationLine: (line: Line2D | null) => void;
   setQuotePxPerMeter: (pxPerMeter: number | null) => void;
   setQuoteCalibrationPending: (point: Point2D | null) => void;
+  /** Akceptuje odcinek skali: chowa linię, zostawia px/m, włącza obrys. */
+  confirmQuoteCalibration: () => void;
   addQuoteFencePoint: (point: Point2D) => void;
   undoQuoteFencePoint: () => void;
   removeQuoteFencePointAt: (index: number) => void;
@@ -477,7 +479,8 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       }
       return next;
     }),
-  setActiveTab: (tab) => set({ activeTab: tab }),
+  setActiveTab: (tab) =>
+    set({ activeTab: tab === "dimensions" ? "quote" : tab }),
   setBackgroundImage: (url) => {
     const prev = get().backgroundImageUrl;
     if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
@@ -776,6 +779,16 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   setQuotePxPerMeter: (pxPerMeter) => set({ quotePxPerMeter: pxPerMeter }),
   setQuoteCalibrationPending: (point) =>
     set({ quoteCalibrationPending: point }),
+  confirmQuoteCalibration: () =>
+    set((s) => {
+      if (!s.quoteCalibrationLine || s.quoteCalibrationLengthM <= 0) return s;
+      if (!s.quotePxPerMeter || s.quotePxPerMeter <= 0) return s;
+      return {
+        quoteCalibrationLine: null,
+        quoteCalibrationPending: null,
+        quoteDrawMode: "fence" as const,
+      };
+    }),
   addQuoteFencePoint: (point) =>
     set((s) => ({
       quoteFencePoints: s.quoteFenceClosed

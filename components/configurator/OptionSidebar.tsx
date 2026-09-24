@@ -9,7 +9,6 @@ import type {
   Color,
   FootingHeight,
   FootingMaterial,
-  Height,
   Panel,
   Post,
   SpacerOption,
@@ -21,8 +20,6 @@ import {
   formatWicketInsertAfterLabel,
   getNextConfiguratorTab,
   getWicketLayoutPanelCount,
-  MAX_PREVIEW_PANELS,
-  MIN_PREVIEW_PANELS,
   resolveQuotePerimeterM,
   useConfiguratorStore,
 } from "@/lib/configurator/state";
@@ -95,13 +92,13 @@ function ModelCard({
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "text-sm font-semibold",
+            "text-[16px] font-semibold",
             selected ? "text-white" : "text-[#f6f6f4]",
           )}
         >
           {title}
         </p>
-        <p className="text-[11px] text-[#d6d6d2]">{subtitle}</p>
+        <p className="text-[14px] text-[#d6d6d2]">{subtitle}</p>
       </div>
     </button>
   );
@@ -115,11 +112,6 @@ function formatSurchargePerPanel(
   const amount = resolveSurchargePerPanel(perPanel, perMeter, panelWidthCm);
   if (amount === 0) return "w cenie bazowej";
   return `+${amount} PLN/panel`;
-}
-
-function formatHeightMultiplier(value?: number): string {
-  if (value == null || value === 1) return "×1,00";
-  return `×${value.toFixed(2)}`;
 }
 
 function OpeningInsertAfterPicker({
@@ -311,7 +303,6 @@ export function OptionSidebar({
   const setFootingHeightId = useConfiguratorStore((s) => s.setFootingHeightId);
   const setFootingMaterialId = useConfiguratorStore((s) => s.setFootingMaterialId);
   const previewPanelCount = useConfiguratorStore((s) => s.previewPanelCount);
-  const setPreviewPanelCount = useConfiguratorStore((s) => s.setPreviewPanelCount);
   const pricing = useConfiguratorStore((s) => s.pricing);
   const panelWidthCm = resolvePanelWidthCm(selectedPanel, pricing);
   const quotePerimeterM = useConfiguratorStore((s) => s.quotePerimeterM);
@@ -596,58 +587,6 @@ export function OptionSidebar({
           </div>
         )}
 
-        {activeTab === "dimensions" && (
-          <div>
-            <SectionLabel>Szerokość podglądu — panele</SectionLabel>
-            <div className="mb-6 rounded-lg border border-[#333] bg-[#222] p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-white">
-                  {previewPanelCount} paneli
-                </span>
-                <span className="text-[10px] uppercase tracking-wider text-[#d6d6d2]">
-                  {MIN_PREVIEW_PANELS}–{MAX_PREVIEW_PANELS}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={MIN_PREVIEW_PANELS}
-                max={MAX_PREVIEW_PANELS}
-                value={previewPanelCount}
-                onChange={(e) => setPreviewPanelCount(Number(e.target.value))}
-                className="w-full accent-[#e30311]"
-              />
-              <p className="mt-2 text-[10px] leading-relaxed text-[#d6d6d2] max-lg:landscape:hidden">
-                Przeciągnij boczne uchwyty płotu w podglądzie, aby szybko
-                dodać lub usunąć panele.
-              </p>
-            </div>
-
-            <SectionLabel>Wysokość — presety</SectionLabel>
-            <div className="grid grid-cols-2 gap-2">
-              {catalog.heights.map((height: Height) => (
-                <button
-                  key={height.id}
-                  type="button"
-                  onClick={() => onSelect({ heightId: height.id })}
-                  className={cn(
-                    "rounded-lg border px-3 py-3 text-center transition-all",
-                    selection.heightId === height.id
-                      ? "border-[#e30311] bg-[#2a0e10] text-white"
-                      : "border-[#333] bg-[#222] text-[#e8e8e4] hover:border-[#444]",
-                  )}
-                >
-                  <span className="block font-heading text-lg font-bold">
-                    {height.label}
-                  </span>
-                  <span className="mt-0.5 block text-[10px] text-[#e8e8e4]">
-                    {formatHeightMultiplier(height.priceMultiplier)}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {activeTab === "gates" && (
           <div className="space-y-6">
             {scope.gate && (
@@ -691,7 +630,7 @@ export function OptionSidebar({
               {bramaElementId && scope.fence && (
                 <p className="mt-2 text-[11px] leading-relaxed text-[#e8e8e4]">
                   Możesz też przesuwać bramę strzałkami na podglądzie. Na zakładce{" "}
-                  <strong className="text-[#f6f6f4]">Wymiary działki</strong> uchwyty{" "}
+                  <strong className="text-[#f6f6f4]">Wymiary</strong> uchwyty{" "}
                   <strong className="text-[#f6f6f4]">B1/B2</strong> doprecyzują szerokość
                   na rzucie.
                 </p>
@@ -761,7 +700,7 @@ export function OptionSidebar({
               {furtkaEnabled && scope.fence && (
                 <p className="mt-3 text-[11px] leading-relaxed text-[#e8e8e4]">
                   Możesz też przesuwać furtkę strzałkami na podglądzie. Na zakładce{" "}
-                  <strong className="text-[#f6f6f4]">Wymiary działki</strong> marker{" "}
+                  <strong className="text-[#f6f6f4]">Wymiary</strong> marker{" "}
                   <strong className="text-[#f6f6f4]">F</strong> na rzucie doprecyzuje
                   miejsce na działce.
                 </p>
@@ -797,127 +736,6 @@ export function OptionSidebar({
             <div>
               <SectionLabel>Tło podglądu</SectionLabel>
               <BackgroundPicker />
-            </div>
-
-            <div className="space-y-4">
-              <SectionLabel>Twoja konfiguracja</SectionLabel>
-            {[
-              ...(scope.fence
-                ? [
-                    { label: "Model panelu", value: selectedPanel?.name },
-                    { label: "Kolor", value: selectedColor?.name },
-                    { label: "Wykończenie", value: selectedSpacer?.name },
-                    { label: "Wysokość", value: selectedHeight?.label },
-                    {
-                      label: "Panele w podglądzie",
-                      value: `${previewPanelCount} szt.`,
-                    },
-                    { label: "Słupek", value: selectedPost?.name },
-                    {
-                      label: "Podmurówka",
-                      value: footingEnabled
-                        ? [selectedFootingHeight?.label, selectedFootingMaterial?.name]
-                            .filter(Boolean)
-                            .join(" · ") || "Tak"
-                        : "Nie",
-                    },
-                  ]
-                : []),
-              ...(scope.gate
-                ? [
-                    {
-                      label: "Brama wjazdowa",
-                      value:
-                        quote.configurationItems.find(
-                          (i) => i.label === "Brama wjazdowa",
-                        )?.value ?? "Nie",
-                    },
-                  ]
-                : []),
-              ...(scope.wicket
-                ? [
-                    {
-                      label: "Furtka",
-                      value:
-                        quote.configurationItems.find((i) => i.label === "Furtka")
-                          ?.value ?? "Nie",
-                    },
-                  ]
-                : []),
-              ...(scope.fence
-                ? [
-                    {
-                      label: "Długość z rzutu",
-                      value:
-                        effectiveQuotePerimeterM != null
-                          ? `${effectiveQuotePerimeterM.toFixed(1)} m bieżących`
-                          : "—",
-                    },
-                    {
-                      label: "Stawka za panel",
-                      value: `${quote.pricePerPanelNet.toLocaleString("pl-PL")} PLN/panel`,
-                    },
-                    {
-                      label: "Liczba paneli",
-                      value: `${quote.panelUnits} szt.`,
-                    },
-                  ]
-                : []),
-              {
-                label: "Wycena orientacyjna",
-                value: `${Math.round(quote.totalNet).toLocaleString("pl-PL")} PLN netto`,
-              },
-            ].map(({ label, value }) => (
-              <div
-                key={label}
-                className="flex items-center justify-between border-b border-[#2A2A26] py-2.5"
-              >
-                <span className="text-[11px] uppercase tracking-wider text-[#d6d6d2]">
-                  {label}
-                </span>
-                <span className="text-sm font-semibold text-white">
-                  {value ?? "—"}
-                </span>
-              </div>
-            ))}
-            {selectedColor && (
-              <div className="flex items-center gap-3 rounded-lg bg-[#222] p-3">
-                <span
-                  className="h-10 w-10 rounded-lg border border-[#444]"
-                  style={{ backgroundColor: selectedColor.hex }}
-                />
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    {selectedColor.name}
-                  </p>
-                  <p className="font-mono text-xs text-[#d6d6d2]">
-                    {selectedColor.hex}
-                  </p>
-                </div>
-              </div>
-            )}
-            <div className="rounded-lg border border-[#333] bg-[#222] p-3">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#d6d6d2]">
-                Składniki ceny
-              </p>
-              <div className="space-y-1.5">
-                {quote.breakdown.map((row, index) => (
-                  <div
-                    key={`${row.label}-${index}`}
-                    className="flex justify-between gap-2 text-[11px]"
-                  >
-                    <span className="text-[#e8e8e4]">{row.label}</span>
-                    {row.amount > 0 ? (
-                      <span className="font-semibold text-white">
-                        {Math.round(row.amount).toLocaleString("pl-PL")} PLN
-                      </span>
-                    ) : (
-                      <span className="text-[#d6d6d2]">{row.value}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
             </div>
 
             <PdfDocument

@@ -42,6 +42,10 @@ export function QuotePlanCanvas() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
   const [imageLayout, setImageLayout] = useState<ImageLayout>(EMPTY_LAYOUT);
+  /** Pozycja kursora w % layoutu obrazu — do gumki kalibracji / obrysu. */
+  const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number } | null>(
+    null,
+  );
 
   const quotePlanImageUrl = useConfiguratorStore((s) => s.quotePlanImageUrl);
   const quoteDrawMode = useConfiguratorStore((s) => s.quoteDrawMode);
@@ -243,6 +247,7 @@ export function QuotePlanCanvas() {
 
       if (quoteDrawMode === "calibrate") {
         if (quoteCalibrationLine && !quoteCalibrationPending) {
+          // Nowa kalibracja od zera — reset skali do czasu ponownej akceptacji.
           setQuoteCalibrationLine(null);
           setQuotePxPerMeter(null);
           setQuoteCalibrationPending(point);
@@ -252,6 +257,7 @@ export function QuotePlanCanvas() {
           setQuoteCalibrationPending(point);
           return;
         }
+        // Drugi klik tylko zamyka odcinek — zostajemy w calibrate.
         const line = {
           x1: quoteCalibrationPending.x,
           y1: quoteCalibrationPending.y,
@@ -260,11 +266,6 @@ export function QuotePlanCanvas() {
         };
         setQuoteCalibrationLine(line);
         setQuoteCalibrationPending(null);
-
-        const linePx = lineLengthNormalizedPx(line, imageLayout);
-        const pxPerMeter = computePxPerMeter(linePx, quoteCalibrationLengthM);
-        setQuotePxPerMeter(pxPerMeter);
-        setQuoteDrawMode("fence");
         return;
       }
 
@@ -289,20 +290,60 @@ export function QuotePlanCanvas() {
       quoteDrawMode,
       quoteCalibrationLine,
       quoteCalibrationPending,
-      quoteCalibrationLengthM,
       quotePxPerMeter,
       quoteFenceClosed,
       quoteFencePoints,
       setQuoteCalibrationPending,
       setQuoteCalibrationLine,
       setQuotePxPerMeter,
-      setQuoteDrawMode,
       addQuoteFencePoint,
       removeQuoteFencePointAt,
     ],
   );
 
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!containerRef.current || imageLayout.width <= 0) {
+        setCursorPoint(null);
+        return;
+      }
+      const rect = containerRef.current.getBoundingClientRect();
+      const point = clientToNormalizedInLayout(
+        e.clientX,
+        e.clientY,
+        rect,
+        imageLayout,
+      );
+      setCursorPoint(point);
+    },
+    [imageLayout],
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    setCursorPoint(null);
+  }, []);
+
   const calibrationPreviewLine = quoteCalibrationLine;
+
+  const rubberBandLine =
+    quoteDrawMode === "calibrate" && quoteCalibrationPending && cursorPoint
+      ? {
+          x1: quoteCalibrationPending.x,
+          y1: quoteCalibrationPending.y,
+          x2: cursorPoint.x,
+          y2: cursorPoint.y,
+        }
+      : quoteDrawMode === "fence" &&
+          !quoteFenceClosed &&
+          quoteFencePoints.length >= 1 &&
+          cursorPoint
+        ? {
+            x1: quoteFencePoints[quoteFencePoints.length - 1]!.x,
+            y1: quoteFencePoints[quoteFencePoints.length - 1]!.y,
+            x2: cursorPoint.x,
+            y2: cursorPoint.y,
+          }
+        : null;
 
   const bramaSlicePoints =
     quoteFenceClosed &&
@@ -402,7 +443,7 @@ export function QuotePlanCanvas() {
               </button>
               <button
                 type="button"
-                disabled={!quotePxPerMeter}
+                disabled={!quotePxPerMeter || !!quoteCalibrationLine}
                 onClick={() => setQuoteDrawMode("fence")}
                 className={cn(
                   "flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
@@ -457,7 +498,7 @@ export function QuotePlanCanvas() {
               </button>
               <button
                 type="button"
-                disabled={!quotePxPerMeter}
+                disabled={!quotePxPerMeter || !!quoteCalibrationLine}
                 onClick={() => setQuoteDrawMode("fence")}
                 className={cn(
                   "flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
@@ -522,6 +563,8 @@ export function QuotePlanCanvas() {
           ref={containerRef}
           className="relative flex-1 cursor-crosshair overflow-hidden"
           onClick={handleCanvasClick}
+          onPointerMove={handlePointerMove}
+          onPointerLeave={handlePointerLeave}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -587,6 +630,18 @@ export function QuotePlanCanvas() {
                   stroke="#e30311"
                   strokeWidth="0.4"
                   strokeDasharray="1.2 0.8"
+                />
+              )}
+              {rubberBandLine && (
+                <line
+                  x1={rubberBandLine.x1}
+                  y1={rubberBandLine.y1}
+                  x2={rubberBandLine.x2}
+                  y2={rubberBandLine.y2}
+                  stroke="#e30311"
+                  strokeWidth="0.35"
+                  strokeDasharray="1.2 0.8"
+                  opacity="0.75"
                 />
               )}
               {quoteFenceClosed && quoteFencePoints.length >= 3 ? (
@@ -774,7 +829,7 @@ export function QuotePlanCanvas() {
                   ? quoteCalibrationPending
                     ? "Kliknij drugi punkt, aby domknąć linię skali"
                     : quoteCalibrationLine
-                      ? "Kliknij, aby ustawić skalę od nowa"
+                      ? "Wpisz długość i zaakceptuj kalibrację w panelu bocznym"
                       : "Kliknij pierwszy punkt linii skali"
                   : quoteFenceClosed
                     ? bramaEnabled || furtkaEnabled

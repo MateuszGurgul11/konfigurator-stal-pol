@@ -31,9 +31,8 @@ import {
   formatWicketInsertAfterLabel,
   getWicketLayoutPanelCount,
   useConfiguratorStore,
-  type QuoteFenceScope,
 } from "@/lib/configurator/state";
-import type { CatalogCollections, ConfiguratorSelection, QuoteResult } from "@/lib/types";
+import type { CatalogCollections, ConfiguratorSelection, Height } from "@/lib/types";
 import { DecimalInput } from "./DecimalInput";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -42,6 +41,11 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
       {children}
     </p>
   );
+}
+
+function formatHeightMultiplier(value?: number): string {
+  if (value == null || value === 1) return "×1,00";
+  return `×${value.toFixed(2)}`;
 }
 
 type StepStatus = { label: string; tone: "idle" | "active" | "done" };
@@ -93,16 +97,6 @@ function StepHeader({
 
 const CARD_CLASS = "rounded-xl border border-[#333] bg-[#222] p-4";
 
-const QUOTE_SCOPE_LABELS: Record<QuoteFenceScope, string> = {
-  "full-perimeter": "Całe ogrodzenie",
-  "front-only": "Tylko front",
-};
-
-const QUOTE_LENGTH_LABELS: Record<QuoteFenceScope, string> = {
-  "full-perimeter": "Długość bieżąca",
-  "front-only": "Długość frontu",
-};
-
 function ScopeCard({
   selected,
   title,
@@ -142,114 +136,6 @@ function ScopeCard({
         {subtitle}
       </span>
     </button>
-  );
-}
-
-function QuoteCalculationBlock({
-  quote,
-  previewPanelsFromQuote,
-  quoteFenceScope,
-}: {
-  quote: QuoteResult;
-  previewPanelsFromQuote: number;
-  quoteFenceScope: QuoteFenceScope;
-}) {
-  return (
-    <>
-      <div>
-        <SectionLabel>Wybrana konfiguracja</SectionLabel>
-        <div className="mb-4 space-y-2 rounded-lg border border-[#333] bg-[#222] p-4">
-          <div className="flex items-center justify-between gap-2 text-xs">
-            <span className="text-[#e8e8e4]">Zakres wyceny</span>
-            <span className="text-right font-semibold text-white">
-              {QUOTE_SCOPE_LABELS[quoteFenceScope]}
-            </span>
-          </div>
-          {quote.configurationItems.map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between gap-2 text-xs"
-            >
-              <span className="text-[#e8e8e4]">{item.label}</span>
-              <span className="text-right font-semibold text-white">
-                {item.value}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <SectionLabel>Kalkulacja</SectionLabel>
-        <div className="space-y-2 rounded-lg border border-[#333] bg-[#222] p-4">
-          <div className="flex justify-between text-xs">
-            <span className="text-[#e8e8e4]">
-              {QUOTE_LENGTH_LABELS[quoteFenceScope]}
-            </span>
-            <span className="font-semibold text-white">
-              {quote.perimeterM.toFixed(1)} m
-              {!quote.hasMeasuredPerimeter && (
-                <span className="ml-1 text-[#d6d6d2]">(szacunek)</span>
-              )}
-            </span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-[#e8e8e4]">Szac. liczba paneli</span>
-            <span className="text-right font-semibold text-white">
-              {quote.estimatedPanels} szt.
-            </span>
-          </div>
-          {quote.estimatedPanels > MAX_PREVIEW_PANELS && (
-            <p className="text-[10px] leading-relaxed text-[#e8e8e4]">
-              Podgląd pokazuje max {MAX_PREVIEW_PANELS} paneli (obecnie:{" "}
-              {previewPanelsFromQuote}).
-            </p>
-          )}
-          <div className="flex justify-between text-xs">
-            <span className="text-[#e8e8e4]">Stawka za panel</span>
-            <span className="font-semibold text-white">
-              {quote.pricePerPanelNet.toLocaleString("pl-PL")} PLN/panel
-            </span>
-          </div>
-          {quote.footingPrice > 0 && (
-            <div className="flex justify-between text-xs">
-              <span className="text-[#e8e8e4]">Podmurówka</span>
-              <span className="font-semibold text-white">
-                {quote.footingPrice.toLocaleString("pl-PL")} PLN
-              </span>
-            </div>
-          )}
-          <div className="my-2 border-t border-[#333]" />
-          {quote.breakdown.map((row, index) => (
-            <div
-              key={`${row.label}-${index}`}
-              className="flex justify-between gap-2 text-[11px]"
-            >
-              <span className="text-[#e8e8e4]">
-                {row.label}
-                {row.value ? (
-                  <span className="block text-[10px] text-[#c8c8c4]">{row.value}</span>
-                ) : null}
-              </span>
-              {row.amount > 0 && (
-                <span className="shrink-0 font-semibold text-white">
-                  {Math.round(row.amount).toLocaleString("pl-PL")} PLN
-                </span>
-              )}
-            </div>
-          ))}
-          <div className="mt-2 flex items-baseline justify-between border-t border-[#333] pt-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#d6d6d2]">
-              Razem netto
-            </span>
-            <span className="font-heading text-xl font-bold text-[#e30311]">
-              {Math.round(quote.totalNet).toLocaleString("pl-PL")}{" "}
-              <span className="text-sm text-[#e8e8e4]">{quote.currency}</span>
-            </span>
-          </div>
-        </div>
-      </div>
-    </>
   );
 }
 
@@ -295,6 +181,9 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
   const setQuoteCalibrationLengthM = useConfiguratorStore(
     (s) => s.setQuoteCalibrationLengthM,
   );
+  const confirmQuoteCalibration = useConfiguratorStore(
+    (s) => s.confirmQuoteCalibration,
+  );
   const setQuoteDrawMode = useConfiguratorStore((s) => s.setQuoteDrawMode);
   const setManualQuoteSideLength = useConfiguratorStore(
     (s) => s.setManualQuoteSideLength,
@@ -315,6 +204,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
   const clearQuoteFence = useConfiguratorStore((s) => s.clearQuoteFence);
   const closeQuoteFence = useConfiguratorStore((s) => s.closeQuoteFence);
   const applyQuoteToPreview = useConfiguratorStore((s) => s.applyQuoteToPreview);
+  const setSelection = useConfiguratorStore((s) => s.setSelection);
 
   const furtkaPositionLabel = formatWicketInsertAfterLabel(
     clampWicketInsertAfter(
@@ -407,11 +297,15 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
   const canApplyToPreview =
     scope.fence && effectivePerimeterM != null && effectivePerimeterM > 0;
 
-  const calibrationStatus: StepStatus = quotePxPerMeter
+  const scaleAccepted = Boolean(quotePxPerMeter && !quoteCalibrationLine);
+
+  const calibrationStatus: StepStatus = scaleAccepted
     ? { label: "Skala OK", tone: "done" }
-    : quoteDrawMode === "calibrate"
-      ? { label: "Zaznaczasz", tone: "active" }
-      : { label: "Do zrobienia", tone: "idle" };
+    : quoteCalibrationLine
+      ? { label: "Do akceptacji", tone: "active" }
+      : quoteDrawMode === "calibrate"
+        ? { label: "Zaznaczasz", tone: "active" }
+        : { label: "Do zrobienia", tone: "idle" };
 
   const fenceStatus: StepStatus = quoteFenceClosed
     ? { label: "Zamknięty", tone: "done" }
@@ -421,6 +315,34 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
 
   return (
     <div className="space-y-5">
+      {scope.fence && (
+        <div>
+          <SectionLabel>Wysokość ogrodzenia</SectionLabel>
+          <div className="grid grid-cols-2 gap-2">
+            {catalog.heights.map((height: Height) => (
+              <button
+                key={height.id}
+                type="button"
+                onClick={() => setSelection({ heightId: height.id })}
+                className={cn(
+                  "rounded-lg border px-3 py-3 text-center transition-all",
+                  selection.heightId === height.id
+                    ? "border-[#e30311] bg-[#2a0e10] text-white"
+                    : "border-[#333] bg-[#222] text-[#e8e8e4] hover:border-[#444]",
+                )}
+              >
+                <span className="block font-heading text-lg font-bold">
+                  {height.label}
+                </span>
+                <span className="mt-0.5 block text-[10px] text-[#e8e8e4]">
+                  {formatHeightMultiplier(height.priceMultiplier)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {quoteAdvancedView ? (
         <button
           type="button"
@@ -692,15 +614,28 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                     />
                   </div>
 
-                  {quotePxPerMeter ? (
+                  <button
+                    type="button"
+                    disabled={
+                      !quoteCalibrationLine ||
+                      quoteCalibrationLengthM <= 0 ||
+                      !quotePxPerMeter
+                    }
+                    onClick={() => confirmQuoteCalibration()}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] px-3 py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#c9020f] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#e30311]"
+                  >
+                    Zaakceptuj kalibrację
+                  </button>
+
+                  {scaleAccepted ? (
                     <div className="flex items-center gap-3 rounded-lg border border-[#1f7a4a]/40 bg-[#0e2a1a] px-3 py-2.5">
                       <Gauge className="h-5 w-5 shrink-0 text-[#4ade80]" />
                       <div className="min-w-0">
                         <p className="text-[9px] font-bold uppercase tracking-wider text-[#4ade80]/70">
-                          Skala ustawiona
+                          Skala ustawiona — rysuj obrys
                         </p>
                         <p className="text-sm font-bold text-white">
-                          {quotePxPerMeter.toFixed(1)}{" "}
+                          {quotePxPerMeter!.toFixed(1)}{" "}
                           <span className="text-[11px] font-medium text-[#e8e8e4]">
                             px / metr
                           </span>
@@ -714,7 +649,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                     <div className="flex items-center gap-2 rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-[11px] text-[#e8e8e4]">
                       <span className="flex h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#e30311]" />
                       {quoteCalibrationLine
-                        ? "Wpisz długość linii w metrach powyżej"
+                        ? "Wpisz długość i zaakceptuj"
                         : "Kliknij 2 punkty na rzucie, aby wyznaczyć skalę"}
                     </div>
                   )}
@@ -736,7 +671,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      disabled={!quotePxPerMeter}
+                      disabled={!scaleAccepted}
                       onClick={() => setQuoteDrawMode("fence")}
                       className={cn(
                         "flex flex-1 items-center justify-center gap-2 rounded-lg border px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-colors disabled:opacity-40",
@@ -820,12 +755,6 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
           )}
         </>
       )}
-
-      <QuoteCalculationBlock
-        quote={quote}
-        previewPanelsFromQuote={previewPanelsFromQuote}
-        quoteFenceScope={quoteFenceScope}
-      />
 
       {canApplyToPreview && (
         <button

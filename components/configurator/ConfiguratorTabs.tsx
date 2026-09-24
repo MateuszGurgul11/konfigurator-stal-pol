@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Ruler, Fence, Calculator, ClipboardCheck } from "lucide-react";
+import { Box, Ruler, Fence, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getVisibleConfiguratorTabs, type ConfiguratorTab, type ProductScope } from "@/lib/configurator/state";
 
@@ -10,9 +10,8 @@ const tabs: {
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { id: "model", labelLines: ["Model"], icon: Box },
-  { id: "dimensions", labelLines: ["Wymiary", "ogrodzenia"], icon: Ruler },
   { id: "gates", labelLines: ["Elementy"], icon: Fence },
-  { id: "quote", labelLines: ["Wymiary", "działki"], icon: Calculator },
+  { id: "quote", labelLines: ["Wymiary"], icon: Ruler },
   { id: "review", labelLines: ["Podsumowanie"], icon: ClipboardCheck },
 ];
 
@@ -43,7 +42,7 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
             )}
           >
             <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-[#e30311]")} />
-            <span className="text-center text-[11px] font-bold uppercase leading-[1.2] tracking-[0.06em]">
+            <span className="text-center text-[16px] font-semibold leading-[1.2] tracking-normal normal-case">
               {labelLines.map((line) => (
                 <span key={line} className="block">
                   {line}
