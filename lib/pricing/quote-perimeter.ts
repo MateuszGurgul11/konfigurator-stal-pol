@@ -12,6 +12,36 @@ export function defaultManualQuotePerimeterM(panelWidthCm: number): number {
   return estimatePerimeterFromPanels(DEFAULT_MANUAL_PANEL_COUNT, panelWidthCm);
 }
 
+export function sumSideLengthsM(sides: number[]): number {
+  return sides.reduce((sum, len) => {
+    const n = Number(len);
+    return sum + (Number.isFinite(n) && n > 0 ? n : 0);
+  }, 0);
+}
+
+export type ManualQuoteSide = {
+  id: string;
+  lengthM: number;
+};
+
+export function createManualQuoteSide(lengthM = 0): ManualQuoteSide {
+  return {
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `side-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    lengthM,
+  };
+}
+
+export function sumManualQuoteSidesM(sides: ManualQuoteSide[]): number {
+  return sumSideLengthsM(sides.map((s) => s.lengthM));
+}
+
+export function sideLengthLabel(index: number): string {
+  return String.fromCharCode(65 + (index % 26));
+}
+
 export type QuoteFenceScope = "full-perimeter" | "front-only";
 
 export function resolveQuotePerimeterM(params: {

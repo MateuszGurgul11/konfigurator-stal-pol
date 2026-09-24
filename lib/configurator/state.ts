@@ -17,13 +17,23 @@ import {
 } from "@/lib/pricing/element-prices";
 import { arcSpanM } from "@/lib/pricing/perimeter-path";
 import {
+  createManualQuoteSide,
   defaultManualQuotePerimeterM,
   resolveQuotePerimeterM,
+  sumManualQuoteSidesM,
+  type ManualQuoteSide,
   type QuoteFenceScope,
 } from "@/lib/pricing/quote-perimeter";
-import { getDrivewayGateSpanM } from "@/lib/pricing/variant-prices";
+import { getDrivewayGateSpanM, resolvePanelWidthCm } from "@/lib/pricing/variant-prices";
 
-export { resolveQuotePerimeterM, type QuoteFenceScope } from "@/lib/pricing/quote-perimeter";
+export {
+  resolveQuotePerimeterM,
+  sideLengthLabel,
+  type ManualQuoteSide,
+  type QuoteFenceScope,
+} from "@/lib/pricing/quote-perimeter";
+
+export const MAX_MANUAL_QUOTE_SIDES = 12;
 
 export type ConfiguratorTab =
   | "model"
@@ -114,15 +124,34 @@ export function getGatePanelIndex(
   }
 }
 
-/** Indeks panela, po którym wstawiamy furtkę (-1 = przed pierwszym panelem w pętli). */
+/** Liczba paneli w układzie (bez 2 paneli zajętych przez bramę). */
+export function getWicketLayoutPanelCount(
+  panelCount: number,
+  drivewayGateEnabled?: boolean,
+): number {
+  return drivewayGateEnabled ? Math.max(0, panelCount - 2) : panelCount;
+}
+
+export function clampWicketInsertAfter(
+  insertAfter: number,
+  panelCount: number,
+  drivewayGateEnabled?: boolean,
+): number {
+  const layout = getWicketLayoutPanelCount(panelCount, drivewayGateEnabled);
+  if (layout <= 0) return -1;
+  return Math.min(layout - 1, Math.max(-1, Math.round(insertAfter)));
+}
+
+/** Indeks panela, po którym wstawiamy furtkę (-1 = przed pierwszym panelem). */
 export function getWicketInsertAfterIndex(
   position: GatePosition,
   panelCount: number,
   options?: { drivewayGateEnabled?: boolean },
 ): number {
-  const layoutPanelCount = options?.drivewayGateEnabled
-    ? Math.max(0, panelCount - 2)
-    : panelCount;
+  const layoutPanelCount = getWicketLayoutPanelCount(
+    panelCount,
+    options?.drivewayGateEnabled,
+  );
   switch (position) {
     case "left":
       return -1;
@@ -134,6 +163,34 @@ export function getWicketInsertAfterIndex(
         : -1;
   }
 }
+
+export function gatePositionFromInsertAfter(
+  insertAfter: number,
+  panelCount: number,
+  drivewayGateEnabled?: boolean,
+): GatePosition {
+  const layout = getWicketLayoutPanelCount(panelCount, drivewayGateEnabled);
+  if (layout <= 0 || insertAfter < 0) return "left";
+  if (insertAfter >= layout - 1) return "right";
+  return "center";
+}
+
+export function formatWicketInsertAfterLabel(
+  insertAfter: number,
+  layoutPanelCount: number,
+): string {
+  if (layoutPanelCount <= 0) return "Brak paneli";
+  if (insertAfter < 0) return "Na początku";
+  if (insertAfter >= layoutPanelCount - 1) return "Na końcu";
+  return `Po panelu ${insertAfter + 1}`;
+}
+
+/** Alias: ta sama logika slotów dla bramy (2 panele szerokości). */
+export const getGateLayoutPanelCount = getWicketLayoutPanelCount;
+export const clampGateInsertAfter = clampWicketInsertAfter;
+export const formatGateInsertAfterLabel = formatWicketInsertAfterLabel;
+export const getGateInsertAfterIndex = getWicketInsertAfterIndex;
+export const gatePositionFromGateInsertAfter = gatePositionFromInsertAfter;
 
 type ConfiguratorState = {
   catalog: CatalogCollections | null;
@@ -149,12 +206,16 @@ type ConfiguratorState = {
   bramaEnabled: boolean;
   bramaElementId: string | null;
   bramaPosition: GatePosition;
+  /** Indeks panela, po którym stoi brama (-1 = na początku). */
+  bramaInsertAfter: number;
   bramaArcStart: number | null;
   bramaArcEnd: number | null;
   bramaOccupiedSpanM: number | null;
   furtkaEnabled: boolean;
   furtkaElementId: string | null;
   furtkaPosition: GatePosition;
+  /** Indeks panela, po którym stoi furtka (-1 = przed pierwszym). */
+  furtkaInsertAfter: number;
   furtkaArcPosition: number | null;
   furtkaHingeSide: WicketHingeSide;
   footingEnabled: boolean;
@@ -172,6 +233,8 @@ type ConfiguratorState = {
   quotePxPerMeter: number | null;
   quotePerimeterM: number | null;
   manualQuotePerimeterM: number;
+  /** Długości boków działki (A+B+C…) — suma = manualQuotePerimeterM. */
+  manualQuoteSides: ManualQuoteSide[];
   quoteFenceScope: QuoteFenceScope;
   manualQuoteFrontLengthM: number;
   quoteAdvancedView: boolean;
@@ -191,12 +254,14 @@ type ConfiguratorState = {
   setBramaEnabled: (enabled: boolean) => void;
   setBramaElementId: (elementId: string | null) => void;
   setBramaPosition: (position: GatePosition) => void;
+  setBramaInsertAfter: (insertAfter: number) => void;
   setBramaArcStart: (arcT: number | null) => void;
   setBramaArcEnd: (arcT: number | null) => void;
   setBramaOccupiedSpanM: (spanM: number | null) => void;
   setFurtkaEnabled: (enabled: boolean) => void;
   setFurtkaElementId: (elementId: string | null) => void;
   setFurtkaPosition: (position: GatePosition) => void;
+  setFurtkaInsertAfter: (insertAfter: number) => void;
   setFurtkaArcPosition: (arcT: number | null) => void;
   setFurtkaHingeSide: (side: WicketHingeSide) => void;
   setFootingEnabled: (enabled: boolean) => void;
@@ -219,6 +284,9 @@ type ConfiguratorState = {
   closeQuoteFence: () => void;
   setQuotePerimeterM: (perimeterM: number | null) => void;
   setManualQuotePerimeterM: (perimeterM: number) => void;
+  setManualQuoteSideLength: (sideId: string, lengthM: number) => void;
+  addManualQuoteSide: () => void;
+  removeManualQuoteSide: (sideId: string) => void;
   setQuoteFenceScope: (scope: QuoteFenceScope) => void;
   setManualQuoteFrontLengthM: (lengthM: number) => void;
   setQuoteAdvancedView: (open: boolean) => void;
@@ -264,12 +332,14 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   bramaEnabled: false,
   bramaElementId: null,
   bramaPosition: "left",
+  bramaInsertAfter: -1,
   bramaArcStart: null,
   bramaArcEnd: null,
   bramaOccupiedSpanM: null,
   furtkaEnabled: false,
   furtkaElementId: null,
   furtkaPosition: "right",
+  furtkaInsertAfter: DEFAULT_PREVIEW_PANELS - 1,
   furtkaArcPosition: null,
   furtkaHingeSide: "right",
   footingEnabled: false,
@@ -289,6 +359,11 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   manualQuotePerimeterM: defaultManualQuotePerimeterM(
     DEFAULT_PRICING_SETTINGS.panelWidthCm,
   ),
+  manualQuoteSides: [
+    createManualQuoteSide(
+      defaultManualQuotePerimeterM(DEFAULT_PRICING_SETTINGS.panelWidthCm),
+    ),
+  ],
   quoteFenceScope: "full-perimeter",
   manualQuoteFrontLengthM: defaultManualQuotePerimeterM(
     DEFAULT_PRICING_SETTINGS.panelWidthCm,
@@ -296,17 +371,22 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   quoteAdvancedView: false,
   setCatalog: (catalog) => set({ catalog }),
   setPricing: (pricing) =>
-    set((s) => ({
-      pricing,
-      manualQuotePerimeterM:
-        s.manualQuotePerimeterM > 0
-          ? s.manualQuotePerimeterM
-          : defaultManualQuotePerimeterM(pricing.panelWidthCm),
-      manualQuoteFrontLengthM:
-        s.manualQuoteFrontLengthM > 0
-          ? s.manualQuoteFrontLengthM
-          : defaultManualQuotePerimeterM(pricing.panelWidthCm),
-    })),
+    set((s) => {
+      const defaultPerimeter = defaultManualQuotePerimeterM(pricing.panelWidthCm);
+      const nextSides =
+        s.manualQuoteSides.length > 0 && sumManualQuoteSidesM(s.manualQuoteSides) > 0
+          ? s.manualQuoteSides
+          : [createManualQuoteSide(defaultPerimeter)];
+      return {
+        pricing,
+        manualQuoteSides: nextSides,
+        manualQuotePerimeterM: sumManualQuoteSidesM(nextSides),
+        manualQuoteFrontLengthM:
+          s.manualQuoteFrontLengthM > 0
+            ? s.manualQuoteFrontLengthM
+            : defaultPerimeter,
+      };
+    }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setScope: (partial) =>
@@ -341,6 +421,7 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
     const defaultManualPerimeter = defaultManualQuotePerimeterM(
       get().pricing.panelWidthCm,
     );
+    next.manualQuoteSides = [createManualQuoteSide(defaultManualPerimeter)];
     next.manualQuotePerimeterM = defaultManualPerimeter;
     next.quoteFenceScope = "full-perimeter";
     next.manualQuoteFrontLengthM = defaultManualPerimeter;
@@ -469,10 +550,43 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
         bramaArcStart,
         bramaArcEnd,
         bramaOccupiedSpanM:
-          spanFromArc ?? getDrivewayGateSpanM(s.pricing.panelWidthCm),
+          spanFromArc ??
+          getDrivewayGateSpanM(
+            resolvePanelWidthCm(
+              s.catalog?.panels.find((p) => p.id === s.selection.panelId),
+              s.pricing,
+            ),
+          ),
       };
     }),
-  setBramaPosition: (position) => set({ bramaPosition: position }),
+  setBramaPosition: (position) =>
+    set((s) => {
+      const insertAfter = getGateInsertAfterIndex(
+        position,
+        s.previewPanelCount,
+        { drivewayGateEnabled: true },
+      );
+      return {
+        bramaPosition: position,
+        bramaInsertAfter: insertAfter,
+      };
+    }),
+  setBramaInsertAfter: (insertAfter) =>
+    set((s) => {
+      const clamped = clampGateInsertAfter(
+        insertAfter,
+        s.previewPanelCount,
+        true,
+      );
+      return {
+        bramaInsertAfter: clamped,
+        bramaPosition: gatePositionFromGateInsertAfter(
+          clamped,
+          s.previewPanelCount,
+          true,
+        ),
+      };
+    }),
   setBramaArcStart: (arcT) =>
     set((s) => {
       const bramaArcStart = arcT;
@@ -530,7 +644,36 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
         furtkaArcPosition,
       };
     }),
-  setFurtkaPosition: (position) => set({ furtkaPosition: position }),
+  setFurtkaPosition: (position) =>
+    set((s) => {
+      const drivewayGateEnabled = Boolean(s.bramaEnabled && s.bramaElementId);
+      const insertAfter = getWicketInsertAfterIndex(
+        position,
+        s.previewPanelCount,
+        { drivewayGateEnabled },
+      );
+      return {
+        furtkaPosition: position,
+        furtkaInsertAfter: insertAfter,
+      };
+    }),
+  setFurtkaInsertAfter: (insertAfter) =>
+    set((s) => {
+      const drivewayGateEnabled = Boolean(s.bramaEnabled && s.bramaElementId);
+      const clamped = clampWicketInsertAfter(
+        insertAfter,
+        s.previewPanelCount,
+        drivewayGateEnabled,
+      );
+      return {
+        furtkaInsertAfter: clamped,
+        furtkaPosition: gatePositionFromInsertAfter(
+          clamped,
+          s.previewPanelCount,
+          drivewayGateEnabled,
+        ),
+      };
+    }),
   setFurtkaArcPosition: (arcT) => set({ furtkaArcPosition: arcT }),
   setFurtkaHingeSide: (side) => set({ furtkaHingeSide: side }),
   setFootingEnabled: (enabled) =>
@@ -557,11 +700,37 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   setFootingHeightId: (heightId) => set({ footingHeightId: heightId }),
   setFootingMaterialId: (materialId) => set({ footingMaterialId: materialId }),
   setPreviewPanelCount: (count) =>
-    set({
-      previewPanelCount: Math.min(
+    set((s) => {
+      const previewPanelCount = Math.min(
         MAX_PREVIEW_PANELS,
         Math.max(MIN_PREVIEW_PANELS, count),
-      ),
+      );
+      const drivewayGateEnabled = Boolean(s.bramaEnabled && s.bramaElementId);
+      const furtkaInsertAfter = clampWicketInsertAfter(
+        s.furtkaInsertAfter,
+        previewPanelCount,
+        drivewayGateEnabled,
+      );
+      const bramaInsertAfter = drivewayGateEnabled
+        ? clampGateInsertAfter(s.bramaInsertAfter, previewPanelCount, true)
+        : s.bramaInsertAfter;
+      return {
+        previewPanelCount,
+        furtkaInsertAfter,
+        furtkaPosition: gatePositionFromInsertAfter(
+          furtkaInsertAfter,
+          previewPanelCount,
+          drivewayGateEnabled,
+        ),
+        bramaInsertAfter,
+        bramaPosition: drivewayGateEnabled
+          ? gatePositionFromGateInsertAfter(
+              bramaInsertAfter,
+              previewPanelCount,
+              true,
+            )
+          : s.bramaPosition,
+      };
     }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   toggleSidebarOpen: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
@@ -667,7 +836,39 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
       ),
     })),
   setManualQuotePerimeterM: (perimeterM) =>
-    set({ manualQuotePerimeterM: perimeterM }),
+    set({
+      manualQuotePerimeterM: perimeterM,
+      manualQuoteSides: [createManualQuoteSide(perimeterM)],
+    }),
+  setManualQuoteSideLength: (sideId, lengthM) =>
+    set((s) => {
+      const nextSides = s.manualQuoteSides.map((side) =>
+        side.id === sideId ? { ...side, lengthM } : side,
+      );
+      return {
+        manualQuoteSides: nextSides,
+        manualQuotePerimeterM: sumManualQuoteSidesM(nextSides),
+      };
+    }),
+  addManualQuoteSide: () =>
+    set((s) => {
+      if (s.manualQuoteSides.length >= MAX_MANUAL_QUOTE_SIDES) return s;
+      const nextSides = [...s.manualQuoteSides, createManualQuoteSide(0)];
+      return {
+        manualQuoteSides: nextSides,
+        manualQuotePerimeterM: sumManualQuoteSidesM(nextSides),
+      };
+    }),
+  removeManualQuoteSide: (sideId) =>
+    set((s) => {
+      if (s.manualQuoteSides.length <= 1) return s;
+      const nextSides = s.manualQuoteSides.filter((side) => side.id !== sideId);
+      if (nextSides.length === s.manualQuoteSides.length) return s;
+      return {
+        manualQuoteSides: nextSides,
+        manualQuotePerimeterM: sumManualQuoteSidesM(nextSides),
+      };
+    }),
   setQuoteFenceScope: (scope) => set({ quoteFenceScope: scope }),
   setManualQuoteFrontLengthM: (lengthM) =>
     set({ manualQuoteFrontLengthM: lengthM }),

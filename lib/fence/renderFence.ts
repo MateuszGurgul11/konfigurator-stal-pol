@@ -19,6 +19,8 @@ export type FenceRenderParams = {
   wicketInsertAfter?: number;
   drivewayGateEnabled?: boolean;
   drivewayGateKind?: DrivewayGateKind;
+  /** Indeks panela, po którym wstawiamy bramę (-1 = na początku). */
+  drivewayGateInsertAfter?: number;
   drivewayGateTextureUrl?: string | null;
   /** Wzór wypełnienia bramy (z elementu katalogu). */
   drivewayGateInfillPatternId?: PatternId;
@@ -102,6 +104,8 @@ type FenceSegment =
 export type BuildFenceSegmentsOptions = {
   wicketInsertAfter?: number;
   drivewayGateKind?: DrivewayGateKind;
+  /** Indeks panela, po którym wstawiamy bramę (-1 = na początku). */
+  drivewayGateInsertAfter?: number;
 };
 
 export function buildFenceSegments(
@@ -110,21 +114,30 @@ export function buildFenceSegments(
 ): FenceSegment[] {
   const opts: BuildFenceSegmentsOptions =
     typeof options === "number" ? { wicketInsertAfter: options } : (options ?? {});
-  const { wicketInsertAfter, drivewayGateKind } = opts;
+  const {
+    wicketInsertAfter,
+    drivewayGateKind,
+    drivewayGateInsertAfter = -1,
+  } = opts;
   const hasWicket = wicketInsertAfter !== undefined;
-  const effectivePanelCount = drivewayGateKind
+  const hasGate = drivewayGateKind !== undefined;
+  const effectivePanelCount = hasGate
     ? Math.max(0, panelCount - 2)
     : panelCount;
+  const gateInsertAfter = hasGate ? drivewayGateInsertAfter : undefined;
   const segments: FenceSegment[] = [];
 
-  if (drivewayGateKind) {
-    segments.push({ type: "driveway-gate", gateKind: drivewayGateKind });
+  if (gateInsertAfter !== undefined && gateInsertAfter < 0) {
+    segments.push({ type: "driveway-gate", gateKind: drivewayGateKind! });
   }
   if (hasWicket && wicketInsertAfter! < 0) {
     segments.push({ type: "wicket" });
   }
   for (let i = 0; i < effectivePanelCount; i++) {
     segments.push({ type: "panel" });
+    if (gateInsertAfter !== undefined && gateInsertAfter === i) {
+      segments.push({ type: "driveway-gate", gateKind: drivewayGateKind! });
+    }
     if (hasWicket && wicketInsertAfter === i) {
       segments.push({ type: "wicket" });
     }
@@ -336,12 +349,10 @@ function draw3DMeshPanel(
   h: number,
   colorHex: string,
   shadowEdge: string,
-  shadowBottom: string,
 ): string {
-  // Tylko dolna belka — bez górnej ramki (realny panel 3D kończy się siatką u góry).
-  const railH = Math.max(4, h * 0.055);
+  // Realny panel 3D: siatka na całą wysokość — bez górnej i dolnej belki.
   const meshY = y;
-  const meshH = Math.max(0, h - railH);
+  const meshH = h;
   const meshX = px;
   const meshW = sectionW;
   const vPitch = Math.max(3.5, Math.min(5.5, sectionW * 0.028));
@@ -351,9 +362,6 @@ function draw3DMeshPanel(
   const wireW = 1.15;
 
   let out = "";
-
-  out += `<rect x="${px.toFixed(1)}" y="${(y + h - railH).toFixed(1)}" width="${sectionW.toFixed(1)}" height="${railH.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
-  out += `<rect x="${px.toFixed(1)}" y="${(y + h - railH).toFixed(1)}" width="${sectionW.toFixed(1)}" height="2" fill="${shadowBottom}" opacity="0.45"/>`;
 
   if (meshH > 4 && meshW > 4) {
     for (let vx = meshX + vPitch * 0.5; vx < meshX + meshW; vx += vPitch) {
@@ -894,7 +902,7 @@ function drawSectionPanels(
     );
   }
   if (patternId === "pattern-3d") {
-    return draw3DMeshPanel(px, y, sectionW, h, colorHex, shadowEdge, shadowBottom);
+    return draw3DMeshPanel(px, y, sectionW, h, colorHex, shadowEdge);
   }
   if (useStacked) {
     for (let j = 0; j < plankCount; j++) {
@@ -1366,6 +1374,7 @@ export function buildFenceSvg(params: FenceRenderParams): string {
     wicketInsertAfter,
     drivewayGateEnabled = false,
     drivewayGateKind = "double-leaf",
+    drivewayGateInsertAfter = -1,
     drivewayGateTextureUrl = null,
     drivewayGateInfillPatternId,
     footingEnabled = false,
@@ -1403,6 +1412,9 @@ export function buildFenceSvg(params: FenceRenderParams): string {
   const segments = buildFenceSegments(panelCount, {
     wicketInsertAfter,
     drivewayGateKind: drivewayGateEnabled ? drivewayGateKind : undefined,
+    drivewayGateInsertAfter: drivewayGateEnabled
+      ? drivewayGateInsertAfter
+      : undefined,
   });
   const segmentWeights = segmentWidthWeights(
     segments,
@@ -1518,27 +1530,23 @@ export function buildFenceSvg(params: FenceRenderParams): string {
 
   ${
     transparent
-      ? `<!-- Transparent scene — tło z kontenera CSS -->
-  <ellipse cx="${fenceCenterX}" cy="${groundY + 6}" rx="${(totalW * 0.55).toFixed(1)}" ry="18" fill="#000000" opacity="0.35"/>`
+      ? `<!-- Transparent scene — tło z kontenera CSS -->`
       : `<!-- Sky background -->
   <rect width="${viewW}" height="${VIEW_H}" fill="url(#sky)"/>
 
   <!-- Ground -->
   <rect x="0" y="${groundY}" width="${viewW}" height="${VIEW_H - groundY}" fill="url(#grass)"/>
   <rect x="0" y="${groundY + 10}" width="${viewW}" height="6" fill="#3a7a18" opacity="0.4"/>
-  <rect x="0" y="${groundY + 22}" width="${viewW}" height="8" fill="#3a7a18" opacity="0.2"/>
-
-  <!-- Ground shadow ellipse -->
-  <ellipse cx="${fenceCenterX}" cy="${groundY + 4}" rx="${(totalW * 0.5).toFixed(1)}" ry="14" fill="#000000" opacity="0.08"/>`
+  <rect x="0" y="${groundY + 22}" width="${viewW}" height="8" fill="#3a7a18" opacity="0.2"/>`
   }
 
   <!-- Panels group -->
-  <g filter="url(#panelShadow)">
+  <g${transparent ? "" : ' filter="url(#panelShadow)"'}>
     ${segmentsSvg}
   </g>
 
   <!-- Posts group -->
-  <g filter="url(#postShadow)">
+  <g${transparent ? "" : ' filter="url(#postShadow)"'}>
     ${renderPost(leftPost, [...leftEndClampSides])}
     ${intermediatePosts}
     ${renderPost(rightPost, [...rightEndClampSides])}

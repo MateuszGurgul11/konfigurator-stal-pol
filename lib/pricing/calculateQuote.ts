@@ -10,6 +10,7 @@ import { DEFAULT_PRICING_SETTINGS } from "@/lib/pricing/defaults";
 import {
   getDrivewayGateSpanM,
   getWicketWidthCm,
+  resolvePanelWidthCm,
 } from "@/lib/pricing/variant-prices";
 import { resolveElement, resolveElementPriceNet } from "@/lib/pricing/element-prices";
 import { resolveSurchargePerPanel } from "@/lib/pricing/surcharges";
@@ -86,8 +87,6 @@ function formatFootingValue(
 export function calculateQuote(input: QuoteInput): QuoteResult {
   const settings = pickPricing(input.pricing);
   const { catalog, selection } = input;
-  const panelWidthCm = settings.panelWidthCm;
-  const panelWidthM = panelWidthCm / 100;
   const fenceEnabled = input.fenceEnabled ?? true;
 
   const post = catalog.posts.find((p) => p.id === selection.postId);
@@ -95,6 +94,8 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
   const spacer = catalog.spacerOptions.find((s) => s.id === selection.spacerId);
   const height = catalog.heights.find((h) => h.id === selection.heightId);
   const color = catalog.colors.find((c) => c.id === selection.colorId);
+  const panelWidthCm = resolvePanelWidthCm(panel, settings);
+  const panelWidthM = panelWidthCm / 100;
   const footingHeight = catalog.footingHeights?.find(
     (h) => h.id === input.footingHeightId,
   );
@@ -156,7 +157,7 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
       : 0;
   const bramaSpanUsedM = bramaPanels * panelWidthM;
   const furtkaSpanUsedM = furtkaEnabled
-    ? getWicketWidthCm(settings.panelWidthCm) / 100
+    ? getWicketWidthCm(panelWidthCm) / 100
     : 0;
   const openingSpanM = bramaSpanUsedM + furtkaSpanUsedM;
 

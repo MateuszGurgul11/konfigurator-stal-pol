@@ -11,7 +11,7 @@ import {
   resolveDrivewayGateKind,
   resolveElement,
 } from "@/lib/pricing/element-prices";
-import { getWicketWidthCm } from "@/lib/pricing/variant-prices";
+import { getWicketWidthCm, resolvePanelWidthCm } from "@/lib/pricing/variant-prices";
 import {
   computeTextureTileCount,
   resolveOpeningTextureUrl,
@@ -69,6 +69,7 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
   const spacer = catalog.spacerOptions.find((s) => s.id === selection.spacerId);
   const height = catalog.heights.find((h) => h.id === selection.heightId);
   const color = catalog.colors.find((c) => c.id === selection.colorId);
+  const panelWidthCm = resolvePanelWidthCm(panel, pricing);
 
   const hasDrivewayGate =
     bramaEnabled && isDrivewayGateConfigured(bramaElementId);
@@ -107,8 +108,8 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
       hasSpacer: spacer.hasSpacer,
       openness: spacer.openness,
       panelCount,
-      panelWidthCm: pricing.panelWidthCm,
-      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
+      panelWidthCm,
+      wicketWidthCm: getWicketWidthCm(panelWidthCm),
       wicketInsertAfter,
       drivewayGateEnabled: hasDrivewayGate,
       drivewayGateKind,
@@ -127,7 +128,7 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
     color,
     catalog,
     selection.panelId,
-    pricing.panelWidthCm,
+    panelWidthCm,
     hasDrivewayGate,
     hasWicket,
     brama,
@@ -140,11 +141,11 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
     const panelCount = hasDrivewayGate ? 2 : 0;
     const viewW = getViewWidth(panelCount, {
       hasWicket,
-      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
-      panelWidthCm: pricing.panelWidthCm,
+      wicketWidthCm: getWicketWidthCm(panelWidthCm),
+      panelWidthCm,
     });
     return viewW / VIEW_H;
-  }, [hasDrivewayGate, hasWicket, pricing.panelWidthCm]);
+  }, [hasDrivewayGate, hasWicket, panelWidthCm]);
 
   return (
     <div className="flex w-full flex-1 flex-col bg-gradient-to-b from-[#e8f4fc] to-[#f5f9fd]">
@@ -168,7 +169,7 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
             <h2 className="mt-2 font-heading text-xl font-bold text-[#1A1A18]">
               Podgląd konfiguracji
             </h2>
-            <p className="mt-1 text-sm text-[#666]">
+            <p className="mt-1 text-sm text-[#3a4044]">
               Wybierz typ bramy i furtki w panelu bocznym, aby zobaczyć podgląd.
             </p>
           </div>
@@ -181,7 +182,7 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
           <div className="flex flex-wrap items-center gap-4 text-sm">
             {scope.gate && (
               <span className="text-[#1A1A18]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#999]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#4a4f52]">
                   Brama:{" "}
                 </span>
                 <span className="font-semibold">
@@ -196,7 +197,7 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
             )}
             {scope.wicket && (
               <span className="text-[#1A1A18]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#999]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#4a4f52]">
                   Furtka:{" "}
                 </span>
                 <span className="font-semibold">
@@ -211,7 +212,7 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
             )}
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-sm text-[#666]">Razem netto</span>
+            <span className="text-sm text-[#3a4044]">Razem netto</span>
             <span className="font-heading text-2xl font-bold text-[#1A1A18]">
               {Math.round(quote.totalNet).toLocaleString("pl-PL")} PLN
             </span>

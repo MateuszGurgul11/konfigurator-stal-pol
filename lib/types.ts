@@ -17,6 +17,8 @@ export type Post = CatalogEntity & {
 
 export type Panel = CatalogEntity & {
   patternId: string;
+  /** Szerokość jednego panelu w cm (np. 250, 256). */
+  widthCm?: number;
   priceSurchargePerMeter?: number;
   priceSurchargePerPanel?: number;
   baseTextureUrl?: string;

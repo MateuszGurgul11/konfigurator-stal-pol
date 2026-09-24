@@ -65,7 +65,7 @@ export function RotateDeviceOverlay() {
     <div
       className={cn(
         "fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 bg-[#1A1A18] px-8 text-center lg:hidden",
-        "rotate-overlay-enter pt-safe pb-safe",
+        "configurator-ui rotate-overlay-enter pt-safe pb-safe",
       )}
       role="dialog"
       aria-modal="true"
@@ -74,7 +74,7 @@ export function RotateDeviceOverlay() {
     >
       <a
         href={STAL_POL_WEBSITE_URL}
-        className="absolute left-4 flex items-center gap-2 rounded-lg border border-[#333] bg-[#222]/90 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#ccc] transition-colors hover:border-[#444] hover:bg-[#2A2A26] hover:text-white"
+        className="absolute left-4 flex items-center gap-2 rounded-lg border border-[#333] bg-[#222]/90 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#f6f6f4] transition-colors hover:border-[#444] hover:bg-[#2A2A26] hover:text-white"
         style={{ top: "calc(1rem + env(safe-area-inset-top, 0px))" }}
       >
         <ArrowLeft className="h-4 w-4 shrink-0 text-[#e30311]" aria-hidden />
@@ -97,7 +97,7 @@ export function RotateDeviceOverlay() {
           </h2>
           <p
             id="rotate-device-desc"
-            className="text-sm leading-relaxed text-[#888]"
+            className="text-sm leading-relaxed text-[#e8e8e4]"
           >
             Konfigurator działa w orientacji poziomej. Przekręć urządzenie, aby
             kontynuować.
@@ -106,7 +106,7 @@ export function RotateDeviceOverlay() {
 
         <a
           href={STAL_POL_WEBSITE_URL}
-          className="text-[11px] font-medium text-[#666] underline-offset-4 transition-colors hover:text-[#e30311] hover:underline"
+          className="text-[11px] font-medium text-[#d6d6d2] underline-offset-4 transition-colors hover:text-[#e30311] hover:underline"
         >
           Wróć na stronę internetową STAL-POL
         </a>

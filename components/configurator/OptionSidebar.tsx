@@ -16,9 +16,11 @@ import type {
 } from "@/lib/types";
 import {
   type ConfiguratorTab,
-  type GatePosition,
   type WicketHingeSide,
+  clampWicketInsertAfter,
+  formatWicketInsertAfterLabel,
   getNextConfiguratorTab,
+  getWicketLayoutPanelCount,
   MAX_PREVIEW_PANELS,
   MIN_PREVIEW_PANELS,
   resolveQuotePerimeterM,
@@ -31,6 +33,7 @@ import { PdfDocument } from "./PdfDocument";
 import { calculateQuote } from "@/lib/pricing/calculateQuote";
 import { generateConfiguratorPdf } from "@/lib/pdf/generateConfiguratorPdf";
 import { resolveSurchargePerPanel } from "@/lib/pricing/surcharges";
+import { resolvePanelWidthCm } from "@/lib/pricing/variant-prices";
 import {
   formatElementPriceSubtitle,
   pickBramaElementForPattern,
@@ -51,7 +54,7 @@ type Props = {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#666]">
+    <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d6d6d2]">
       {children}
     </p>
   );
@@ -93,12 +96,12 @@ function ModelCard({
         <p
           className={cn(
             "text-sm font-semibold",
-            selected ? "text-white" : "text-[#ccc]",
+            selected ? "text-white" : "text-[#f6f6f4]",
           )}
         >
           {title}
         </p>
-        <p className="text-[11px] text-[#666]">{subtitle}</p>
+        <p className="text-[11px] text-[#d6d6d2]">{subtitle}</p>
       </div>
     </button>
   );
@@ -119,44 +122,60 @@ function formatHeightMultiplier(value?: number): string {
   return `×${value.toFixed(2)}`;
 }
 
-function formatOpeningSummary(
-  enabled: boolean,
-  position: GatePosition,
-  labels: Record<GatePosition, string>,
-): string {
-  return enabled ? `Tak · ${labels[position]}` : "Nie";
-}
-
-function OpeningPositionPicker({
+function OpeningInsertAfterPicker({
   label,
-  value,
+  hint,
+  insertAfter,
+  panelCount,
+  drivewayGateEnabled,
   onChange,
-  labels,
 }: {
   label: string;
-  value: GatePosition;
-  onChange: (position: GatePosition) => void;
-  labels: Record<GatePosition, string>;
+  hint: string;
+  insertAfter: number;
+  panelCount: number;
+  drivewayGateEnabled: boolean;
+  onChange: (insertAfter: number) => void;
 }) {
+  const layoutPanelCount = getWicketLayoutPanelCount(
+    panelCount,
+    drivewayGateEnabled,
+  );
+  const clamped = clampWicketInsertAfter(
+    insertAfter,
+    panelCount,
+    drivewayGateEnabled,
+  );
+  const min = -1;
+  const max = Math.max(-1, layoutPanelCount - 1);
+  const slotCount = Math.max(1, layoutPanelCount + 1);
+
   return (
     <div className="mt-4">
       <SectionLabel>{label}</SectionLabel>
-      <div className="grid grid-cols-1 gap-2">
-        {(["left", "center", "right"] as GatePosition[]).map((pos) => (
-          <button
-            key={pos}
-            type="button"
-            onClick={() => onChange(pos)}
-            className={cn(
-              "rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition-all",
-              value === pos
-                ? "border-[#e30311] bg-[#2a0e10] text-white"
-                : "border-[#333] bg-[#222] text-[#888] hover:border-[#444]",
-            )}
-          >
-            {labels[pos]}
-          </button>
-        ))}
+      <div className="space-y-3 rounded-xl border border-[#333] bg-[#222] p-4">
+        <p className="text-[11px] leading-relaxed text-[#eeeeea]">{hint}</p>
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={1}
+          value={clamped}
+          disabled={layoutPanelCount <= 0 && max < 0}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full accent-[#e30311]"
+          aria-label={label}
+        />
+        <div className="flex items-center justify-between gap-2 text-[11px] text-[#e8e8e4]">
+          <span>Początek</span>
+          <span className="font-semibold text-white">
+            {formatWicketInsertAfterLabel(clamped, layoutPanelCount)}
+          </span>
+          <span>Koniec</span>
+        </div>
+        <p className="text-[10px] text-[#d6d6d2]">
+          {slotCount} {slotCount === 1 ? "pozycja" : "pozycje dostępne"}
+        </p>
       </div>
     </div>
   );
@@ -187,7 +206,7 @@ function WicketHingeSidePicker({
               "rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition-all",
               value === side
                 ? "border-[#e30311] bg-[#2a0e10] text-white"
-                : "border-[#333] bg-[#222] text-[#888] hover:border-[#444]",
+                : "border-[#333] bg-[#222] text-[#e8e8e4] hover:border-[#444]",
             )}
           >
             {label}
@@ -234,7 +253,7 @@ function DrivewayGateKindPicker({
               "rounded-lg border px-3 py-2.5 text-left transition-all",
               selectedKind === kind
                 ? "border-[#e30311] bg-[#2a0e10] text-white"
-                : "border-[#333] bg-[#222] text-[#888] hover:border-[#444]",
+                : "border-[#333] bg-[#222] text-[#e8e8e4] hover:border-[#444]",
             )}
           >
             <span className="text-sm font-semibold">{label}</span>
@@ -242,7 +261,7 @@ function DrivewayGateKindPicker({
               <span
                 className={cn(
                   "mt-0.5 block text-[11px]",
-                  selectedKind === kind ? "text-[#f0c0c3]" : "text-[#666]",
+                  selectedKind === kind ? "text-[#f0c0c3]" : "text-[#d6d6d2]",
                 )}
               >
                 {formatElementPriceSubtitle(element)}
@@ -277,12 +296,16 @@ export function OptionSidebar({
   const furtkaEnabled = useConfiguratorStore((s) => s.furtkaEnabled);
   const furtkaElementId = useConfiguratorStore((s) => s.furtkaElementId);
   const furtkaPosition = useConfiguratorStore((s) => s.furtkaPosition);
+  const furtkaInsertAfter = useConfiguratorStore((s) => s.furtkaInsertAfter);
   const furtkaHingeSide = useConfiguratorStore((s) => s.furtkaHingeSide);
   const footingEnabled = useConfiguratorStore((s) => s.footingEnabled);
   const footingHeightId = useConfiguratorStore((s) => s.footingHeightId);
   const footingMaterialId = useConfiguratorStore((s) => s.footingMaterialId);
   const setBramaElementId = useConfiguratorStore((s) => s.setBramaElementId);
+  const bramaInsertAfter = useConfiguratorStore((s) => s.bramaInsertAfter);
+  const setBramaInsertAfter = useConfiguratorStore((s) => s.setBramaInsertAfter);
   const setFurtkaElementId = useConfiguratorStore((s) => s.setFurtkaElementId);
+  const setFurtkaInsertAfter = useConfiguratorStore((s) => s.setFurtkaInsertAfter);
   const setFurtkaHingeSide = useConfiguratorStore((s) => s.setFurtkaHingeSide);
   const setFootingEnabled = useConfiguratorStore((s) => s.setFootingEnabled);
   const setFootingHeightId = useConfiguratorStore((s) => s.setFootingHeightId);
@@ -290,6 +313,7 @@ export function OptionSidebar({
   const previewPanelCount = useConfiguratorStore((s) => s.previewPanelCount);
   const setPreviewPanelCount = useConfiguratorStore((s) => s.setPreviewPanelCount);
   const pricing = useConfiguratorStore((s) => s.pricing);
+  const panelWidthCm = resolvePanelWidthCm(selectedPanel, pricing);
   const quotePerimeterM = useConfiguratorStore((s) => s.quotePerimeterM);
   const manualQuotePerimeterM = useConfiguratorStore((s) => s.manualQuotePerimeterM);
   const quoteFenceScope = useConfiguratorStore((s) => s.quoteFenceScope);
@@ -306,12 +330,6 @@ export function OptionSidebar({
   const selectedFootingMaterial = catalog.footingMaterials.find(
     (m) => m.id === footingMaterialId,
   );
-
-  const openingPositionLabels: Record<GatePosition, string> = {
-    left: "Lewa sekcja",
-    center: "Środkowa sekcja",
-    right: "Prawa sekcja",
-  };
 
   const wicketHingeSideLabels: Record<WicketHingeSide, string> = {
     left: "zawiasy lewe",
@@ -355,7 +373,14 @@ export function OptionSidebar({
         bramaOccupiedSpanM,
         furtkaEnabled,
         furtkaElementId,
-        furtkaPositionLabel: openingPositionLabels[furtkaPosition],
+        furtkaPositionLabel: formatWicketInsertAfterLabel(
+          clampWicketInsertAfter(
+            furtkaInsertAfter,
+            previewPanelCount,
+            Boolean(bramaElementId),
+          ),
+          getWicketLayoutPanelCount(previewPanelCount, Boolean(bramaElementId)),
+        ),
         furtkaHingeSideLabel: furtkaEnabled
           ? wicketHingeSideLabels[furtkaHingeSide]
           : undefined,
@@ -375,7 +400,7 @@ export function OptionSidebar({
       bramaOccupiedSpanM,
       furtkaEnabled,
       furtkaElementId,
-      furtkaPosition,
+      furtkaInsertAfter,
       furtkaHingeSide,
       footingEnabled,
       footingHeightId,
@@ -408,14 +433,14 @@ export function OptionSidebar({
             <h1 className="font-heading text-lg font-bold text-white max-lg:text-base">
               Konfigurator Ogrodzenia
             </h1>
-            <p className="mt-0.5 text-[11px] text-[#666]">
+            <p className="mt-0.5 text-[11px] text-[#d6d6d2]">
               STAL-POL | Ogrodzenia stalowe
             </p>
           </div>
           <button
             type="button"
             onClick={resetScope}
-            className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#888] underline-offset-2 hover:text-[#e30311] hover:underline"
+            className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#e8e8e4] underline-offset-2 hover:text-[#e30311] hover:underline"
           >
             Zmień zakres
           </button>
@@ -435,7 +460,7 @@ export function OptionSidebar({
                     key={panel.id}
                     selected={selection.panelId === panel.id}
                     title={panel.name}
-                    subtitle={`Wzór: ${panel.patternId.replace("pattern-", "")} · ${formatSurchargePerPanel(panel.priceSurchargePerPanel, panel.priceSurchargePerMeter, pricing.panelWidthCm)}`}
+                    subtitle={`Wzór: ${panel.patternId.replace("pattern-", "")} · ${formatSurchargePerPanel(panel.priceSurchargePerPanel, panel.priceSurchargePerMeter, resolvePanelWidthCm(panel, pricing))}`}
                     onClick={() => onSelect({ panelId: panel.id })}
                   />
                 ))}
@@ -450,7 +475,7 @@ export function OptionSidebar({
                     key={color.id}
                     type="button"
                     onClick={() => onSelect({ colorId: color.id })}
-                    title={`${color.name} · ${formatSurchargePerPanel(color.priceSurchargePerPanel, color.priceSurchargePerMeter, pricing.panelWidthCm)}`}
+                    title={`${color.name} · ${formatSurchargePerPanel(color.priceSurchargePerPanel, color.priceSurchargePerMeter, panelWidthCm)}`}
                     className={cn(
                       "h-12 w-12 rounded-lg border-2 transition-all",
                       selection.colorId === color.id
@@ -462,14 +487,14 @@ export function OptionSidebar({
                 ))}
               </div>
               {selectedColor && (
-                <p className="text-sm text-[#888]">
+                <p className="text-sm text-[#e8e8e4]">
                   Wybrany:{" "}
                   <span className="font-semibold text-white">
                     {selectedColor.name}
                   </span>{" "}
-                  <span className="font-mono text-[#666]">{selectedColor.hex}</span>
+                  <span className="font-mono text-[#d6d6d2]">{selectedColor.hex}</span>
                   <span className="ml-2 text-[#e30311]">
-                    {formatSurchargePerPanel(selectedColor.priceSurchargePerPanel, selectedColor.priceSurchargePerMeter, pricing.panelWidthCm)}
+                    {formatSurchargePerPanel(selectedColor.priceSurchargePerPanel, selectedColor.priceSurchargePerMeter, panelWidthCm)}
                   </span>
                 </p>
               )}
@@ -483,7 +508,7 @@ export function OptionSidebar({
                     key={spacer.id}
                     selected={selection.spacerId === spacer.id}
                     title={spacer.name}
-                    subtitle={formatSurchargePerPanel(spacer.priceSurchargePerPanel, spacer.priceSurchargePerMeter, pricing.panelWidthCm)}
+                    subtitle={formatSurchargePerPanel(spacer.priceSurchargePerPanel, spacer.priceSurchargePerMeter, panelWidthCm)}
                     onClick={() => onSelect({ spacerId: spacer.id })}
                   />
                 ))}
@@ -520,17 +545,17 @@ export function OptionSidebar({
                             "rounded-lg border px-3 py-3 text-center transition-all",
                             footingHeightId === fh.id
                               ? "border-[#e30311] bg-[#2a0e10] text-white"
-                              : "border-[#333] bg-[#222] text-[#888] hover:border-[#444]",
+                              : "border-[#333] bg-[#222] text-[#e8e8e4] hover:border-[#444]",
                           )}
                         >
                           <span className="block font-heading text-lg font-bold">
                             {fh.label}
                           </span>
-                          <span className="mt-0.5 block text-[10px] text-[#888]">
+                          <span className="mt-0.5 block text-[10px] text-[#e8e8e4]">
                             {formatSurchargePerPanel(
                               fh.priceSurchargePerPanel,
                               undefined,
-                              pricing.panelWidthCm,
+                              panelWidthCm,
                             )}
                           </span>
                         </button>
@@ -545,7 +570,7 @@ export function OptionSidebar({
                           key={mat.id}
                           type="button"
                           onClick={() => setFootingMaterialId(mat.id)}
-                          title={`${mat.name} · ${formatSurchargePerPanel(mat.priceSurchargePerPanel, undefined, pricing.panelWidthCm)}`}
+                          title={`${mat.name} · ${formatSurchargePerPanel(mat.priceSurchargePerPanel, undefined, panelWidthCm)}`}
                           className={cn(
                             "h-12 w-12 rounded-lg border-2 transition-all",
                             footingMaterialId === mat.id
@@ -557,7 +582,7 @@ export function OptionSidebar({
                       ))}
                     </div>
                     {selectedFootingMaterial && (
-                      <p className="text-sm text-[#888]">
+                      <p className="text-sm text-[#e8e8e4]">
                         Wybrany:{" "}
                         <span className="font-semibold text-white">
                           {selectedFootingMaterial.name}
@@ -579,7 +604,7 @@ export function OptionSidebar({
                 <span className="text-sm font-semibold text-white">
                   {previewPanelCount} paneli
                 </span>
-                <span className="text-[10px] uppercase tracking-wider text-[#666]">
+                <span className="text-[10px] uppercase tracking-wider text-[#d6d6d2]">
                   {MIN_PREVIEW_PANELS}–{MAX_PREVIEW_PANELS}
                 </span>
               </div>
@@ -591,7 +616,7 @@ export function OptionSidebar({
                 onChange={(e) => setPreviewPanelCount(Number(e.target.value))}
                 className="w-full accent-[#e30311]"
               />
-              <p className="mt-2 text-[10px] leading-relaxed text-[#666] max-lg:landscape:hidden">
+              <p className="mt-2 text-[10px] leading-relaxed text-[#d6d6d2] max-lg:landscape:hidden">
                 Przeciągnij boczne uchwyty płotu w podglądzie, aby szybko
                 dodać lub usunąć panele.
               </p>
@@ -608,13 +633,13 @@ export function OptionSidebar({
                     "rounded-lg border px-3 py-3 text-center transition-all",
                     selection.heightId === height.id
                       ? "border-[#e30311] bg-[#2a0e10] text-white"
-                      : "border-[#333] bg-[#222] text-[#888] hover:border-[#444]",
+                      : "border-[#333] bg-[#222] text-[#e8e8e4] hover:border-[#444]",
                   )}
                 >
                   <span className="block font-heading text-lg font-bold">
                     {height.label}
                   </span>
-                  <span className="mt-0.5 block text-[10px] text-[#888]">
+                  <span className="mt-0.5 block text-[10px] text-[#e8e8e4]">
                     {formatHeightMultiplier(height.priceMultiplier)}
                   </span>
                 </button>
@@ -649,20 +674,30 @@ export function OptionSidebar({
                   if (id) setBramaElementId(id);
                 }}
               />
-              <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
+              <p className="mt-3 text-[11px] leading-relaxed text-[#e8e8e4]">
                 Wypełnienie bramy odpowiada wybranemu{" "}
-                <strong className="text-[#ccc]">modelowi ogrodzenia</strong>.
+                <strong className="text-[#f6f6f4]">modelowi ogrodzenia</strong>.
               </p>
               {bramaElementId && scope.fence && (
-                <p className="mt-2 text-[11px] leading-relaxed text-[#888]">
-                  W podglądzie brama zajmuje <strong className="text-[#ccc]">2 panele od lewej</strong>{" "}
-                  (pozycja zamknięta). Na zakładce{" "}
-                  <strong className="text-[#ccc]">Wycena</strong> możesz doprecyzować szerokość na
-                  rzucie uchwytami <strong className="text-[#ccc]">B1/B2</strong>.
+                <OpeningInsertAfterPicker
+                  label="Pozycja bramy"
+                  hint="Przesuń bramę między panelami — zajmuje szerokość 2 paneli."
+                  insertAfter={bramaInsertAfter}
+                  panelCount={previewPanelCount}
+                  drivewayGateEnabled
+                  onChange={setBramaInsertAfter}
+                />
+              )}
+              {bramaElementId && scope.fence && (
+                <p className="mt-2 text-[11px] leading-relaxed text-[#e8e8e4]">
+                  Możesz też przesuwać bramę strzałkami na podglądzie. Na zakładce{" "}
+                  <strong className="text-[#f6f6f4]">Wymiary działki</strong> uchwyty{" "}
+                  <strong className="text-[#f6f6f4]">B1/B2</strong> doprecyzują szerokość
+                  na rzucie.
                 </p>
               )}
               {bramaElementId && !scope.fence && (
-                <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
+                <p className="mt-3 text-[11px] leading-relaxed text-[#e8e8e4]">
                   Cena bramy jest stała netto — nie zależy od liczby paneli.
                 </p>
               )}
@@ -696,16 +731,16 @@ export function OptionSidebar({
                         onClick={() => setFurtkaElementId(matchedFurtka.id)}
                       />
                     ) : (
-                      <p className="mt-2 text-[11px] text-[#888]">
+                      <p className="mt-2 text-[11px] text-[#e8e8e4]">
                         Brak aktywnych furtek w katalogu — dodaj je w panelu admina.
                       </p>
                     )}
                   </div>
                 );
               })()}
-              <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
+              <p className="mt-3 text-[11px] leading-relaxed text-[#e8e8e4]">
                 Wypełnienie furtki odpowiada wybranemu{" "}
-                <strong className="text-[#ccc]">modelowi ogrodzenia</strong>.
+                <strong className="text-[#f6f6f4]">modelowi ogrodzenia</strong>.
               </p>
               {furtkaEnabled && (
                 <WicketHingeSidePicker
@@ -714,10 +749,21 @@ export function OptionSidebar({
                 />
               )}
               {furtkaEnabled && scope.fence && (
-                <p className="mt-3 text-[11px] leading-relaxed text-[#888]">
-                  Na zakładce <strong className="text-[#ccc]">Wycena</strong> przeciągnij marker{" "}
-                  <strong className="text-[#ccc]">F</strong> wzdłuż obrysu, aby wskazać miejsce
-                  furtki (szerokość 150 cm).
+                <OpeningInsertAfterPicker
+                  label="Pozycja furtki"
+                  hint="Przesuń furtkę między panelami — dowolne miejsce na ogrodzeniu."
+                  insertAfter={furtkaInsertAfter}
+                  panelCount={previewPanelCount}
+                  drivewayGateEnabled={Boolean(bramaElementId)}
+                  onChange={setFurtkaInsertAfter}
+                />
+              )}
+              {furtkaEnabled && scope.fence && (
+                <p className="mt-3 text-[11px] leading-relaxed text-[#e8e8e4]">
+                  Możesz też przesuwać furtkę strzałkami na podglądzie. Na zakładce{" "}
+                  <strong className="text-[#f6f6f4]">Wymiary działki</strong> marker{" "}
+                  <strong className="text-[#f6f6f4]">F</strong> na rzucie doprecyzuje
+                  miejsce na działce.
                 </p>
               )}
             </div>
@@ -732,7 +778,7 @@ export function OptionSidebar({
                     key={post.id}
                     selected={selection.postId === post.id}
                     title={post.name}
-                    subtitle={`Szerokość ${post.widthCm} cm · ${formatSurchargePerPanel(post.priceSurchargePerPanel, post.priceSurchargePerMeter, pricing.panelWidthCm)}`}
+                    subtitle={`Szerokość ${post.widthCm} cm · ${formatSurchargePerPanel(post.priceSurchargePerPanel, post.priceSurchargePerMeter, panelWidthCm)}`}
                     onClick={() => onSelect({ postId: post.id })}
                   />
                 ))}
@@ -826,7 +872,7 @@ export function OptionSidebar({
                 key={label}
                 className="flex items-center justify-between border-b border-[#2A2A26] py-2.5"
               >
-                <span className="text-[11px] uppercase tracking-wider text-[#666]">
+                <span className="text-[11px] uppercase tracking-wider text-[#d6d6d2]">
                   {label}
                 </span>
                 <span className="text-sm font-semibold text-white">
@@ -844,14 +890,14 @@ export function OptionSidebar({
                   <p className="text-sm font-semibold text-white">
                     {selectedColor.name}
                   </p>
-                  <p className="font-mono text-xs text-[#666]">
+                  <p className="font-mono text-xs text-[#d6d6d2]">
                     {selectedColor.hex}
                   </p>
                 </div>
               </div>
             )}
             <div className="rounded-lg border border-[#333] bg-[#222] p-3">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#666]">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#d6d6d2]">
                 Składniki ceny
               </p>
               <div className="space-y-1.5">
@@ -860,13 +906,13 @@ export function OptionSidebar({
                     key={`${row.label}-${index}`}
                     className="flex justify-between gap-2 text-[11px]"
                   >
-                    <span className="text-[#888]">{row.label}</span>
+                    <span className="text-[#e8e8e4]">{row.label}</span>
                     {row.amount > 0 ? (
                       <span className="font-semibold text-white">
                         {Math.round(row.amount).toLocaleString("pl-PL")} PLN
                       </span>
                     ) : (
-                      <span className="text-[#666]">{row.value}</span>
+                      <span className="text-[#d6d6d2]">{row.value}</span>
                     )}
                   </div>
                 ))}
@@ -896,6 +942,8 @@ export function OptionSidebar({
               furtkaEnabled={furtkaEnabled}
               furtkaElementId={furtkaElementId}
               furtkaPosition={furtkaPosition}
+              furtkaInsertAfter={furtkaInsertAfter}
+              bramaInsertAfter={bramaInsertAfter}
               furtkaHingeSide={furtkaHingeSide}
               footingHeightId={footingHeightId}
               footingMaterialId={footingMaterialId}
@@ -907,17 +955,17 @@ export function OptionSidebar({
       <div className="shrink-0 border-t border-[#2A2A26] bg-[#1A1A18] px-5 py-4 max-lg:landscape:px-4 max-lg:landscape:py-2">
         <div className="mb-3 max-lg:landscape:mb-2">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#666]">
+            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#d6d6d2]">
               Wycena orientacyjna
             </span>
             <span className="font-heading text-xl font-bold text-white max-lg:landscape:text-lg">
               {Math.round(quote.totalNet).toLocaleString("pl-PL")}{" "}
-              <span className="text-sm font-semibold text-[#888] max-lg:landscape:text-xs">
+              <span className="text-sm font-semibold text-[#e8e8e4] max-lg:landscape:text-xs">
                 PLN netto
               </span>
             </span>
           </div>
-          <p className="mt-1 text-right text-[10px] text-[#666] max-lg:landscape:hidden">
+          <p className="mt-1 text-right text-[10px] text-[#d6d6d2] max-lg:landscape:hidden">
             {quote.pricePerPanelNet.toLocaleString("pl-PL")} PLN/panel ·{" "}
             {quote.panelUnits} paneli · {quote.perimeterM.toFixed(1)} m bieżących
           </p>

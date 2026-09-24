@@ -103,7 +103,7 @@ function MobileOptionsDrawer({
           <button
             type="button"
             onClick={handleResetScope}
-            className="shrink-0 font-semibold uppercase tracking-wider text-[#888] underline-offset-2 transition-colors hover:text-[#e30311] hover:underline"
+            className="shrink-0 font-semibold uppercase tracking-wider text-[#e8e8e4] underline-offset-2 transition-colors hover:text-[#e30311] hover:underline"
           >
             Zmień zakres
           </button>
@@ -113,7 +113,7 @@ function MobileOptionsDrawer({
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-[#888] transition-colors hover:bg-[#222] hover:text-white"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[#e8e8e4] transition-colors hover:bg-[#222] hover:text-white"
             aria-label="Wróć do podglądu"
           >
             <X className="h-5 w-5" />
@@ -233,7 +233,7 @@ export function ConfiguratorShell() {
 
       <div
         className={cn(
-          "flex w-full flex-col bg-white max-lg:min-h-dvh max-lg:overflow-visible max-lg:bg-[#f0f0f0] lg:h-screen lg:overflow-hidden",
+          "configurator-ui flex w-full flex-col bg-white max-lg:min-h-dvh max-lg:overflow-visible max-lg:bg-[#f0f0f0] lg:h-screen lg:overflow-hidden",
           hideConfiguratorOnMobilePortrait &&
             "max-lg:pointer-events-none max-lg:invisible max-lg:select-none",
         )}

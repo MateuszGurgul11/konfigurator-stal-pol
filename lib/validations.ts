@@ -50,12 +50,9 @@ export const panelSchema = z.object({
     "pattern-palisade",
     "pattern-panel-horizontal",
   ]),
+  widthCm: z.coerce.number().min(50).max(500).default(250),
   priceSurchargePerMeter: z.coerce.number().min(0).default(0),
   priceSurchargePerPanel: z.coerce.number().min(0).default(0),
-  description: optionalString,
-  previewAsset: optionalString,
-  baseTextureUrl: clearableUrl,
-  textureTileHeightM: z.coerce.number().min(0.1).max(2.25).optional(),
   sortOrder: z.coerce.number().int().min(0),
   active: z.boolean(),
 });

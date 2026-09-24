@@ -41,6 +41,8 @@ export type PdfDocumentProps = {
   furtkaEnabled: boolean;
   furtkaElementId: string | null;
   furtkaPosition: ConfigurationSvgInput["furtkaPosition"];
+  furtkaInsertAfter?: number;
+  bramaInsertAfter?: number;
   furtkaHingeSide: ConfigurationSvgInput["furtkaHingeSide"];
   footingHeightId: string | null;
   footingMaterialId: string | null;
@@ -96,6 +98,8 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
       furtkaEnabled,
       furtkaElementId,
       furtkaPosition,
+      furtkaInsertAfter,
+      bramaInsertAfter,
       furtkaHingeSide,
       footingHeightId,
       footingMaterialId,
@@ -112,6 +116,8 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
         furtkaEnabled,
         furtkaElementId,
         furtkaPosition,
+        furtkaInsertAfter,
+        bramaInsertAfter,
         furtkaHingeSide,
         footingEnabled,
         footingHeightId,
@@ -127,6 +133,8 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
         furtkaEnabled,
         furtkaElementId,
         furtkaPosition,
+        furtkaInsertAfter,
+        bramaInsertAfter,
         furtkaHingeSide,
         footingEnabled,
         footingHeightId,

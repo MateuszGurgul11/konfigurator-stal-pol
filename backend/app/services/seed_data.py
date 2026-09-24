@@ -21,6 +21,7 @@ SEED_DATA = {
         {
             "name": "Panel 3D",
             "patternId": "pattern-3d",
+            "widthCm": 250,
             "priceSurchargePerMeter": 0,
             "sortOrder": 0,
             "active": True,
@@ -28,6 +29,7 @@ SEED_DATA = {
         {
             "name": "Palisada pionowa",
             "patternId": "pattern-palisade",
+            "widthCm": 250,
             "priceSurchargePerMeter": 20,
             "sortOrder": 1,
             "active": True,
@@ -35,6 +37,7 @@ SEED_DATA = {
         {
             "name": "Palisada pozioma",
             "patternId": "pattern-panel-horizontal",
+            "widthCm": 250,
             "priceSurchargePerMeter": 15,
             "sortOrder": 2,
             "active": True,

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ChevronLeft,
+  ChevronRight,
   Hand,
   Maximize2,
   Minimize2,
@@ -18,12 +20,17 @@ import {
 } from "@/lib/fence/renderFence";
 import type { PatternId } from "@/lib/fence/patterns";
 import {
-  getWicketInsertAfterIndex,
   MAX_PREVIEW_PANELS,
   MIN_PREVIEW_PANELS,
+  clampGateInsertAfter,
+  clampWicketInsertAfter,
+  formatGateInsertAfterLabel,
+  formatWicketInsertAfterLabel,
+  getGateLayoutPanelCount,
+  getWicketLayoutPanelCount,
   useConfiguratorStore,
 } from "@/lib/configurator/state";
-import { getWicketWidthCm } from "@/lib/pricing/variant-prices";
+import { getWicketWidthCm, resolvePanelWidthCm } from "@/lib/pricing/variant-prices";
 import {
   isDrivewayGateConfigured,
   resolveDrivewayGateKind,
@@ -304,9 +311,12 @@ export function FencePreview({ catalog, selection }: Props) {
   const clearBackgroundImage = useConfiguratorStore((s) => s.clearBackgroundImage);
   const furtkaEnabled = useConfiguratorStore((s) => s.furtkaEnabled);
   const furtkaElementId = useConfiguratorStore((s) => s.furtkaElementId);
-  const furtkaPosition = useConfiguratorStore((s) => s.furtkaPosition);
+  const furtkaInsertAfter = useConfiguratorStore((s) => s.furtkaInsertAfter);
+  const setFurtkaInsertAfter = useConfiguratorStore((s) => s.setFurtkaInsertAfter);
   const furtkaHingeSide = useConfiguratorStore((s) => s.furtkaHingeSide);
   const bramaElementId = useConfiguratorStore((s) => s.bramaElementId);
+  const bramaInsertAfter = useConfiguratorStore((s) => s.bramaInsertAfter);
+  const setBramaInsertAfter = useConfiguratorStore((s) => s.setBramaInsertAfter);
   const hasDrivewayGate = isDrivewayGateConfigured(bramaElementId);
   const previewPanelCount = useConfiguratorStore((s) => s.previewPanelCount);
   const setPreviewPanelCount = useConfiguratorStore((s) => s.setPreviewPanelCount);
@@ -327,14 +337,15 @@ export function FencePreview({ catalog, selection }: Props) {
   const spacer = catalog.spacerOptions.find((s) => s.id === selection.spacerId);
   const height = catalog.heights.find((h) => h.id === selection.heightId);
   const color = catalog.colors.find((c) => c.id === selection.colorId);
+  const panelWidthCm = resolvePanelWidthCm(panel, pricing);
 
   useEffect(() => {
     wicketLayoutRef.current = {
       hasWicket: furtkaEnabled,
-      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
-      panelWidthCm: pricing.panelWidthCm,
+      wicketWidthCm: getWicketWidthCm(panelWidthCm),
+      panelWidthCm,
     };
-  }, [furtkaEnabled, pricing.panelWidthCm]);
+  }, [furtkaEnabled, panelWidthCm]);
 
   useEffect(() => {
     return () => {
@@ -373,8 +384,8 @@ export function FencePreview({ catalog, selection }: Props) {
         sceneWidth,
         previewPanelCount,
         furtkaEnabled,
-        getWicketWidthCm(pricing.panelWidthCm),
-        pricing.panelWidthCm,
+        getWicketWidthCm(panelWidthCm),
+        panelWidthCm,
       ),
     });
   }, [
@@ -386,7 +397,7 @@ export function FencePreview({ catalog, selection }: Props) {
     sceneWidth,
     previewPanelCount,
     furtkaEnabled,
-    pricing.panelWidthCm,
+    panelWidthCm,
   ]);
 
   useEffect(() => {
@@ -499,8 +510,8 @@ export function FencePreview({ catalog, selection }: Props) {
             sceneWidth,
             previewPanelCount,
             furtkaEnabled,
-            getWicketWidthCm(pricing.panelWidthCm),
-            pricing.panelWidthCm,
+            getWicketWidthCm(panelWidthCm),
+            panelWidthCm,
           )
         : DEFAULT_FENCE_SCALE;
     setFenceTransform({ x: 0, y: 0, scale });
@@ -555,8 +566,8 @@ export function FencePreview({ catalog, selection }: Props) {
       origPanelCount: previewPanelCount,
       sceneWidth,
       hasWicket: furtkaEnabled,
-      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
-      panelWidthCm: pricing.panelWidthCm,
+      wicketWidthCm: getWicketWidthCm(panelWidthCm),
+      panelWidthCm: panelWidthCm,
     };
   }
 
@@ -571,12 +582,26 @@ export function FencePreview({ catalog, selection }: Props) {
     }));
   }
 
-  const wicketInsertAfter = useMemo(() => {
+  const wicketLayoutPanelCount = getWicketLayoutPanelCount(
+    previewPanelCount,
+    hasDrivewayGate,
+  );
+  const gateLayoutPanelCount = getGateLayoutPanelCount(
+    previewPanelCount,
+    true,
+  );
+  const resolvedWicketInsertAfter = useMemo(() => {
     if (!furtkaEnabled) return undefined;
-    return getWicketInsertAfterIndex(furtkaPosition, previewPanelCount, {
-      drivewayGateEnabled: hasDrivewayGate,
-    });
-  }, [furtkaEnabled, furtkaPosition, previewPanelCount, hasDrivewayGate]);
+    return clampWicketInsertAfter(
+      furtkaInsertAfter,
+      previewPanelCount,
+      hasDrivewayGate,
+    );
+  }, [furtkaEnabled, furtkaInsertAfter, previewPanelCount, hasDrivewayGate]);
+  const resolvedGateInsertAfter = useMemo(() => {
+    if (!hasDrivewayGate) return undefined;
+    return clampGateInsertAfter(bramaInsertAfter, previewPanelCount, true);
+  }, [hasDrivewayGate, bramaInsertAfter, previewPanelCount]);
 
   const svgMarkup = useMemo(() => {
     if (!post || !panel || !spacer || !height || !color) return null;
@@ -625,11 +650,12 @@ export function FencePreview({ catalog, selection }: Props) {
       hasSpacer: spacer.hasSpacer,
       openness: spacer.openness,
       panelCount: previewPanelCount,
-      panelWidthCm: pricing.panelWidthCm,
-      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
-      wicketInsertAfter,
+      panelWidthCm: panelWidthCm,
+      wicketWidthCm: getWicketWidthCm(panelWidthCm),
+      wicketInsertAfter: resolvedWicketInsertAfter,
       drivewayGateEnabled: hasDrivewayGate,
       drivewayGateKind,
+      drivewayGateInsertAfter: resolvedGateInsertAfter,
       drivewayGateTextureUrl,
       drivewayGateInfillPatternId,
       footingEnabled,
@@ -652,7 +678,8 @@ export function FencePreview({ catalog, selection }: Props) {
     selection.panelId,
     selection.postId,
     selection.colorId,
-    wicketInsertAfter,
+    resolvedWicketInsertAfter,
+    resolvedGateInsertAfter,
     previewPanelCount,
     furtkaEnabled,
     furtkaElementId,
@@ -662,13 +689,13 @@ export function FencePreview({ catalog, selection }: Props) {
     footingEnabled,
     footingHeightId,
     footingMaterialId,
-    pricing.panelWidthCm,
+    panelWidthCm,
   ]);
 
   const viewWidth = getViewWidth(previewPanelCount, {
     hasWicket: furtkaEnabled,
-    wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
-    panelWidthCm: pricing.panelWidthCm,
+    wicketWidthCm: getWicketWidthCm(panelWidthCm),
+    panelWidthCm: panelWidthCm,
   });
 
   const contentBounds = useMemo(() => {
@@ -678,10 +705,10 @@ export function FencePreview({ catalog, selection }: Props) {
       postWidthCm: post.widthCm,
       panelCount: previewPanelCount,
       hasWicket: furtkaEnabled,
-      wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
-      panelWidthCm: pricing.panelWidthCm,
+      wicketWidthCm: getWicketWidthCm(panelWidthCm),
+      panelWidthCm: panelWidthCm,
     });
-  }, [post, height, previewPanelCount, furtkaEnabled, pricing.panelWidthCm]);
+  }, [post, height, previewPanelCount, furtkaEnabled, panelWidthCm]);
 
   const fenceDisplayWidth =
     sceneWidth > 0
@@ -689,8 +716,8 @@ export function FencePreview({ catalog, selection }: Props) {
           sceneWidth,
           previewPanelCount,
           furtkaEnabled,
-          getWicketWidthCm(pricing.panelWidthCm),
-          pricing.panelWidthCm,
+          getWicketWidthCm(panelWidthCm),
+          panelWidthCm,
         )}px`
       : `${FENCE_WIDTH_REM_BASE + (previewPanelCount - MIN_PREVIEW_PANELS) * FENCE_WIDTH_REM_PER_PANEL}rem`;
 
@@ -701,26 +728,37 @@ export function FencePreview({ catalog, selection }: Props) {
     backgroundImageUrl,
   );
 
-  const positionLabels = {
-    left: "lewa sekcja",
-    center: "środkowa sekcja",
-    right: "prawa sekcja",
-  };
-
   const hingeSideLabels = {
     left: "zawiasy lewe",
     right: "zawiasy prawe",
   };
 
+  const wicketPositionLabel =
+    resolvedWicketInsertAfter === undefined
+      ? ""
+      : formatWicketInsertAfterLabel(
+          resolvedWicketInsertAfter,
+          wicketLayoutPanelCount,
+        );
+  const gatePositionLabel =
+    resolvedGateInsertAfter === undefined
+      ? ""
+      : formatGateInsertAfterLabel(
+          resolvedGateInsertAfter,
+          gateLayoutPanelCount,
+        );
+
   const openingLabels: string[] = [];
   if (bramaElementId) {
     const bramaElement = catalog.elements.find((e) => e.id === bramaElementId);
-    openingLabels.push(bramaElement?.name ?? "Brama");
+    openingLabels.push(
+      `${bramaElement?.name ?? "Brama"}${gatePositionLabel ? ` · ${gatePositionLabel}` : ""}`,
+    );
   }
   if (furtkaEnabled && furtkaElementId) {
     const furtkaElement = catalog.elements.find((e) => e.id === furtkaElementId);
     openingLabels.push(
-      `${furtkaElement?.name ?? "Furtka"} · ${positionLabels[furtkaPosition]} · ${hingeSideLabels[furtkaHingeSide]}`,
+      `${furtkaElement?.name ?? "Furtka"} · ${wicketPositionLabel} · ${hingeSideLabels[furtkaHingeSide]}`,
     );
   }
 
@@ -748,7 +786,7 @@ export function FencePreview({ catalog, selection }: Props) {
           aria-label={sidebarOpen ? "Ukryj panel opcji" : "Pokaż panel opcji"}
           title={sidebarOpen ? "Ukryj panel opcji" : "Pokaż panel opcji"}
           onClick={toggleSidebarOpen}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#6b7280] shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#303638]"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#3a4044] shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#303638]"
         >
           {sidebarOpen ? (
             <PanelLeftClose className="h-4 w-4" />
@@ -761,7 +799,7 @@ export function FencePreview({ catalog, selection }: Props) {
           aria-label={isFullscreen ? "Wyjdź z pełnego ekranu" : "Pełny ekran podglądu"}
           title={isFullscreen ? "Wyjdź z pełnego ekranu" : "Pełny ekran podglądu"}
           onClick={toggleFullscreen}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#6b7280] shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#303638]"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#3a4044] shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#303638]"
         >
           {isFullscreen ? (
             <Minimize2 className="h-4 w-4" />
@@ -774,7 +812,7 @@ export function FencePreview({ catalog, selection }: Props) {
           aria-label="Resetuj pozycję płotu"
           title="Resetuj pozycję płotu"
           onClick={resetFenceTransform}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#6b7280] shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#303638]"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#3a4044] shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#303638]"
         >
           <RotateCcw className="h-4 w-4" />
         </button>
@@ -815,7 +853,7 @@ export function FencePreview({ catalog, selection }: Props) {
             )}
             <div
               ref={fenceRef}
-              className={`relative touch-none select-none overflow-visible drop-shadow-[0_12px_28px_rgba(0,0,0,0.45)] ${
+              className={`relative touch-none select-none overflow-visible ${
                 fenceSelected
                   ? isDragging
                     ? "cursor-grabbing"
@@ -869,16 +907,97 @@ export function FencePreview({ catalog, selection }: Props) {
           </div>
         ) : (
           <div className="absolute inset-0 z-10 flex items-center justify-center">
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-[#5b6164]">
               Wybierz opcje, aby zobaczyć podgląd
             </p>
           </div>
         )}
 
-        {fenceSelected && svgMarkup && isLgUp && (
-          <p className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-md border border-[#e5e7eb] bg-white/92 px-3 py-1 text-[10px] text-[#6b7280] shadow-sm backdrop-blur-sm">
-            Przeciągnij aby przesunąć · boki: panele · rogi: skala · scroll: zoom
-          </p>
+        {fenceSelected && svgMarkup && (
+          <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 flex w-[min(100%-1.5rem,28rem)] -translate-x-1/2 flex-col items-center gap-2">
+            {hasDrivewayGate && resolvedGateInsertAfter !== undefined && (
+              <div className="pointer-events-auto flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white/95 px-2 py-1.5 shadow-sm backdrop-blur-sm">
+                <button
+                  type="button"
+                  aria-label="Przesuń bramę w lewo"
+                  disabled={resolvedGateInsertAfter <= -1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setBramaInsertAfter(resolvedGateInsertAfter - 1);
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <div className="min-w-0 flex-1 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#e30311]">
+                    Pozycja bramy
+                  </p>
+                  <p className="truncate text-xs font-semibold text-[#303638]">
+                    {gatePositionLabel}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Przesuń bramę w prawo"
+                  disabled={
+                    resolvedGateInsertAfter >= gateLayoutPanelCount - 1
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setBramaInsertAfter(resolvedGateInsertAfter + 1);
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+            {furtkaEnabled && resolvedWicketInsertAfter !== undefined && (
+              <div className="pointer-events-auto flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-white/95 px-2 py-1.5 shadow-sm backdrop-blur-sm">
+                <button
+                  type="button"
+                  aria-label="Przesuń furtkę w lewo"
+                  disabled={resolvedWicketInsertAfter <= -1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFurtkaInsertAfter(resolvedWicketInsertAfter - 1);
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <div className="min-w-0 flex-1 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#e30311]">
+                    Pozycja furtki
+                  </p>
+                  <p className="truncate text-xs font-semibold text-[#303638]">
+                    {wicketPositionLabel}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Przesuń furtkę w prawo"
+                  disabled={
+                    resolvedWicketInsertAfter >= wicketLayoutPanelCount - 1
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFurtkaInsertAfter(resolvedWicketInsertAfter + 1);
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+            {isLgUp && (
+              <p className="rounded-md border border-[#e5e7eb] bg-white/92 px-3 py-1 text-[10px] text-[#3a4044] shadow-sm backdrop-blur-sm">
+                Przeciągnij aby przesunąć · boki: panele · rogi: skala · scroll:
+                zoom
+              </p>
+            )}
+          </div>
         )}
       </div>
 
@@ -895,7 +1014,7 @@ export function FencePreview({ catalog, selection }: Props) {
               {openingLabels.length > 0 ? ` · ${openingLabels.join(" · ")}` : ""}
             </span>
           </div>
-          <span className="ml-auto text-[10px] uppercase tracking-wider text-[#aaa]">
+          <span className="ml-auto text-[10px] uppercase tracking-wider text-[#4a4f52]">
             Podgląd 2D · aktualizacja na żywo
           </span>
         </div>

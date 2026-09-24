@@ -4,6 +4,7 @@ import {
   type GatePosition,
   type ProductScope,
   type WicketHingeSide,
+  clampWicketInsertAfter,
   getWicketInsertAfterIndex,
 } from "@/lib/configurator/state";
 import {
@@ -11,7 +12,7 @@ import {
   resolveDrivewayGateKind,
   resolveElement,
 } from "@/lib/pricing/element-prices";
-import { getWicketWidthCm } from "@/lib/pricing/variant-prices";
+import { getWicketWidthCm, resolvePanelWidthCm } from "@/lib/pricing/variant-prices";
 import type {
   CatalogCollections,
   ConfiguratorSelection,
@@ -28,6 +29,8 @@ export type ConfigurationSvgInput = {
   furtkaEnabled: boolean;
   furtkaElementId: string | null;
   furtkaPosition: GatePosition;
+  furtkaInsertAfter?: number;
+  bramaInsertAfter?: number;
   furtkaHingeSide: WicketHingeSide;
   footingEnabled: boolean;
   footingHeightId: string | null;
@@ -38,6 +41,7 @@ type PdfPanelLayout = {
   panelCount: number;
   drivewayGateEnabled: boolean;
   wicketInsertAfter?: number;
+  drivewayGateInsertAfter?: number;
 };
 
 function resolvePdfPanelLayout(input: ConfigurationSvgInput): PdfPanelLayout {
@@ -55,6 +59,7 @@ function resolvePdfPanelLayout(input: ConfigurationSvgInput): PdfPanelLayout {
       panelCount: hasDrivewayGate ? 2 : 0,
       drivewayGateEnabled: hasDrivewayGate,
       wicketInsertAfter: hasWicket ? -1 : undefined,
+      drivewayGateInsertAfter: hasDrivewayGate ? -1 : undefined,
     };
   }
 
@@ -69,15 +74,29 @@ function resolvePdfPanelLayout(input: ConfigurationSvgInput): PdfPanelLayout {
   }
 
   const wicketInsertAfter = hasWicket
-    ? getWicketInsertAfterIndex(input.furtkaPosition, panelCount, {
-        drivewayGateEnabled: hasDrivewayGate,
-      })
+    ? clampWicketInsertAfter(
+        input.furtkaInsertAfter ??
+          getWicketInsertAfterIndex(input.furtkaPosition, panelCount, {
+            drivewayGateEnabled: hasDrivewayGate,
+          }),
+        panelCount,
+        hasDrivewayGate,
+      )
+    : undefined;
+
+  const drivewayGateInsertAfter = hasDrivewayGate
+    ? clampWicketInsertAfter(
+        input.bramaInsertAfter ?? -1,
+        panelCount,
+        true,
+      )
     : undefined;
 
   return {
     panelCount,
     drivewayGateEnabled: hasDrivewayGate,
     wicketInsertAfter,
+    drivewayGateInsertAfter,
   };
 }
 
@@ -94,7 +113,9 @@ export function buildConfigurationSvg(
 
   if (!post || !panel || !spacer || !height || !color) return null;
 
-  const { panelCount, drivewayGateEnabled, wicketInsertAfter } =
+  const panelWidthCm = resolvePanelWidthCm(panel, pricing);
+
+  const { panelCount, drivewayGateEnabled, wicketInsertAfter, drivewayGateInsertAfter } =
     resolvePdfPanelLayout(input);
 
   const bramaElement = drivewayGateEnabled
@@ -119,11 +140,12 @@ export function buildConfigurationSvg(
     hasSpacer: spacer.hasSpacer,
     openness: spacer.openness,
     panelCount,
-    panelWidthCm: pricing.panelWidthCm,
-    wicketWidthCm: getWicketWidthCm(pricing.panelWidthCm),
+    panelWidthCm,
+    wicketWidthCm: getWicketWidthCm(panelWidthCm),
     wicketInsertAfter,
     drivewayGateEnabled,
     drivewayGateKind,
+    drivewayGateInsertAfter,
     drivewayGateInfillPatternId: panel.patternId as PatternId,
     footingEnabled: input.footingEnabled,
     footingHeightCm: footingHeight?.heightCm ?? 20,

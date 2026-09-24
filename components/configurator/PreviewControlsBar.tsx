@@ -28,7 +28,7 @@ export function PreviewControlsBar({ children, className, accent }: Props) {
         title={sidebarOpen ? "Ukryj panel opcji" : "Pokaż panel opcji"}
         onClick={toggleSidebarOpen}
         className={cn(
-          "flex h-11 w-11 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#6b7280] shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#303638] lg:h-9 lg:w-9",
+          "flex h-11 w-11 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#3a4044] shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#303638] lg:h-9 lg:w-9",
           accent &&
             "max-lg:border-transparent max-lg:bg-[#e30311] max-lg:text-white max-lg:shadow-md max-lg:hover:bg-[#c9020f] max-lg:hover:text-white",
         )}

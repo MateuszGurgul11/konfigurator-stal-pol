@@ -30,11 +30,9 @@ export const panelsConfig: EntityConfig = {
   emptyItem: {
     name: "",
     patternId: "pattern-3d",
+    widthCm: 250,
     priceSurchargePerMeter: 0,
     priceSurchargePerPanel: 0,
-    previewAsset: "",
-    baseTextureUrl: "",
-    textureTileHeightM: 0.45,
     sortOrder: 0,
     active: true,
   },
@@ -47,6 +45,11 @@ export const panelsConfig: EntityConfig = {
       options: PATTERN_OPTIONS.map((p) => ({ value: p.id, label: p.label })),
     },
     {
+      name: "widthCm",
+      label: "Szerokość panelu (cm)",
+      type: "number",
+    },
+    {
       name: "priceSurchargePerPanel",
       label: "Dopłata za panel (PLN)",
       type: "number",
@@ -55,18 +58,6 @@ export const panelsConfig: EntityConfig = {
       name: "priceSurchargePerMeter",
       label: "Dopłata za m bieżący (PLN, legacy)",
       type: "number",
-    },
-    {
-      name: "textureTileHeightM",
-      label: "Wysokość kafelka tekstury (m)",
-      type: "number",
-    },
-    {
-      name: "baseTextureUrl",
-      label: "Bazowe zdjęcie panelu",
-      type: "image",
-      storagePath: ({ editingId }) =>
-        editingId ? catalogAssetPath("panels", editingId, "base") : null,
     },
     { name: "sortOrder", label: "Kolejność", type: "number" },
     { name: "active", label: "Aktywny", type: "boolean" },

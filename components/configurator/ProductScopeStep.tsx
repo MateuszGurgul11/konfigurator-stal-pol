@@ -62,7 +62,7 @@ export function ProductScopeStep() {
         <h1 className="mt-2 text-center font-heading text-2xl font-bold text-white max-lg:text-xl">
           Co chcesz skonfigurować?
         </h1>
-        <p className="mt-2 text-center text-sm text-[#888]">
+        <p className="mt-2 text-center text-sm text-[#e8e8e4]">
           Zaznacz jedną lub więcej pozycji — możesz wybrać sam płot, samą bramę
           lub kompletny zestaw.
         </p>
@@ -99,19 +99,19 @@ export function ProductScopeStep() {
                     <Icon
                       className={cn(
                         "h-4 w-4 shrink-0",
-                        checked ? "text-[#e30311]" : "text-[#666]",
+                        checked ? "text-[#e30311]" : "text-[#d6d6d2]",
                       )}
                     />
                     <p
                       className={cn(
                         "text-sm font-semibold",
-                        checked ? "text-white" : "text-[#ccc]",
+                        checked ? "text-white" : "text-[#f6f6f4]",
                       )}
                     >
                       {title}
                     </p>
                   </div>
-                  <p className="mt-1 text-[12px] leading-relaxed text-[#777]">
+                  <p className="mt-1 text-[12px] leading-relaxed text-[#e0e0dc]">
                     {description}
                   </p>
                 </div>

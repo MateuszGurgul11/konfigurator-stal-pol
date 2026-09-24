@@ -56,6 +56,7 @@ class PanelCreate(BaseEntity):
     patternId: Literal[
         "pattern-3d", "pattern-palisade", "pattern-panel-horizontal"
     ]
+    widthCm: float = Field(ge=50, le=500, default=250)
     priceSurchargePerMeter: float = Field(ge=0, default=0)
     priceSurchargePerPanel: float = Field(ge=0, default=0)
     baseTextureUrl: str | None = None

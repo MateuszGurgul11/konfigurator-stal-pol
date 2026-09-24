@@ -28,6 +28,30 @@ export function getDrivewayGateSpanM(panelWidthCm: number): number {
   return (DRIVEWAY_GATE_PANEL_COUNT * panelWidthCm) / 100;
 }
 
+/** Szerokość panelu z modelu, z fallbackiem do ustawień wyceny. */
+export function resolvePanelWidthCm(
+  panel?: { widthCm?: number | null } | null,
+  pricing?: { panelWidthCm?: number | null } | null,
+): number {
+  const fromPanel = panel?.widthCm;
+  if (
+    typeof fromPanel === "number" &&
+    Number.isFinite(fromPanel) &&
+    fromPanel >= 50
+  ) {
+    return fromPanel;
+  }
+  const fromPricing = pricing?.panelWidthCm;
+  if (
+    typeof fromPricing === "number" &&
+    Number.isFinite(fromPricing) &&
+    fromPricing >= 50
+  ) {
+    return fromPricing;
+  }
+  return DEFAULT_PRICING_SETTINGS.panelWidthCm;
+}
+
 export const PANEL_PRICE_BY_PATTERN: Record<string, number> = {
   "pattern-3d": 0,
   "pattern-palisade": 50,

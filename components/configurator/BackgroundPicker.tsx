@@ -97,7 +97,7 @@ export function BackgroundPicker() {
         Prześlij zdjęcie własnego domu
       </button>
 
-      <p className="text-[10px] leading-relaxed text-[#666]">
+      <p className="text-[10px] leading-relaxed text-[#d6d6d2]">
         JPG, PNG lub WebP do 5 MB. Zdjęcie działki lub posesji pomoże lepiej
         ocenić wygląd ogrodzenia.
       </p>

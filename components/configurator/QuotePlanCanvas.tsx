@@ -394,7 +394,7 @@ export function QuotePlanCanvas() {
                   "flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors",
                   quoteDrawMode === "calibrate"
                     ? "bg-[#e30311] text-white shadow-sm"
-                    : "text-[#5b6164] hover:bg-black/5",
+                    : "text-[#2f3437] hover:bg-black/5",
                 )}
               >
                 <Ruler className="h-3.5 w-3.5" />
@@ -408,7 +408,7 @@ export function QuotePlanCanvas() {
                   "flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
                   quoteDrawMode === "fence"
                     ? "bg-[#e30311] text-white shadow-sm"
-                    : "text-[#5b6164] hover:bg-black/5",
+                    : "text-[#2f3437] hover:bg-black/5",
                 )}
               >
                 <Fence className="h-3.5 w-3.5" />
@@ -418,7 +418,7 @@ export function QuotePlanCanvas() {
             <button
               type="button"
               onClick={resetQuoteDrawing}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-black/5 bg-white/85 text-[#6b7280] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white hover:text-[#e30311]"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-black/5 bg-white/85 text-[#3a4044] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white hover:text-[#e30311]"
               title="Resetuj rysowanie"
             >
               <RotateCcw className="h-4 w-4" />
@@ -449,7 +449,7 @@ export function QuotePlanCanvas() {
                   "flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors",
                   quoteDrawMode === "calibrate"
                     ? "bg-[#e30311] text-white shadow-sm"
-                    : "text-[#5b6164] hover:bg-black/5",
+                    : "text-[#2f3437] hover:bg-black/5",
                 )}
               >
                 <Ruler className="h-3.5 w-3.5" />
@@ -463,7 +463,7 @@ export function QuotePlanCanvas() {
                   "flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
                   quoteDrawMode === "fence"
                     ? "bg-[#e30311] text-white shadow-sm"
-                    : "text-[#5b6164] hover:bg-black/5",
+                    : "text-[#2f3437] hover:bg-black/5",
                 )}
               >
                 <Fence className="h-3.5 w-3.5" />
@@ -473,7 +473,7 @@ export function QuotePlanCanvas() {
             <button
               type="button"
               onClick={resetQuoteDrawing}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-black/5 bg-white/85 text-[#6b7280] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white hover:text-[#e30311]"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-black/5 bg-white/85 text-[#3a4044] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white hover:text-[#e30311]"
               title="Resetuj rysowanie"
             >
               <RotateCcw className="h-4 w-4" />
@@ -491,7 +491,7 @@ export function QuotePlanCanvas() {
             <p className="font-heading text-base font-bold text-[#222]">
               Wgraj plan działki lub zrzut mapy
             </p>
-            <p className="mx-auto mt-1.5 max-w-xs text-xs leading-relaxed text-[#6b7280]">
+            <p className="mx-auto mt-1.5 max-w-xs text-xs leading-relaxed text-[#3a4044]">
               Ustaw skalę (2 kliknięcia + długość w&nbsp;metrach), a&nbsp;potem
               klikaj narożniki działki, gdzie stanie płot.
             </p>
@@ -499,7 +499,7 @@ export function QuotePlanCanvas() {
               {["Skala", "Obrys", "Cena"].map((label, i) => (
                 <div key={label} className="flex items-center gap-2">
                   {i > 0 && <span className="h-px w-4 bg-[#d4d6da]" />}
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#888]">
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#3a4044]">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f0d3d5] text-[10px] font-bold text-[#e30311]">
                       {i + 1}
                     </span>
