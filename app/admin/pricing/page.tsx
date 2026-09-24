@@ -203,9 +203,9 @@ export default function AdminPricingPage() {
         <CardHeader>
           <CardTitle>Przykładowe ceny wariantów</CardTitle>
           <CardDescription>
-            Uzupełnia dopłaty na panelach, kolorach, wysokościach, słupkach i
-            dystansach oraz globalne stawki bazowe. Nie tworzy duplikatów —
-            aktualizuje istniejące wpisy.
+            Uzupełnia dopłaty na panelach, kolorach, wysokościach i słupkach
+            oraz globalne stawki bazowe. Nie tworzy duplikatów — aktualizuje
+            istniejące wpisy.
           </CardDescription>
         </CardHeader>
         <CardContent>

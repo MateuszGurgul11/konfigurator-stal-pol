@@ -17,9 +17,8 @@ export default function AdminColorsPage() {
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        Kolory definiują kolumny w macierzy tekstur (panel × kolor i słupek ×
-        kolor). Zdjęcia wgrywasz w sekcji Tekstury — tutaj ustawiasz tylko nazwę
-        i kod koloru.
+        Kolory malowania paneli i elementów. Ustawiasz nazwę oraz kod koloru
+        (#RRGGBB).
       </p>
       <EntityManager<Color>
       collection="colors"

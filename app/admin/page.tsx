@@ -17,21 +17,11 @@ import { Loader2 } from "lucide-react";
 
 const sections = [
   { href: "/admin/posts", title: "Słupki", desc: "Warianty słupków ogrodzenia" },
-  { href: "/admin/panels", title: "Panele", desc: "Wzory i tekstury paneli stalowych" },
-  {
-    href: "/admin/textures",
-    title: "Tekstury",
-    desc: "Macierz zdjęć panel × kolor i słupek × kolor",
-  },
+  { href: "/admin/panels", title: "Panele", desc: "Wzory paneli stalowych" },
   {
     href: "/admin/elements",
     title: "Elementy",
-    desc: "Brama i furtka — wygląd, tekstury i ceny",
-  },
-  {
-    href: "/admin/spacers",
-    title: "Wykończenie",
-    desc: "Ocynk i malowanie proszkowe RAL",
+    desc: "Brama i furtka — wygląd i ceny",
   },
   {
     href: "/admin/heights",

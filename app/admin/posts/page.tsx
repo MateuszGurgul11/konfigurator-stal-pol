@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { EntityManager } from "@/components/admin/EntityManager";
 import { postSchema } from "@/lib/validations";
 import type { Post } from "@/lib/types";
@@ -22,11 +21,7 @@ export default function AdminPostsPage() {
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        Tekstury słupka per kolor ustaw w{" "}
-        <Link href="/admin/textures" className="text-primary underline">
-          macierzy tekstur
-        </Link>{" "}
-        (zakładka Słupki × kolory). Poniżej opcjonalne bazowe zdjęcie słupka.
+        Warianty słupków ogrodzenia. Opcjonalne bazowe zdjęcie słupka.
       </p>
       <EntityManager<Post>
         collection="posts"

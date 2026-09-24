@@ -4,7 +4,6 @@ import { EntityManager } from "@/components/admin/EntityManager";
 import { panelSchema } from "@/lib/validations";
 import type { Panel } from "@/lib/types";
 import { catalogAssetPath } from "@/lib/firebase/storage";
-import Link from "next/link";
 
 const emptyItem = {
   name: "",
@@ -22,11 +21,8 @@ export default function AdminPanelsPage() {
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        Bazowe zdjęcie panelu i wysokość kafelka. Tekstury per kolor ustawiasz w{" "}
-        <Link href="/admin/textures" className="text-primary underline">
-          macierzy tekstur
-        </Link>
-        . Gdy brak zdjęć, podgląd używa wzoru SVG (fallback).
+        Wzór SVG i opcjonalne bazowe zdjęcie panelu. Gdy brak zdjęcia, podgląd
+        używa wzoru SVG.
       </p>
       <EntityManager<Panel>
         collection="panels"

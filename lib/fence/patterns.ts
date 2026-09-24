@@ -5,6 +5,6 @@ export type PatternId =
 
 export const PATTERN_OPTIONS: { id: PatternId; label: string }[] = [
   { id: "pattern-3d", label: "Panel 3D" },
-  { id: "pattern-palisade", label: "Palisada" },
-  { id: "pattern-panel-horizontal", label: "Panel poziomy" },
+  { id: "pattern-palisade", label: "Palisada pionowa" },
+  { id: "pattern-panel-horizontal", label: "Palisada pozioma" },
 ];

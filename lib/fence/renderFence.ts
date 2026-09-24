@@ -338,29 +338,26 @@ function draw3DMeshPanel(
   shadowEdge: string,
   shadowBottom: string,
 ): string {
+  // Tylko dolna belka — bez górnej ramki (realny panel 3D kończy się siatką u góry).
   const railH = Math.max(4, h * 0.055);
-  const meshY = y + railH;
-  const meshH = Math.max(0, h - railH * 2);
+  const meshY = y;
+  const meshH = Math.max(0, h - railH);
   const meshX = px;
   const meshW = sectionW;
   const vPitch = Math.max(3.5, Math.min(5.5, sectionW * 0.028));
   const hPitch = Math.max(16, Math.min(24, meshH * 0.11));
   const stroke = darken(colorHex, 0.28);
   const highlight = lighten(colorHex, 0.1);
-  const frameLight = lighten(colorHex, 0.08);
   const wireW = 1.15;
 
   let out = "";
 
-  out += `<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${sectionW.toFixed(1)}" height="${railH.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
-  out += `<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${sectionW.toFixed(1)}" height="2" fill="${frameLight}" opacity="0.55"/>`;
   out += `<rect x="${px.toFixed(1)}" y="${(y + h - railH).toFixed(1)}" width="${sectionW.toFixed(1)}" height="${railH.toFixed(1)}" fill="${colorHex}" rx="1"/>`;
   out += `<rect x="${px.toFixed(1)}" y="${(y + h - railH).toFixed(1)}" width="${sectionW.toFixed(1)}" height="2" fill="${shadowBottom}" opacity="0.45"/>`;
 
   if (meshH > 4 && meshW > 4) {
-    const spikeH = Math.max(2, railH * 0.45);
     for (let vx = meshX + vPitch * 0.5; vx < meshX + meshW; vx += vPitch) {
-      out += `<line x1="${vx.toFixed(1)}" y1="${(meshY - spikeH).toFixed(1)}" x2="${vx.toFixed(1)}" y2="${(meshY + meshH).toFixed(1)}" stroke="${stroke}" stroke-width="${wireW}" opacity="0.8"/>`;
+      out += `<line x1="${vx.toFixed(1)}" y1="${meshY.toFixed(1)}" x2="${vx.toFixed(1)}" y2="${(meshY + meshH).toFixed(1)}" stroke="${stroke}" stroke-width="${wireW}" opacity="0.8"/>`;
     }
 
     for (let hy = meshY + hPitch * 0.5; hy < meshY + meshH; hy += hPitch) {

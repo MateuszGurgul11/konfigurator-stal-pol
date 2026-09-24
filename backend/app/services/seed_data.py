@@ -26,14 +26,14 @@ SEED_DATA = {
             "active": True,
         },
         {
-            "name": "Palisada",
+            "name": "Palisada pionowa",
             "patternId": "pattern-palisade",
             "priceSurchargePerMeter": 20,
             "sortOrder": 1,
             "active": True,
         },
         {
-            "name": "Panel poziomy",
+            "name": "Palisada pozioma",
             "patternId": "pattern-panel-horizontal",
             "priceSurchargePerMeter": 15,
             "sortOrder": 2,
