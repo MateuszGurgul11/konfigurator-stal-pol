@@ -104,14 +104,14 @@ export function ProductScopeStep() {
                     />
                     <p
                       className={cn(
-                        "text-sm font-semibold",
+                        "text-[16px] font-semibold",
                         checked ? "text-white" : "text-[#f6f6f4]",
                       )}
                     >
                       {title}
                     </p>
                   </div>
-                  <p className="mt-1 text-[12px] leading-relaxed text-[#e0e0dc]">
+                  <p className="mt-1 text-[16px] leading-relaxed text-[#e0e0dc]">
                     {description}
                   </p>
                 </div>

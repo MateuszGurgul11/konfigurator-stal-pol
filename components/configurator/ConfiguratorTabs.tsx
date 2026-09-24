@@ -26,7 +26,7 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
   const visibleTabs = tabs.filter((tab) => visibleTabIds.has(tab.id));
 
   return (
-    <div className="scrollbar-dark flex flex-nowrap gap-0.5 overflow-x-auto border-b border-[#2A2A26] px-2 pb-0 pt-3 max-lg:landscape:pt-1.5 sm:gap-1 sm:px-4">
+    <div className="flex w-full border-b border-[#2A2A26] px-2 pb-0 pt-3 max-lg:landscape:pt-1.5 sm:px-4">
       {visibleTabs.map(({ id, labelLines, icon: Icon }) => {
         const isActive = active === id;
         return (
@@ -35,7 +35,7 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
             type="button"
             onClick={() => onChange(id)}
             className={cn(
-              "flex shrink-0 flex-col items-center gap-1 rounded-t-lg px-2.5 py-2.5 transition-all max-lg:min-h-[44px] max-lg:flex-row max-lg:gap-1.5 max-lg:landscape:min-h-0 max-lg:landscape:py-1.5 max-lg:px-3 sm:px-3",
+              "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-t-lg px-1.5 py-2.5 transition-all max-lg:min-h-[44px] max-lg:flex-row max-lg:justify-center max-lg:gap-1.5 max-lg:landscape:min-h-0 max-lg:landscape:py-1.5 sm:px-2",
               isActive
                 ? "bg-[#2A2A26] text-[#e30311]"
                 : "text-[#d6d6d2] hover:bg-[#222] hover:text-[#ecece8]",
@@ -44,13 +44,13 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
             <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-[#e30311]")} />
             <span className="text-center text-[16px] font-semibold leading-[1.2] tracking-normal normal-case">
               {labelLines.map((line) => (
-                <span key={line} className="block">
+                <span key={line} className="block truncate">
                   {line}
                 </span>
               ))}
             </span>
             {isActive && (
-              <span className="h-0.5 w-full rounded-full bg-[#e30311]" />
+              <span className="h-0.5 w-full max-w-[3rem] rounded-full bg-[#e30311]" />
             )}
           </button>
         );

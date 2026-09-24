@@ -37,7 +37,7 @@ import { DecimalInput } from "./DecimalInput";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d6d6d2]">
+    <p className="mb-3 text-[14px] font-bold uppercase tracking-[0.2em] text-[#d6d6d2]">
       {children}
     </p>
   );
@@ -69,7 +69,7 @@ function StepHeader({
       <div className="flex items-center gap-2.5">
         <span
           className={cn(
-            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white transition-shadow",
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[14px] font-bold text-white transition-shadow",
             status?.tone === "done"
               ? "bg-[#1f7a4a] shadow-[0_0_0_3px_rgba(31,122,74,0.18)]"
               : "bg-[#e30311] shadow-[0_0_0_3px_rgba(227,3,17,0.16)]",
@@ -77,7 +77,7 @@ function StepHeader({
         >
           {status?.tone === "done" ? <Check className="h-3.5 w-3.5" /> : index}
         </span>
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-white">
+        <span className="text-[14px] font-bold uppercase tracking-[0.16em] text-white">
           {title}
         </span>
       </div>
@@ -132,7 +132,7 @@ function ScopeCard({
         </div>
         <span className="text-xs font-bold text-white">{title}</span>
       </div>
-      <span className="pl-7 text-[10px] leading-relaxed text-[#e8e8e4]">
+      <span className="pl-7 text-[14px] leading-relaxed text-[#e8e8e4]">
         {subtitle}
       </span>
     </button>
@@ -334,7 +334,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                 <span className="block font-heading text-lg font-bold">
                   {height.label}
                 </span>
-                <span className="mt-0.5 block text-[10px] text-[#e8e8e4]">
+                <span className="mt-0.5 block text-[14px] text-[#e8e8e4]">
                   {formatHeightMultiplier(height.priceMultiplier)}
                 </span>
               </button>
@@ -347,7 +347,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
         <button
           type="button"
           onClick={() => setQuoteAdvancedView(false)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#3a3a36] bg-[#222] py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#f6f6f4] transition-colors hover:border-[#555] hover:text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#3a3a36] bg-[#222] py-2.5 text-[14px] font-bold uppercase tracking-[0.12em] text-[#f6f6f4] transition-colors hover:border-[#555] hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
           Wróć do prostego widoku
@@ -355,10 +355,10 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
       ) : (
         <>
           <div className="overflow-hidden rounded-xl bg-[#222] px-4 py-3.5 ring-1 ring-[#333]">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#e30311]">
+            <p className="text-[14px] font-bold uppercase tracking-[0.18em] text-[#e30311]">
               Wycena orientacyjna
             </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-[#eeeeea]">
+            <p className="mt-1 text-[14px] leading-relaxed text-[#eeeeea]">
               Wybierz zakres i podaj wymiar — policzymy liczbę paneli i cenę
               netto. W podglądzie po prawej zobaczysz ogrodzenie.
             </p>
@@ -388,7 +388,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                 <div>
                   <SectionLabel>Długości boków działki</SectionLabel>
                   <div className={cn(CARD_CLASS, "space-y-3")}>
-                    <p className="text-[11px] leading-relaxed text-[#eeeeea]">
+                    <p className="text-[14px] leading-relaxed text-[#eeeeea]">
                       Wpisz długość każdego boku (A + B + C…). Obwód to suma
                       wszystkich boków.
                     </p>
@@ -436,7 +436,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                       <button
                         type="button"
                         onClick={addManualQuoteSide}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#555] bg-[#1a1a18] py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[#f6f6f4] transition-colors hover:border-[#e30311]/60 hover:bg-[#2a0e10] hover:text-white"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#555] bg-[#1a1a18] py-2.5 text-[14px] font-bold uppercase tracking-[0.1em] text-[#f6f6f4] transition-colors hover:border-[#e30311]/60 hover:bg-[#2a0e10] hover:text-white"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Dodaj kolejny bok
@@ -456,7 +456,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                       </span>
                     </div>
                     {quoteFenceClosed && quotePerimeterM && (
-                      <p className="text-[10px] leading-relaxed text-[#e8e8e4]">
+                      <p className="text-[14px] leading-relaxed text-[#e8e8e4]">
                         Na rzucie zmierzono{" "}
                         <strong className="text-[#f6f6f4]">
                           {quotePerimeterM.toFixed(1)} m
@@ -476,7 +476,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                 <div>
                   <SectionLabel>Długość frontu przy ulicy</SectionLabel>
                   <div className={cn(CARD_CLASS, "space-y-3")}>
-                    <p className="text-[11px] leading-relaxed text-[#eeeeea]">
+                    <p className="text-[14px] leading-relaxed text-[#eeeeea]">
                       Szerokość działki od jednej granicy do drugiej przy
                       drodze.
                     </p>
@@ -506,10 +506,10 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
       {quoteAdvancedView && (
         <>
           <div className="overflow-hidden rounded-xl bg-[#e30311] px-4 py-3.5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+            <p className="text-[14px] font-bold uppercase tracking-[0.18em] text-white">
               Wycena na rzucie
             </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-white/85">
+            <p className="mt-1 text-[14px] leading-relaxed text-white/85">
               Wgraj plan działki, ustaw skalę i obrysuj teren — cena policzy się
               automatycznie.
             </p>
@@ -558,7 +558,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                   status={calibrationStatus}
                 />
                 <div className={cn(CARD_CLASS, "space-y-3")}>
-                  <p className="text-[11px] leading-relaxed text-[#eeeeea]">
+                  <p className="text-[14px] leading-relaxed text-[#eeeeea]">
                     Kliknij 2 punkty na znanym odcinku (np. bok działki 20 m), a
                     potem wpisz jego długość w metrach.
                   </p>
@@ -593,14 +593,14 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                       >
                         Narysuj linię skali
                       </span>
-                      <span className="text-[10px] text-[#e0e0dc]">
+                      <span className="text-[14px] text-[#e0e0dc]">
                         2 kliknięcia na rzucie
                       </span>
                     </span>
                   </button>
 
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-[#e0e0dc]">
+                    <label className="mb-1.5 block text-[14px] font-bold uppercase tracking-wider text-[#e0e0dc]">
                       Długość linii odniesienia
                     </label>
                     <DecimalInput
@@ -622,7 +622,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                       !quotePxPerMeter
                     }
                     onClick={() => confirmQuoteCalibration()}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] px-3 py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#c9020f] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#e30311]"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] px-3 py-2.5 text-[14px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#c9020f] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#e30311]"
                   >
                     Zaakceptuj kalibrację
                   </button>
@@ -636,7 +636,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                         </p>
                         <p className="text-sm font-bold text-white">
                           {quotePxPerMeter!.toFixed(1)}{" "}
-                          <span className="text-[11px] font-medium text-[#e8e8e4]">
+                          <span className="text-[14px] font-medium text-[#e8e8e4]">
                             px / metr
                           </span>
                         </p>
@@ -646,7 +646,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-[11px] text-[#e8e8e4]">
+                    <div className="flex items-center gap-2 rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-[14px] text-[#e8e8e4]">
                       <span className="flex h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#e30311]" />
                       {quoteCalibrationLine
                         ? "Wpisz długość i zaakceptuj"
@@ -663,7 +663,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                   status={fenceStatus}
                 />
                 <div className={cn(CARD_CLASS, "space-y-3")}>
-                  <p className="text-[11px] leading-relaxed text-[#eeeeea]">
+                  <p className="text-[14px] leading-relaxed text-[#eeeeea]">
                     Klikaj kolejne narożniki działki (min. 3) — tam ma przebiegać
                     płot. Kliknij × na kropce lub w liście poniżej, aby usunąć
                     punkt.
@@ -674,7 +674,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                       disabled={!scaleAccepted}
                       onClick={() => setQuoteDrawMode("fence")}
                       className={cn(
-                        "flex flex-1 items-center justify-center gap-2 rounded-lg border px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-colors disabled:opacity-40",
+                        "flex flex-1 items-center justify-center gap-2 rounded-lg border px-2 py-2.5 text-[14px] font-bold uppercase tracking-wide transition-colors disabled:opacity-40",
                         quoteDrawMode === "fence"
                           ? "border-[#e30311] bg-[#2a0e10] text-white"
                           : "border-[#3a3a36] text-[#f0f0ec] hover:border-[#555] hover:bg-[#222]",
@@ -704,7 +704,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                   </div>
                   {quoteFencePoints.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#d6d6d2]">
+                      <p className="text-[14px] font-bold uppercase tracking-wider text-[#d6d6d2]">
                         Punkty obrysu
                       </p>
                       <div className="flex flex-wrap gap-1.5">
@@ -713,7 +713,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                             key={`point-${index}`}
                             type="button"
                             onClick={() => removeQuoteFencePointAt(index)}
-                            className="flex items-center gap-1 rounded-md border border-[#3a3a36] bg-[#161614] px-2 py-1 text-[11px] font-semibold text-[#f6f6f4] transition-colors hover:border-[#e30311] hover:text-white"
+                            className="flex items-center gap-1 rounded-md border border-[#3a3a36] bg-[#161614] px-2 py-1 text-[14px] font-semibold text-[#f6f6f4] transition-colors hover:border-[#e30311] hover:text-white"
                             title={`Usuń punkt ${index + 1}`}
                           >
                             <span>{index + 1}</span>
@@ -727,7 +727,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                     <button
                       type="button"
                       onClick={closeQuoteFence}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#c9020f]"
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-2.5 text-[14px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#c9020f]"
                     >
                       <Check className="h-4 w-4" />
                       Zamknij obrys
@@ -760,7 +760,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
         <button
           type="button"
           onClick={applyQuoteToPreview}
-          className="w-full rounded-lg border border-[#e30311]/40 bg-[#2a0e10] py-3 text-[11px] font-bold uppercase tracking-[0.15em] text-white transition-colors hover:bg-[#3a1012]"
+          className="w-full rounded-lg border border-[#e30311]/40 bg-[#2a0e10] py-3 text-[14px] font-bold uppercase tracking-[0.15em] text-white transition-colors hover:bg-[#3a1012]"
         >
           Zastosuj do podglądu ({previewPanelsFromQuote} paneli)
         </button>
@@ -770,7 +770,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
         <button
           type="button"
           onClick={() => setQuoteAdvancedView(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#3a3a36] bg-[#161614] py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[#f6f6f4] transition-colors hover:border-[#555] hover:text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#3a3a36] bg-[#161614] py-3 text-[14px] font-bold uppercase tracking-[0.12em] text-[#f6f6f4] transition-colors hover:border-[#555] hover:text-white"
         >
           <Map className="h-4 w-4 text-[#e30311]" />
           Zaawansowany widok

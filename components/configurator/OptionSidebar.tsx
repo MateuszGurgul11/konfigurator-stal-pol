@@ -51,7 +51,7 @@ type Props = {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d6d6d2]">
+    <p className="mb-3 text-[14px] font-bold uppercase tracking-[0.2em] text-[#d6d6d2]">
       {children}
     </p>
   );
@@ -146,7 +146,7 @@ function OpeningInsertAfterPicker({
     <div className="mt-4">
       <SectionLabel>{label}</SectionLabel>
       <div className="space-y-3 rounded-xl border border-[#333] bg-[#222] p-4">
-        <p className="text-[11px] leading-relaxed text-[#eeeeea]">{hint}</p>
+        <p className="text-[14px] leading-relaxed text-[#eeeeea]">{hint}</p>
         <input
           type="range"
           min={min}
@@ -158,14 +158,14 @@ function OpeningInsertAfterPicker({
           className="w-full accent-[#e30311]"
           aria-label={label}
         />
-        <div className="flex items-center justify-between gap-2 text-[11px] text-[#e8e8e4]">
+        <div className="flex items-center justify-between gap-2 text-[14px] text-[#e8e8e4]">
           <span>Początek</span>
           <span className="font-semibold text-white">
             {formatWicketInsertAfterLabel(clamped, layoutPanelCount)}
           </span>
           <span>Koniec</span>
         </div>
-        <p className="text-[10px] text-[#d6d6d2]">
+        <p className="text-[14px] text-[#d6d6d2]">
           {slotCount} {slotCount === 1 ? "pozycja" : "pozycje dostępne"}
         </p>
       </div>
@@ -252,7 +252,7 @@ function DrivewayGateKindPicker({
             {element && (
               <span
                 className={cn(
-                  "mt-0.5 block text-[11px]",
+                  "mt-0.5 block text-[14px]",
                   selectedKind === kind ? "text-[#f0c0c3]" : "text-[#d6d6d2]",
                 )}
               >
@@ -424,14 +424,14 @@ export function OptionSidebar({
             <h1 className="font-heading text-lg font-bold text-white max-lg:text-base">
               Konfigurator Ogrodzenia
             </h1>
-            <p className="mt-0.5 text-[11px] text-[#d6d6d2]">
+            <p className="mt-0.5 text-[14px] text-[#d6d6d2]">
               STAL-POL | Ogrodzenia stalowe
             </p>
           </div>
           <button
             type="button"
             onClick={resetScope}
-            className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#e8e8e4] underline-offset-2 hover:text-[#e30311] hover:underline"
+            className="shrink-0 text-[14px] font-semibold uppercase tracking-wider text-[#e8e8e4] underline-offset-2 hover:text-[#e30311] hover:underline"
           >
             Zmień zakres
           </button>
@@ -542,7 +542,7 @@ export function OptionSidebar({
                           <span className="block font-heading text-lg font-bold">
                             {fh.label}
                           </span>
-                          <span className="mt-0.5 block text-[10px] text-[#e8e8e4]">
+                          <span className="mt-0.5 block text-[14px] text-[#e8e8e4]">
                             {formatSurchargePerPanel(
                               fh.priceSurchargePerPanel,
                               undefined,
@@ -613,7 +613,7 @@ export function OptionSidebar({
                   if (id) setBramaElementId(id);
                 }}
               />
-              <p className="mt-3 text-[11px] leading-relaxed text-[#e8e8e4]">
+              <p className="mt-3 text-[14px] leading-relaxed text-[#e8e8e4]">
                 Wypełnienie bramy odpowiada wybranemu{" "}
                 <strong className="text-[#f6f6f4]">modelowi ogrodzenia</strong>.
               </p>
@@ -628,7 +628,7 @@ export function OptionSidebar({
                 />
               )}
               {bramaElementId && scope.fence && (
-                <p className="mt-2 text-[11px] leading-relaxed text-[#e8e8e4]">
+                <p className="mt-2 text-[14px] leading-relaxed text-[#e8e8e4]">
                   Możesz też przesuwać bramę strzałkami na podglądzie. Na zakładce{" "}
                   <strong className="text-[#f6f6f4]">Wymiary</strong> uchwyty{" "}
                   <strong className="text-[#f6f6f4]">B1/B2</strong> doprecyzują szerokość
@@ -636,7 +636,7 @@ export function OptionSidebar({
                 </p>
               )}
               {bramaElementId && !scope.fence && (
-                <p className="mt-3 text-[11px] leading-relaxed text-[#e8e8e4]">
+                <p className="mt-3 text-[14px] leading-relaxed text-[#e8e8e4]">
                   Cena bramy jest stała netto — nie zależy od liczby paneli.
                 </p>
               )}
@@ -670,14 +670,14 @@ export function OptionSidebar({
                         onClick={() => setFurtkaElementId(matchedFurtka.id)}
                       />
                     ) : (
-                      <p className="mt-2 text-[11px] text-[#e8e8e4]">
+                      <p className="mt-2 text-[14px] text-[#e8e8e4]">
                         Brak aktywnych furtek w katalogu — dodaj je w panelu admina.
                       </p>
                     )}
                   </div>
                 );
               })()}
-              <p className="mt-3 text-[11px] leading-relaxed text-[#e8e8e4]">
+              <p className="mt-3 text-[14px] leading-relaxed text-[#e8e8e4]">
                 Wypełnienie furtki odpowiada wybranemu{" "}
                 <strong className="text-[#f6f6f4]">modelowi ogrodzenia</strong>.
               </p>
@@ -698,7 +698,7 @@ export function OptionSidebar({
                 />
               )}
               {furtkaEnabled && scope.fence && (
-                <p className="mt-3 text-[11px] leading-relaxed text-[#e8e8e4]">
+                <p className="mt-3 text-[14px] leading-relaxed text-[#e8e8e4]">
                   Możesz też przesuwać furtkę strzałkami na podglądzie. Na zakładce{" "}
                   <strong className="text-[#f6f6f4]">Wymiary</strong> marker{" "}
                   <strong className="text-[#f6f6f4]">F</strong> na rzucie doprecyzuje
@@ -773,7 +773,7 @@ export function OptionSidebar({
       <div className="shrink-0 border-t border-[#2A2A26] bg-[#1A1A18] px-5 py-4 max-lg:landscape:px-4 max-lg:landscape:py-2">
         <div className="mb-3 max-lg:landscape:mb-2">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#d6d6d2]">
+            <span className="text-[14px] font-bold uppercase tracking-[0.15em] text-[#d6d6d2]">
               Wycena orientacyjna
             </span>
             <span className="font-heading text-xl font-bold text-white max-lg:landscape:text-lg">
@@ -783,7 +783,7 @@ export function OptionSidebar({
               </span>
             </span>
           </div>
-          <p className="mt-1 text-right text-[10px] text-[#d6d6d2] max-lg:landscape:hidden">
+          <p className="mt-1 text-right text-[14px] text-[#d6d6d2] max-lg:landscape:hidden">
             {quote.pricePerPanelNet.toLocaleString("pl-PL")} PLN/panel ·{" "}
             {quote.panelUnits} paneli · {quote.perimeterM.toFixed(1)} m bieżących
           </p>
@@ -794,7 +794,7 @@ export function OptionSidebar({
             disabled={isGeneratingPdf}
             onClick={handleDownloadPdf}
             className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors max-lg:landscape:py-2.5",
+              "flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-3.5 text-[14px] font-bold uppercase tracking-[0.18em] text-white transition-colors max-lg:landscape:py-2.5",
               isGeneratingPdf ? "cursor-wait opacity-60" : "hover:bg-[#c9020f]",
             )}
           >
@@ -807,7 +807,7 @@ export function OptionSidebar({
             disabled={!nextTab}
             onClick={() => nextTab && onTabChange(nextTab)}
             className={cn(
-              "w-full rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors max-lg:landscape:py-2.5",
+              "w-full rounded-lg bg-[#e30311] py-3.5 text-[14px] font-bold uppercase tracking-[0.18em] text-white transition-colors max-lg:landscape:py-2.5",
               nextTab ? "hover:bg-[#c9020f]" : "cursor-not-allowed opacity-50",
             )}
           >
