@@ -16,7 +16,7 @@ import {
   Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { calculateQuote } from "@/lib/pricing/calculateQuote";
+import { calculateQuote, formatQuotePanelsBreakdown } from "@/lib/pricing/calculateQuote";
 import {
   ACCEPTED_BG_TYPES,
   MAX_BG_SIZE,
@@ -37,7 +37,7 @@ import { DecimalInput } from "./DecimalInput";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-[14px] font-bold uppercase tracking-[0.2em] text-[#d6d6d2]">
+    <p className="mb-3 text-[14px] font-bold uppercase tracking-wide text-[#d6d6d2]">
       {children}
     </p>
   );
@@ -77,14 +77,14 @@ function StepHeader({
         >
           {status?.tone === "done" ? <Check className="h-3.5 w-3.5" /> : index}
         </span>
-        <span className="text-[14px] font-bold uppercase tracking-[0.16em] text-white">
+        <span className="text-[14px] font-bold uppercase tracking-wide text-white">
           {title}
         </span>
       </div>
       {status && (
         <span
           className={cn(
-            "flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+            "flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-bold uppercase tracking-wide",
             toneClass[status.tone],
           )}
         >
@@ -113,7 +113,7 @@ function ScopeCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full flex-col items-start gap-1 rounded-lg border px-3 py-3 text-left transition-all",
+        "flex min-w-0 w-full flex-col items-start gap-1 rounded-lg border px-3 py-3 text-left transition-all",
         selected
           ? "border-[#e30311] bg-[#2a0e10]"
           : "border-[#333] bg-[#222] hover:border-[#444] hover:bg-[#282828]",
@@ -130,9 +130,11 @@ function ScopeCard({
         >
           {selected && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
         </div>
-        <span className="text-xs font-bold text-white">{title}</span>
+        <span className="min-w-0 text-[14px] font-bold leading-snug text-white">
+          {title}
+        </span>
       </div>
-      <span className="pl-7 text-[14px] leading-relaxed text-[#e8e8e4]">
+      <span className="min-w-0 pl-7 text-[14px] leading-relaxed break-words text-[#e8e8e4]">
         {subtitle}
       </span>
     </button>
@@ -318,7 +320,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
       {scope.fence && (
         <div>
           <SectionLabel>Wysokość ogrodzenia</SectionLabel>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
             {catalog.heights.map((height: Height) => (
               <button
                 key={height.id}
@@ -331,7 +333,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                     : "border-[#333] bg-[#222] text-[#e8e8e4] hover:border-[#444]",
                 )}
               >
-                <span className="block font-heading text-lg font-bold">
+                <span className="block font-sans text-base font-semibold tabular-nums tracking-tight">
                   {height.label}
                 </span>
                 <span className="mt-0.5 block text-[14px] text-[#e8e8e4]">
@@ -355,7 +357,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
       ) : (
         <>
           <div className="overflow-hidden rounded-xl bg-[#222] px-4 py-3.5 ring-1 ring-[#333]">
-            <p className="text-[14px] font-bold uppercase tracking-[0.18em] text-[#e30311]">
+            <p className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#e30311]">
               Wycena orientacyjna
             </p>
             <p className="mt-1 text-[14px] leading-relaxed text-[#eeeeea]">
@@ -368,7 +370,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
             <>
               <div>
                 <SectionLabel>Co chcesz wycenić?</SectionLabel>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid min-w-0 grid-cols-1 gap-2 min-[400px]:grid-cols-2">
                   <ScopeCard
                     selected={quoteFenceScope === "full-perimeter"}
                     title="A · Całe ogrodzenie"
@@ -442,7 +444,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                         Dodaj kolejny bok
                       </button>
                     )}
-                    <div className="flex items-center justify-between rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-xs">
+                    <div className="flex items-center justify-between rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-sm">
                       <span className="text-[#e8e8e4]">
                         Suma{" "}
                         {manualQuoteSides.length > 1
@@ -464,10 +466,10 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                         — ta wartość ma pierwszeństwo w kalkulacji.
                       </p>
                     )}
-                    <div className="flex items-center justify-between rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-xs">
-                      <span className="text-[#e8e8e4]">Szac. panele</span>
-                      <span className="font-semibold text-white">
-                        {quote.estimatedPanels} szt.
+                    <div className="flex items-start justify-between gap-3 rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-sm">
+                      <span className="shrink-0 text-[#e8e8e4]">Szac. panele</span>
+                      <span className="text-right font-semibold leading-snug text-white">
+                        {formatQuotePanelsBreakdown(quote)}
                       </span>
                     </div>
                   </div>
@@ -489,10 +491,10 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                         </span>
                       }
                     />
-                    <div className="flex items-center justify-between rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-xs">
-                      <span className="text-[#e8e8e4]">Szac. panele</span>
-                      <span className="font-semibold text-white">
-                        {quote.estimatedPanels} szt.
+                    <div className="flex items-start justify-between gap-3 rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-sm">
+                      <span className="shrink-0 text-[#e8e8e4]">Szac. panele</span>
+                      <span className="text-right font-semibold leading-snug text-white">
+                        {formatQuotePanelsBreakdown(quote)}
                       </span>
                     </div>
                   </div>
@@ -506,7 +508,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
       {quoteAdvancedView && (
         <>
           <div className="overflow-hidden rounded-xl bg-[#e30311] px-4 py-3.5">
-            <p className="text-[14px] font-bold uppercase tracking-[0.18em] text-white">
+            <p className="text-[14px] font-bold uppercase tracking-[0.08em] text-white">
               Wycena na rzucie
             </p>
             <p className="mt-1 text-[14px] leading-relaxed text-white/85">
@@ -517,7 +519,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
               {["Rzut", "Skala", "Obrys", "Cena"].map((label, i) => (
                 <span
                   key={label}
-                  className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/95"
+                  className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white/95"
                 >
                   {i + 1}. {label}
                 </span>
@@ -585,7 +587,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                     <span className="flex flex-col">
                       <span
                         className={cn(
-                          "text-xs font-bold",
+                          "text-sm font-bold",
                           quoteDrawMode === "calibrate"
                             ? "text-white"
                             : "text-[#f4f4f0]",
@@ -631,7 +633,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                     <div className="flex items-center gap-3 rounded-lg border border-[#1f7a4a]/40 bg-[#0e2a1a] px-3 py-2.5">
                       <Gauge className="h-5 w-5 shrink-0 text-[#4ade80]" />
                       <div className="min-w-0">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-[#4ade80]/70">
+                        <p className="text-xs font-bold uppercase tracking-wide text-[#4ade80]">
                           Skala ustawiona — rysuj obrys
                         </p>
                         <p className="text-sm font-bold text-white">
@@ -641,7 +643,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                           </span>
                         </p>
                       </div>
-                      <span className="ml-auto shrink-0 rounded-md bg-[#1f7a4a]/25 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-[#4ade80]">
+                      <span className="ml-auto shrink-0 rounded-md bg-[#1f7a4a]/25 px-2 py-1 text-xs font-bold uppercase tracking-wide text-[#4ade80]">
                         Obrys aktywny
                       </span>
                     </div>
@@ -737,10 +739,10 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
                     <div className="flex items-center gap-3 rounded-lg border border-[#e30311]/30 bg-[#2a0e10] px-3 py-3">
                       <Spline className="h-5 w-5 shrink-0 text-[#e30311]" />
                       <div>
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-[#e8e8e4]">
+                        <p className="text-xs font-bold uppercase tracking-wider text-[#e8e8e4]">
                           Obwód działki
                         </p>
-                        <p className="font-heading text-lg font-bold leading-none text-white">
+                        <p className="font-sans text-base font-semibold tabular-nums leading-none tracking-tight text-white">
                           {quotePerimeterM.toFixed(1)}{" "}
                           <span className="text-xs font-medium text-[#e8e8e4]">
                             m bież.
@@ -760,7 +762,7 @@ export function QuoteSidebarPanel({ catalog, selection }: Props) {
         <button
           type="button"
           onClick={applyQuoteToPreview}
-          className="w-full rounded-lg border border-[#e30311]/40 bg-[#2a0e10] py-3 text-[14px] font-bold uppercase tracking-[0.15em] text-white transition-colors hover:bg-[#3a1012]"
+          className="w-full rounded-lg border border-[#e30311]/40 bg-[#2a0e10] py-3 text-[14px] font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-[#3a1012]"
         >
           Zastosuj do podglądu ({previewPanelsFromQuote} paneli)
         </button>

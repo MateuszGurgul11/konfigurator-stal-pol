@@ -37,15 +37,15 @@ function DesktopSidebar({
   return (
     <aside
       className={cn(
-        "hidden shrink-0 flex-col bg-[#1A1A18] transition-all duration-300 ease-out lg:flex lg:border-r lg:border-[#2A2A26]",
+        "hidden shrink-0 flex-col overflow-x-hidden bg-[#1A1A18] transition-all duration-300 ease-out lg:flex lg:border-r lg:border-[#2A2A26]",
         sidebarOpen
-          ? "lg:w-[min(480px,38vw)] xl:w-[min(540px,40vw)]"
+          ? "lg:min-w-[400px] lg:w-[min(480px,42vw)] xl:w-[min(540px,40vw)]"
           : "w-0 overflow-hidden border-r-0 lg:w-0",
       )}
     >
       <div
         className={cn(
-          "flex h-full w-full min-w-[480px] flex-col xl:min-w-[540px]",
+          "flex h-full w-full min-w-0 flex-col",
           !sidebarOpen && "pointer-events-none opacity-0",
         )}
       >
@@ -107,7 +107,7 @@ function MobileOptionsDrawer({
           >
             Zmień zakres
           </button>
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white max-lg:landscape:hidden">
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-white max-lg:landscape:hidden">
             Opcje
           </p>
           <button
@@ -243,7 +243,7 @@ export function ConfiguratorShell() {
 
         {showDemoBanner && (
           <div className="shrink-0 border-b border-amber-200/20 bg-amber-950/40 px-5 py-2 text-center max-lg:px-4">
-            <p className="text-[11px] text-amber-400/90 max-lg:text-[10px]">
+            <p className="text-xs text-amber-400/90">
               API niedostępne — wyświetlane są dane demo. Sprawdź backend na
               Render i zmienną NEXT_PUBLIC_API_URL (lokalnie) lub proxy /api
               (produkcja Vercel).{" "}
@@ -261,7 +261,7 @@ export function ConfiguratorShell() {
             <p className="max-w-md text-sm text-[#ff6b6b]">{error}</p>
             <Link
               href="/admin"
-              className="rounded-lg bg-[#e30311] px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider text-white hover:bg-[#c9020f]"
+              className="rounded-lg bg-[#e30311] px-5 py-2.5 text-sm font-bold uppercase tracking-[0.08em] text-white hover:bg-[#c9020f]"
             >
               Przejdź do panelu admina
             </Link>

@@ -163,6 +163,10 @@ export type QuoteResult = {
   perimeterM: number;
   estimatedPanels: number;
   panelUnits: number;
+  /** Ile paneli szerokości zajmuje brama (0 = brak). */
+  bramaPanelUnits: number;
+  /** Ile paneli szerokości zajmuje furtka (0 = brak). */
+  furtkaPanelUnits: number;
   pricePerPanelNet: number;
   /** @deprecated Użyj pricePerPanelNet — zachowane dla kompatybilności UI. */
   pricePerMeterNet: number;

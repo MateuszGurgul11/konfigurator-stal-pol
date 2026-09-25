@@ -417,7 +417,7 @@ export function QuotePlanCanvas() {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex h-9 items-center gap-2 rounded-full border border-black/5 bg-white/85 px-3.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#303638] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white"
+          className="flex h-9 items-center gap-2 rounded-full border border-black/5 bg-white/85 px-3.5 text-xs font-bold uppercase tracking-[0.08em] text-[#303638] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white"
         >
           <ImagePlus className="h-4 w-4 text-[#e30311]" />
           {quotePlanImageUrl ? "Zmień rzut" : "Wgraj rzut"}
@@ -432,7 +432,7 @@ export function QuotePlanCanvas() {
                   setQuoteCalibrationPending(null);
                 }}
                 className={cn(
-                  "flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors",
+                  "flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-bold uppercase tracking-[0.06em] transition-colors",
                   quoteDrawMode === "calibrate"
                     ? "bg-[#e30311] text-white shadow-sm"
                     : "text-[#2f3437] hover:bg-black/5",
@@ -446,7 +446,7 @@ export function QuotePlanCanvas() {
                 disabled={!quotePxPerMeter || !!quoteCalibrationLine}
                 onClick={() => setQuoteDrawMode("fence")}
                 className={cn(
-                  "flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
+                  "flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
                   quoteDrawMode === "fence"
                     ? "bg-[#e30311] text-white shadow-sm"
                     : "text-[#2f3437] hover:bg-black/5",
@@ -468,11 +468,50 @@ export function QuotePlanCanvas() {
         )}
       </div>
 
-      <div className="absolute bottom-20 left-3 right-3 z-20 flex flex-wrap items-center justify-center gap-2 lg:hidden">
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col items-center gap-2 px-3 pb-safe pt-2 lg:hidden">
+        {quotePlanImageUrl && (
+          <div className="pointer-events-none flex w-full max-w-md items-center gap-2.5 rounded-xl border border-black/5 bg-white/90 px-3 py-2.5 shadow-lg shadow-black/10 backdrop-blur">
+            <span
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white",
+                quoteDrawMode === "calibrate" ? "bg-[#e30311]" : "bg-[#1A1A18]",
+              )}
+            >
+              {quoteDrawMode === "calibrate" ? (
+                <Ruler className="h-4 w-4" />
+              ) : (
+                <Fence className="h-4 w-4" />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#e30311]">
+                {quoteDrawMode === "calibrate"
+                  ? "Krok 1 · Skala"
+                  : "Krok 2 · Obrys"}
+              </p>
+              <p className="text-xs font-semibold leading-snug text-[#303638]">
+                {quoteDrawMode === "calibrate"
+                  ? quoteCalibrationPending
+                    ? "Kliknij drugi punkt, aby domknąć linię skali"
+                    : quoteCalibrationLine
+                      ? "Wpisz długość i zaakceptuj kalibrację w panelu bocznym"
+                      : "Kliknij pierwszy punkt linii skali"
+                  : quoteFenceClosed
+                    ? bramaEnabled || furtkaEnabled
+                      ? "Przeciągnij uchwyty bramy (B1/B2) lub furtkę (F) wzdłuż obrysu"
+                      : "Obrys gotowy — × na kropce usuwa punkt"
+                    : quoteFencePoints.length === 0
+                      ? "Klikaj narożniki działki (min. 3). × usuwa punkt"
+                      : `Punkt ${quoteFencePoints.length} — kliknij kolejny narożnik lub × by usunąć`}
+              </p>
+            </div>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-center gap-2 pb-3">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex h-10 items-center gap-2 rounded-full border border-black/5 bg-white/85 px-3.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#303638] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white"
+          className="flex h-11 items-center gap-2 rounded-full border border-black/5 bg-white/85 px-3.5 text-xs font-bold uppercase tracking-[0.08em] text-[#303638] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white"
         >
           <ImagePlus className="h-4 w-4 text-[#e30311]" />
           {quotePlanImageUrl ? "Zmień rzut" : "Wgraj rzut"}
@@ -487,7 +526,7 @@ export function QuotePlanCanvas() {
                   setQuoteCalibrationPending(null);
                 }}
                 className={cn(
-                  "flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors",
+                  "flex h-11 items-center gap-1.5 rounded-full px-3 text-xs font-bold uppercase tracking-[0.06em] transition-colors",
                   quoteDrawMode === "calibrate"
                     ? "bg-[#e30311] text-white shadow-sm"
                     : "text-[#2f3437] hover:bg-black/5",
@@ -501,7 +540,7 @@ export function QuotePlanCanvas() {
                 disabled={!quotePxPerMeter || !!quoteCalibrationLine}
                 onClick={() => setQuoteDrawMode("fence")}
                 className={cn(
-                  "flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
+                  "flex h-11 items-center gap-1.5 rounded-full px-3 text-xs font-bold uppercase tracking-[0.06em] transition-colors disabled:cursor-not-allowed disabled:opacity-35",
                   quoteDrawMode === "fence"
                     ? "bg-[#e30311] text-white shadow-sm"
                     : "text-[#2f3437] hover:bg-black/5",
@@ -514,13 +553,14 @@ export function QuotePlanCanvas() {
             <button
               type="button"
               onClick={resetQuoteDrawing}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-black/5 bg-white/85 text-[#3a4044] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white hover:text-[#e30311]"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-black/5 bg-white/85 text-[#3a4044] shadow-md shadow-black/10 backdrop-blur transition-colors hover:bg-white hover:text-[#e30311]"
               title="Resetuj rysowanie"
             >
               <RotateCcw className="h-4 w-4" />
             </button>
           </>
         )}
+        </div>
       </div>
 
       {!quotePlanImageUrl ? (
@@ -540,8 +580,8 @@ export function QuotePlanCanvas() {
               {["Skala", "Obrys", "Cena"].map((label, i) => (
                 <div key={label} className="flex items-center gap-2">
                   {i > 0 && <span className="h-px w-4 bg-[#d4d6da]" />}
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#3a4044]">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f0d3d5] text-[10px] font-bold text-[#e30311]">
+                  <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#3a4044]">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f0d3d5] text-xs font-bold text-[#e30311]">
                       {i + 1}
                     </span>
                     {label}
@@ -552,7 +592,7 @@ export function QuotePlanCanvas() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="rounded-lg bg-[#e30311] px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white shadow-md shadow-[#e30311]/25 transition-colors hover:bg-[#c9020f]"
+              className="min-h-11 rounded-lg bg-[#e30311] px-6 py-2.5 text-xs font-bold uppercase tracking-[0.08em] text-white shadow-md shadow-[#e30311]/25 transition-colors hover:bg-[#c9020f]"
             >
               Wybierz plik
             </button>
@@ -592,7 +632,7 @@ export function QuotePlanCanvas() {
                   type="button"
                   aria-label={`Usuń punkt ${i + 1}`}
                   title={`Usuń punkt ${i + 1}`}
-                  className="absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-transparent text-[10px] font-bold text-[#e30311] opacity-0 transition-all hover:border-[#e30311] hover:bg-white/90 hover:opacity-100 focus-visible:border-[#e30311] focus-visible:bg-white/90 focus-visible:opacity-100"
+                  className="absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-transparent text-xs font-bold text-[#e30311] opacity-0 transition-all hover:border-[#e30311] hover:bg-white/90 hover:opacity-100 focus-visible:border-[#e30311] focus-visible:bg-white/90 focus-visible:opacity-100 max-lg:h-11 max-lg:w-11 max-lg:border-[#e30311]/40 max-lg:bg-white/80 max-lg:opacity-100"
                   style={{
                     left: `${p.x}%`,
                     top: `${p.y}%`,
@@ -716,7 +756,7 @@ export function QuotePlanCanvas() {
             ))}
             {calibrationMidpoint && quoteCalibrationLengthM > 0 && (
               <span
-                className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full bg-[#e30311] px-2 py-0.5 text-[10px] font-bold text-white shadow-md ring-2 ring-white/70"
+                className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full bg-[#e30311] px-2.5 py-1 text-xs font-bold text-white shadow-md ring-2 ring-white/70"
                 style={{
                   left: `${calibrationMidpoint.x}%`,
                   top: `${calibrationMidpoint.y}%`,
@@ -734,12 +774,12 @@ export function QuotePlanCanvas() {
                   top: `${fenceCentroid.y}%`,
                 }}
               >
-                <span className="text-[8px] font-bold uppercase tracking-wider text-white/55">
+                <span className="text-xs font-bold uppercase tracking-wide text-white/70">
                   Obwód
                 </span>
                 <span className="font-heading text-sm font-bold leading-none text-white">
                   {quotePerimeterM.toFixed(1)}{" "}
-                  <span className="text-[9px] font-medium text-white/60">m</span>
+                  <span className="text-xs font-medium text-white/60">m</span>
                 </span>
               </span>
             )}
@@ -759,7 +799,7 @@ export function QuotePlanCanvas() {
                 <button
                   type="button"
                   aria-label="Początek bramy"
-                  className="absolute z-30 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center rounded-full border-2 border-white bg-[#2563eb] text-[9px] font-bold text-white shadow-md active:cursor-grabbing"
+                  className="absolute z-30 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center rounded-full border-2 border-white bg-[#2563eb] text-xs font-bold text-white shadow-md active:cursor-grabbing"
                   style={{
                     left: `${bramaStartPoint.x}%`,
                     top: `${bramaStartPoint.y}%`,
@@ -773,7 +813,7 @@ export function QuotePlanCanvas() {
                 <button
                   type="button"
                   aria-label="Koniec bramy"
-                  className="absolute z-30 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center rounded-full border-2 border-white bg-[#2563eb] text-[9px] font-bold text-white shadow-md active:cursor-grabbing"
+                  className="absolute z-30 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center rounded-full border-2 border-white bg-[#2563eb] text-xs font-bold text-white shadow-md active:cursor-grabbing"
                   style={{
                     left: `${bramaEndPoint.x}%`,
                     top: `${bramaEndPoint.y}%`,
@@ -787,7 +827,7 @@ export function QuotePlanCanvas() {
                 <button
                   type="button"
                   aria-label="Furtka"
-                  className="absolute z-30 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center rounded-md border-2 border-white bg-[#f59e0b] text-[9px] font-bold text-white shadow-md active:cursor-grabbing"
+                  className="absolute z-30 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center rounded-md border-2 border-white bg-[#f59e0b] text-xs font-bold text-white shadow-md active:cursor-grabbing"
                   style={{
                     left: `${furtkaPoint.x}%`,
                     top: `${furtkaPoint.y}%`,
@@ -802,8 +842,7 @@ export function QuotePlanCanvas() {
 
           <div
             className={cn(
-              "pointer-events-none absolute left-3 right-3 flex items-center gap-2.5 rounded-xl border border-black/5 bg-white/90 px-3 py-2.5 shadow-lg shadow-black/10 backdrop-blur sm:right-auto sm:max-w-md lg:left-4 lg:bottom-4",
-              quotePlanImageUrl ? "bottom-28 max-lg:bottom-28 lg:bottom-4" : "bottom-4",
+              "pointer-events-none absolute left-3 right-3 hidden items-center gap-2.5 rounded-xl border border-black/5 bg-white/90 px-3 py-2.5 shadow-lg shadow-black/10 backdrop-blur sm:right-auto sm:max-w-md lg:left-4 lg:bottom-4 lg:flex",
             )}
           >
             <span
@@ -819,7 +858,7 @@ export function QuotePlanCanvas() {
               )}
             </span>
             <div className="min-w-0">
-              <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#e30311]">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#e30311]">
                 {quoteDrawMode === "calibrate"
                   ? "Krok 1 · Skala"
                   : "Krok 2 · Obrys"}

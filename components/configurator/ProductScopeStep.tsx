@@ -56,7 +56,7 @@ export function ProductScopeStep() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center bg-[#1A1A18] px-6 py-12 max-lg:min-h-[calc(100dvh-3.5rem)] max-lg:px-4 max-lg:py-10 max-lg:pb-safe">
       <div className="w-full max-w-lg">
-        <p className="text-center text-[10px] font-bold uppercase tracking-[0.25em] text-[#e30311]">
+        <p className="text-center text-xs font-bold uppercase tracking-[0.12em] text-[#e30311]">
           STAL-POL
         </p>
         <h1 className="mt-2 text-center font-heading text-2xl font-bold text-white max-lg:text-xl">
@@ -127,7 +127,7 @@ export function ProductScopeStep() {
         <button
           type="button"
           onClick={handleConfirm}
-          className="mt-8 w-full rounded-lg bg-[#e30311] py-3.5 text-[11px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#c9020f]"
+          className="mt-8 w-full rounded-lg bg-[#e30311] py-3.5 text-sm font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-[#c9020f]"
         >
           Przejdź do konfiguratora
         </button>

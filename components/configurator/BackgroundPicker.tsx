@@ -78,7 +78,7 @@ export function BackgroundPicker() {
               alt="Twoje zdjęcie"
               className="h-full w-full object-cover"
             />
-            <span className="absolute inset-x-0 bottom-0 bg-black/55 px-2 py-1 text-[10px] font-semibold text-white">
+            <span className="absolute inset-x-0 bottom-0 bg-black/55 px-2 py-1 text-xs font-semibold text-white">
               Twoje zdjęcie
             </span>
             <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#e30311] shadow-md">
@@ -97,7 +97,7 @@ export function BackgroundPicker() {
         Prześlij zdjęcie własnego domu
       </button>
 
-      <p className="text-[10px] leading-relaxed text-[#d6d6d2]">
+      <p className="text-xs leading-relaxed text-[#d6d6d2]">
         JPG, PNG lub WebP do 5 MB. Zdjęcie działki lub posesji pomoże lepiej
         ocenić wygląd ogrodzenia.
       </p>

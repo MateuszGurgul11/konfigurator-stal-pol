@@ -16,6 +16,39 @@ import { resolveElement, resolveElementPriceNet } from "@/lib/pricing/element-pr
 import { resolveSurchargePerPanel } from "@/lib/pricing/surcharges";
 import { MIN_PREVIEW_PANELS } from "@/lib/configurator/state";
 
+/** Odmiana „panel/panele/paneli” po polsku. */
+export function polishPanelWord(count: number): string {
+  if (count === 1) return "panel";
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "panele";
+  return "paneli";
+}
+
+/** np. „15 paneli + brama (2 panele) + furtka (1 panel)” */
+export function formatQuotePanelsBreakdown(
+  quote: Pick<
+    QuoteResult,
+    "panelUnits" | "bramaPanelUnits" | "furtkaPanelUnits"
+  >,
+): string {
+  const parts: string[] = [];
+  if (quote.panelUnits > 0) {
+    parts.push(`${quote.panelUnits} ${polishPanelWord(quote.panelUnits)}`);
+  }
+  if (quote.bramaPanelUnits > 0) {
+    parts.push(
+      `brama (${quote.bramaPanelUnits} ${polishPanelWord(quote.bramaPanelUnits)})`,
+    );
+  }
+  if (quote.furtkaPanelUnits > 0) {
+    parts.push(
+      `furtka (${quote.furtkaPanelUnits} ${polishPanelWord(quote.furtkaPanelUnits)})`,
+    );
+  }
+  return parts.length > 0 ? parts.join(" + ") : "0 paneli";
+}
+
 type QuoteInput = {
   catalog: CatalogCollections;
   selection: ConfiguratorSelection;
@@ -158,6 +191,9 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
   const bramaSpanUsedM = bramaPanels * panelWidthM;
   const furtkaSpanUsedM = furtkaEnabled
     ? getWicketWidthCm(panelWidthCm) / 100
+    : 0;
+  const furtkaPanels = furtkaEnabled
+    ? Math.max(1, Math.ceil(furtkaSpanUsedM / panelWidthM))
     : 0;
   const openingSpanM = bramaSpanUsedM + furtkaSpanUsedM;
 
@@ -345,6 +381,8 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
     perimeterM: fenceEnabled ? perimeterM : 0,
     estimatedPanels,
     panelUnits,
+    bramaPanelUnits: bramaPanels,
+    furtkaPanelUnits: furtkaPanels,
     pricePerPanelNet: fenceEnabled ? pricePerPanelNet : 0,
     pricePerMeterNet: fenceEnabled ? pricePerMeterNet : 0,
     fenceSubtotal,

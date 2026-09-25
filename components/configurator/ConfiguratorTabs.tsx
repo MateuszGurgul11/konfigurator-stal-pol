@@ -7,12 +7,18 @@ import { getVisibleConfiguratorTabs, type ConfiguratorTab, type ProductScope } f
 const tabs: {
   id: ConfiguratorTab;
   labelLines: string[];
+  mobileLabel?: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { id: "model", labelLines: ["Model"], icon: Box },
   { id: "gates", labelLines: ["Elementy"], icon: Fence },
   { id: "quote", labelLines: ["Wymiary"], icon: Ruler },
-  { id: "review", labelLines: ["Podsumowanie"], icon: ClipboardCheck },
+  {
+    id: "review",
+    labelLines: ["Podsumowanie"],
+    mobileLabel: "Podsum.",
+    icon: ClipboardCheck,
+  },
 ];
 
 type Props = {
@@ -27,7 +33,7 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
 
   return (
     <div className="flex w-full border-b border-[#2A2A26] px-2 pb-0 pt-3 max-lg:landscape:pt-1.5 sm:px-4">
-      {visibleTabs.map(({ id, labelLines, icon: Icon }) => {
+      {visibleTabs.map(({ id, labelLines, mobileLabel, icon: Icon }) => {
         const isActive = active === id;
         return (
           <button
@@ -35,7 +41,7 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
             type="button"
             onClick={() => onChange(id)}
             className={cn(
-              "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-t-lg px-1.5 py-2.5 transition-all max-lg:min-h-[44px] max-lg:flex-row max-lg:justify-center max-lg:gap-1.5 max-lg:landscape:min-h-0 max-lg:landscape:py-1.5 sm:px-2",
+              "relative flex min-h-[44px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-t-lg px-1.5 py-2.5 transition-all max-lg:flex-row max-lg:gap-1.5 max-lg:landscape:min-h-[44px] max-lg:landscape:py-2 sm:px-2",
               isActive
                 ? "bg-[#2A2A26] text-[#e30311]"
                 : "text-[#d6d6d2] hover:bg-[#222] hover:text-[#ecece8]",
@@ -43,14 +49,23 @@ export function ConfiguratorTabs({ active, scope, onChange }: Props) {
           >
             <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-[#e30311]")} />
             <span className="text-center text-[16px] font-semibold leading-[1.2] tracking-normal normal-case">
-              {labelLines.map((line) => (
-                <span key={line} className="block truncate">
-                  {line}
-                </span>
-              ))}
+              {mobileLabel ? (
+                <>
+                  <span className="block truncate lg:hidden">{mobileLabel}</span>
+                  <span className="hidden truncate lg:block">
+                    {labelLines[0]}
+                  </span>
+                </>
+              ) : (
+                labelLines.map((line) => (
+                  <span key={line} className="block truncate">
+                    {line}
+                  </span>
+                ))
+              )}
             </span>
             {isActive && (
-              <span className="h-0.5 w-full max-w-[3rem] rounded-full bg-[#e30311]" />
+              <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#e30311]" />
             )}
           </button>
         );

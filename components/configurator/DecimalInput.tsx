@@ -67,7 +67,7 @@ export function DecimalInput({
           setDraft(null);
         }}
         className={cn(
-          "w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-sm font-semibold text-white outline-none transition-colors focus:border-[#e30311]",
+          "w-full rounded-lg border border-[#3a3a36] bg-[#161614] px-3 py-2.5 text-base font-semibold text-white outline-none transition-colors focus:border-[#e30311]",
           suffix ? "pr-16" : "pr-3",
           className,
         )}

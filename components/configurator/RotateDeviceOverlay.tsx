@@ -74,7 +74,7 @@ export function RotateDeviceOverlay() {
     >
       <a
         href={STAL_POL_WEBSITE_URL}
-        className="absolute left-4 flex items-center gap-2 rounded-lg border border-[#333] bg-[#222]/90 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#f6f6f4] transition-colors hover:border-[#444] hover:bg-[#2A2A26] hover:text-white"
+        className="absolute left-4 flex items-center gap-2 rounded-lg border border-[#333] bg-[#222]/90 px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.08em] min-h-11 text-[#f6f6f4] transition-colors hover:border-[#444] hover:bg-[#2A2A26] hover:text-white"
         style={{ top: "calc(1rem + env(safe-area-inset-top, 0px))" }}
       >
         <ArrowLeft className="h-4 w-4 shrink-0 text-[#e30311]" aria-hidden />
@@ -82,7 +82,7 @@ export function RotateDeviceOverlay() {
       </a>
 
       <div className="rotate-hint-content flex flex-col items-center gap-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#e30311]">
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#e30311]">
           STAL-POL
         </p>
 
@@ -106,7 +106,7 @@ export function RotateDeviceOverlay() {
 
         <a
           href={STAL_POL_WEBSITE_URL}
-          className="text-[11px] font-medium text-[#d6d6d2] underline-offset-4 transition-colors hover:text-[#e30311] hover:underline"
+          className="text-xs font-medium text-[#d6d6d2] underline-offset-4 transition-colors hover:text-[#e30311] hover:underline"
         >
           Wróć na stronę internetową STAL-POL
         </a>

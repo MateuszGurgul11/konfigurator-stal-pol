@@ -635,8 +635,8 @@ function drawWicketHinges(
     <rect x="${strapX.toFixed(1)}" y="${(cy - strapH / 2).toFixed(1)}" width="${strapW.toFixed(1)}" height="${strapH.toFixed(1)}" fill="${GALV_BODY}" stroke="${GALV_EDGE}" stroke-width="0.6" rx="1"/>
     <rect x="${(segmentEdgeX - barrelW / 2).toFixed(1)}" y="${(cy - barrelH / 2).toFixed(1)}" width="${barrelW.toFixed(1)}" height="${barrelH.toFixed(1)}" fill="${GALV_BODY}" stroke="${GALV_EDGE}" stroke-width="0.7" rx="${(barrelW / 2).toFixed(1)}"/>
     <rect x="${(segmentEdgeX - barrelW / 2 + 0.6).toFixed(1)}" y="${(cy - barrelH / 2 + 0.6).toFixed(1)}" width="1.2" height="${(barrelH - 1.2).toFixed(1)}" fill="${GALV_HI}" opacity="0.85" rx="0.6"/>
-    <circle cx="${boltX.toFixed(1)}" cy="${cy.toFixed(1)}" r="${Math.max(1.6, barrelW * 0.32).toFixed(1)}" fill="${GALV_BOLT}"/>
-    <circle cx="${boltX.toFixed(1)}" cy="${cy.toFixed(1)}" r="${Math.max(0.7, barrelW * 0.14).toFixed(1)}" fill="${GALV_HI}" opacity="0.7"/>`;
+    <circle cx="${boltX.toFixed(1)}" cy="${cy.toFixed(1)}" r="${Math.max(1.0, barrelW * 0.2).toFixed(1)}" fill="${GALV_BOLT}"/>
+    <circle cx="${boltX.toFixed(1)}" cy="${cy.toFixed(1)}" r="${Math.max(0.45, barrelW * 0.09).toFixed(1)}" fill="${GALV_HI}" opacity="0.7"/>`;
 
   return `<!-- Wicket hinges -->
     ${hinge(y + h * 0.17)}
@@ -1582,7 +1582,7 @@ export function buildFenceSvg(params: FenceRenderParams): string {
   <line x1="${dimX}" y1="${dimTopY}" x2="${dimX}" y2="${dimBotY}" stroke="#e30311" stroke-width="1.5" stroke-dasharray="4 3"/>
   <line x1="${dimX - 5}" y1="${dimTopY}" x2="${dimX + 5}" y2="${dimTopY}" stroke="#e30311" stroke-width="2"/>
   <line x1="${dimX - 5}" y1="${dimBotY}" x2="${dimX + 5}" y2="${dimBotY}" stroke="#e30311" stroke-width="2"/>
-  <text x="${dimX + 9}" y="${dimMidY + 5}" font-size="13" font-weight="700" fill="#e30311" font-family="system-ui,sans-serif">${heightM.toFixed(2).replace(".", ",")} m</text>`
+  <text x="${dimX + 9}" y="${dimMidY + 4}" font-size="11" font-weight="500" fill="#e30311" font-family="var(--font-inter), system-ui, sans-serif">${heightM.toFixed(2).replace(".", ",")} m</text>`
   }
 </svg>`;
 }

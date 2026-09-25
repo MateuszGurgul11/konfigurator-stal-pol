@@ -193,7 +193,7 @@ function StretchHandle({
     <div
       data-stretch-handle=""
       role="presentation"
-      className={`absolute z-30 h-4 w-4 rounded-sm border-2 border-white bg-[#e30311] shadow-md max-lg:h-5 max-lg:w-5 ${pos[side]}`}
+      className={`absolute z-30 h-4 w-4 rounded-sm border-2 border-white bg-[#e30311] shadow-md max-lg:h-11 max-lg:w-11 max-lg:border-[3px] ${pos[side]}`}
       onPointerDown={(e) => onPointerDown(e, side)}
     />
   );
@@ -217,7 +217,7 @@ function ResizeHandle({
     <div
       data-resize-handle=""
       role="presentation"
-      className={`absolute z-30 h-3.5 w-3.5 rounded-sm border-2 border-white bg-[#e30311] shadow-md max-lg:h-5 max-lg:w-5 ${pos[corner]}`}
+      className={`absolute z-30 h-3.5 w-3.5 rounded-sm border-2 border-white bg-[#e30311] shadow-md max-lg:h-11 max-lg:w-11 max-lg:border-[3px] ${pos[corner]}`}
       onPointerDown={(e) => onPointerDown(e, corner)}
     />
   );
@@ -239,11 +239,11 @@ function FenceInteractionHint({ inverseScale }: { inverseScale: number }) {
     >
       <div className="flex items-center gap-2 rounded-full border border-[#e30311]/25 bg-white/95 px-3.5 py-2 shadow-lg backdrop-blur-sm">
         <Hand className="h-4 w-4 shrink-0 text-[#e30311]" />
-        <span className="text-[11px] font-semibold text-[#303638]">
+        <span className="text-xs font-semibold text-[#303638]">
           Kliknij płot i przeciągnij
         </span>
       </div>
-      <div className="flex items-center gap-3 text-[9px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-md">
+      <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-white/90 drop-shadow-md">
         <span className="flex items-center gap-1">
           <Maximize2 className="h-3 w-3" />
           Rogi · skala
@@ -270,10 +270,10 @@ function PreviewInfoBar({
           key={label}
           className="rounded-lg border border-[#e5e7eb] bg-white/92 px-3 py-2 shadow-sm backdrop-blur-md"
         >
-          <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#e30311]">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#e30311]">
             {label}
           </p>
-          <p className="text-xs font-semibold text-[#303638] whitespace-nowrap">
+          <p className="max-w-[14rem] text-xs font-semibold leading-snug text-[#303638] line-clamp-2">
             {value}
           </p>
         </div>
@@ -819,7 +819,17 @@ export function FencePreview({ catalog, selection }: Props) {
       </div>
 
       <div className="lg:hidden">
-        <PreviewControlsBar className="left-3 right-auto top-3" accent />
+        <PreviewControlsBar className="left-3 right-auto top-3" accent>
+          <button
+            type="button"
+            aria-label="Resetuj pozycję płotu"
+            title="Resetuj pozycję płotu"
+            onClick={resetFenceTransform}
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-[#e5e7eb] bg-white/92 text-[#3a4044] shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#303638]"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        </PreviewControlsBar>
       </div>
 
       {/* Scene */}
@@ -925,12 +935,12 @@ export function FencePreview({ catalog, selection }: Props) {
                     e.stopPropagation();
                     setBramaInsertAfter(resolvedGateInsertAfter - 1);
                   }}
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35"
+                  className="flex h-11 w-11 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35 lg:h-9 lg:w-9"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
                 <div className="min-w-0 flex-1 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#e30311]">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#e30311]">
                     Pozycja bramy
                   </p>
                   <p className="truncate text-xs font-semibold text-[#303638]">
@@ -947,7 +957,7 @@ export function FencePreview({ catalog, selection }: Props) {
                     e.stopPropagation();
                     setBramaInsertAfter(resolvedGateInsertAfter + 1);
                   }}
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35"
+                  className="flex h-11 w-11 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35 lg:h-9 lg:w-9"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
@@ -963,12 +973,12 @@ export function FencePreview({ catalog, selection }: Props) {
                     e.stopPropagation();
                     setFurtkaInsertAfter(resolvedWicketInsertAfter - 1);
                   }}
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35"
+                  className="flex h-11 w-11 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35 lg:h-9 lg:w-9"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
                 <div className="min-w-0 flex-1 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#e30311]">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#e30311]">
                     Pozycja furtki
                   </p>
                   <p className="truncate text-xs font-semibold text-[#303638]">
@@ -985,14 +995,14 @@ export function FencePreview({ catalog, selection }: Props) {
                     e.stopPropagation();
                     setFurtkaInsertAfter(resolvedWicketInsertAfter + 1);
                   }}
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35"
+                  className="flex h-11 w-11 items-center justify-center rounded-md text-[#303638] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-35 lg:h-9 lg:w-9"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
               </div>
             )}
             {isLgUp && (
-              <p className="rounded-md border border-[#e5e7eb] bg-white/92 px-3 py-1 text-[10px] text-[#3a4044] shadow-sm backdrop-blur-sm">
+              <p className="rounded-md border border-[#e5e7eb] bg-white/92 px-3 py-1 text-xs text-[#3a4044] shadow-sm backdrop-blur-sm">
                 Przeciągnij aby przesunąć · boki: panele · rogi: skala · scroll:
                 zoom
               </p>
@@ -1014,7 +1024,7 @@ export function FencePreview({ catalog, selection }: Props) {
               {openingLabels.length > 0 ? ` · ${openingLabels.join(" · ")}` : ""}
             </span>
           </div>
-          <span className="ml-auto text-[10px] uppercase tracking-wider text-[#4a4f52]">
+          <span className="ml-auto text-xs uppercase tracking-wide text-[#4a4f52]">
             Podgląd 2D · aktualizacja na żywo
           </span>
         </div>

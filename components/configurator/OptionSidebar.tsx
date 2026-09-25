@@ -27,7 +27,10 @@ import { ConfiguratorTabs } from "./ConfiguratorTabs";
 import { BackgroundPicker } from "./BackgroundPicker";
 import { QuoteSidebarPanel } from "./QuoteSidebarPanel";
 import { PdfDocument } from "./PdfDocument";
-import { calculateQuote } from "@/lib/pricing/calculateQuote";
+import {
+  calculateQuote,
+  formatQuotePanelsBreakdown,
+} from "@/lib/pricing/calculateQuote";
 import { generateConfiguratorPdf } from "@/lib/pdf/generateConfiguratorPdf";
 import { resolveSurchargePerPanel } from "@/lib/pricing/surcharges";
 import { resolvePanelWidthCm } from "@/lib/pricing/variant-prices";
@@ -51,7 +54,7 @@ type Props = {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-[14px] font-bold uppercase tracking-[0.2em] text-[#d6d6d2]">
+    <p className="mb-3 text-[14px] font-bold uppercase tracking-wide text-[#d6d6d2]">
       {children}
     </p>
   );
@@ -417,7 +420,7 @@ export function OptionSidebar({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 min-w-0 flex-col">
       <div className="border-b border-[#2A2A26] px-5 py-4 max-lg:px-4 max-lg:landscape:hidden">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -526,7 +529,7 @@ export function OptionSidebar({
                 <>
                   <div className="mt-4">
                     <SectionLabel>Wysokość podmurówki</SectionLabel>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
                       {catalog.footingHeights.map((fh: FootingHeight) => (
                         <button
                           key={fh.id}
@@ -771,21 +774,22 @@ export function OptionSidebar({
       </div>
 
       <div className="shrink-0 border-t border-[#2A2A26] bg-[#1A1A18] px-5 py-4 max-lg:landscape:px-4 max-lg:landscape:py-2">
-        <div className="mb-3 max-lg:landscape:mb-2">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[14px] font-bold uppercase tracking-[0.15em] text-[#d6d6d2]">
+        <div className="mb-3 min-w-0 max-lg:landscape:mb-2">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+            <span className="shrink-0 text-[14px] font-bold uppercase tracking-[0.08em] text-[#d6d6d2]">
               Wycena orientacyjna
             </span>
-            <span className="font-heading text-xl font-bold text-white max-lg:landscape:text-lg">
+            <span className="min-w-0 text-left font-sans text-lg font-semibold tabular-nums tracking-tight text-white sm:text-right max-lg:landscape:text-base">
               {Math.round(quote.totalNet).toLocaleString("pl-PL")}{" "}
-              <span className="text-sm font-semibold text-[#e8e8e4] max-lg:landscape:text-xs">
+              <span className="text-sm font-medium text-[#e8e8e4]">
                 PLN netto
               </span>
             </span>
           </div>
-          <p className="mt-1 text-right text-[14px] text-[#d6d6d2] max-lg:landscape:hidden">
+          <p className="mt-1 break-words text-left text-xs leading-snug text-[#d6d6d2] sm:text-right">
             {quote.pricePerPanelNet.toLocaleString("pl-PL")} PLN/panel ·{" "}
-            {quote.panelUnits} paneli · {quote.perimeterM.toFixed(1)} m bieżących
+            {formatQuotePanelsBreakdown(quote)} ·{" "}
+            {quote.perimeterM.toFixed(1)} m bieżących
           </p>
         </div>
         {activeTab === "review" ? (
@@ -794,7 +798,7 @@ export function OptionSidebar({
             disabled={isGeneratingPdf}
             onClick={handleDownloadPdf}
             className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-3.5 text-[14px] font-bold uppercase tracking-[0.18em] text-white transition-colors max-lg:landscape:py-2.5",
+              "flex w-full items-center justify-center gap-2 rounded-lg bg-[#e30311] py-3.5 text-[14px] font-bold uppercase tracking-[0.08em] text-white transition-colors max-lg:landscape:py-2.5",
               isGeneratingPdf ? "cursor-wait opacity-60" : "hover:bg-[#c9020f]",
             )}
           >
@@ -807,7 +811,7 @@ export function OptionSidebar({
             disabled={!nextTab}
             onClick={() => nextTab && onTabChange(nextTab)}
             className={cn(
-              "w-full rounded-lg bg-[#e30311] py-3.5 text-[14px] font-bold uppercase tracking-[0.18em] text-white transition-colors max-lg:landscape:py-2.5",
+              "w-full rounded-lg bg-[#e30311] py-3.5 text-[14px] font-bold uppercase tracking-[0.08em] text-white transition-colors max-lg:landscape:py-2.5",
               nextTab ? "hover:bg-[#c9020f]" : "cursor-not-allowed opacity-50",
             )}
           >

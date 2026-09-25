@@ -19,6 +19,7 @@ import type {
   QuoteResult,
   SpacerOption,
 } from "@/lib/types";
+import { formatQuotePanelsBreakdown } from "@/lib/pricing/calculateQuote";
 
 export type PdfDocumentProps = {
   catalog: CatalogCollections;
@@ -210,7 +211,7 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
                 },
                 {
                   label: "Liczba paneli",
-                  value: `${quote.panelUnits} szt.`,
+                  value: formatQuotePanelsBreakdown(quote),
                 },
               ]
             : []),

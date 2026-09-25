@@ -163,7 +163,7 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
           />
         ) : (
           <div className="w-full max-w-md rounded-2xl border border-[#ddd] bg-white p-6 text-center shadow-lg">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#e30311]">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#e30311]">
               STAL-POL · Elementy otwierające
             </p>
             <h2 className="mt-2 font-heading text-xl font-bold text-[#1A1A18]">
@@ -177,12 +177,12 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
         </div>
       </div>
 
-      <div className="hidden border-t border-[#dce6ef] bg-white/70 px-6 py-4 backdrop-blur lg:block">
-        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 max-lg:flex-col max-lg:items-start">
-          <div className="flex flex-wrap items-center gap-4 text-sm">
+      <div className="border-t border-[#dce6ef] bg-white/70 px-4 py-3 backdrop-blur max-lg:pb-safe lg:px-6 lg:py-4">
+        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 max-lg:flex-col max-lg:items-stretch">
+          <div className="hidden flex-wrap items-center gap-4 text-sm lg:flex">
             {scope.gate && (
               <span className="text-[#1A1A18]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#4a4f52]">
+                <span className="text-xs font-bold uppercase tracking-wide text-[#4a4f52]">
                   Brama:{" "}
                 </span>
                 <span className="font-semibold">
@@ -197,7 +197,7 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
             )}
             {scope.wicket && (
               <span className="text-[#1A1A18]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#4a4f52]">
+                <span className="text-xs font-bold uppercase tracking-wide text-[#4a4f52]">
                   Furtka:{" "}
                 </span>
                 <span className="font-semibold">
@@ -211,9 +211,9 @@ export function OpeningsOnlyPreview({ catalog }: Props) {
               </span>
             )}
           </div>
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline justify-between gap-2 lg:justify-end">
             <span className="text-sm text-[#3a4044]">Razem netto</span>
-            <span className="font-heading text-2xl font-bold text-[#1A1A18]">
+            <span className="font-sans text-xl font-semibold tabular-nums tracking-tight text-[#1A1A18]">
               {Math.round(quote.totalNet).toLocaleString("pl-PL")} PLN
             </span>
           </div>
